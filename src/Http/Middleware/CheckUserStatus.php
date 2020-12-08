@@ -38,7 +38,6 @@ class CheckUserStatus implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $actor = $request->getAttribute('actor');
-        $actor->status = 2;
         // 被禁用的用户
         if ($actor->status == 1) {
             throw new PermissionDeniedException('ban_user');
