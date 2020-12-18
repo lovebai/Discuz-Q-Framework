@@ -27,7 +27,8 @@ use Psr\Http\Server\RequestHandlerInterface;
 class CheckUserStatus implements MiddlewareInterface
 {
     private $noCheckAction = [
-        '/api/user/signinfields'
+        '/api/user/signinfields',
+        '/api/attachments'
     ];
     /**
      * {@inheritdoc}
