@@ -21,6 +21,7 @@ namespace Discuz\Http;
 use Discuz\Foundation\Application;
 use Discuz\Foundation\SiteApp;
 use Discuz\Http\Middleware\RequestHandler;
+use Illuminate\Database\QueryException;
 use Laminas\Diactoros\Response;
 use Laminas\Diactoros\ServerRequest;
 use Laminas\Diactoros\ServerRequestFactory;
@@ -37,6 +38,8 @@ class Server extends SiteApp
     {
         try {
             $this->siteBoot();
+        } catch (QueryException $e) {
+            // 忽略，避免由于数据库引起的启动错误，导致页面无法显示
         } catch (Throwable $e) {
             exit($this->formatBootException($e));
         }
