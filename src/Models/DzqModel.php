@@ -23,10 +23,11 @@ class DzqModel extends Model
 {
     private static $instance;
     protected function __clone(){}
+
     public static function instance() {
         $class = get_called_class();
         if (!isset(self::$instance[$class])) {
-            self::$instance[$class] = new $class();
+            self::$instance[$class] = new static();
         }
         return self::$instance[$class];
     }
