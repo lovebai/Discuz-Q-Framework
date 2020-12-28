@@ -18,6 +18,7 @@
 
 namespace Discuz\Http\Middleware;
 
+use App\Models\User;
 use Discuz\Auth\Exception\PermissionDeniedException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -26,6 +27,11 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class CheckUserStatus implements MiddlewareInterface
 {
+    private $noCheckAction = [
+        '/api/user/signinfields',
+        '/api/attachments'
+    ];
+
     /**
      * {@inheritdoc}
      *
@@ -33,25 +39,34 @@ class CheckUserStatus implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $actor = $request->getAttribute('actor');
 
+        $actor = $request->getAttribute('actor');
         // 被禁用的用户
-        if ($actor->status == 1) {
+        if ($actor->status == User::STATUS_BAN) {
             throw new PermissionDeniedException('ban_user');
         }
         // 审核中的用户
-        if ($actor->status == 2) {
-            throw new PermissionDeniedException('register_validate');
+        if ($actor->status == User::STATUS_MOD) {
+            $path = $request->getUri()->getPath();
+            if (!in_array($path, $this->noCheckAction)) {
+                throw new PermissionDeniedException('register_validate');
+            }
         }
         // 审核拒绝
-        if ($actor->status == 3) {
+        if ($actor->status == User::STATUS_REFUSE) {
             throw new PermissionDeniedException('validate_reject');
         }
         // 审核忽略
-        if ($actor->status == 4) {
+        if ($actor->status == User::STATUS_IGNORE) {
             throw new PermissionDeniedException('validate_ignore');
         }
-
+        // 待填写扩展审核字段的用户
+        if ($actor->status == User::STATUS_NEED_FIELDS) {
+            $path = $request->getUri()->getPath();
+            if (!in_array($path, $this->noCheckAction)) {
+                throw new PermissionDeniedException('need_ext_fields');
+            }
+        }
         return $handler->handle($request);
     }
 }
