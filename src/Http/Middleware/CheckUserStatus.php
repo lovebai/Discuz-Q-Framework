@@ -19,7 +19,10 @@
 namespace Discuz\Http\Middleware;
 
 use App\Models\User;
+use App\Models\UserSignInFields;
 use Discuz\Auth\Exception\PermissionDeniedException;
+use Discuz\Common\Utils;
+use Discuz\Http\DiscuzResponseFactory;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -54,7 +57,17 @@ class CheckUserStatus implements MiddlewareInterface
         }
         // 审核拒绝
         if ($actor->status == User::STATUS_REFUSE) {
-            throw new PermissionDeniedException('validate_reject');
+            $response = [
+                'errors' => [
+                    [
+                        'status' => '401',
+                        'code' => 'validate_reject',
+                        'data' => UserSignInFields::instance()->getUserRejectReason($actor->id)
+                    ]
+                ]
+            ];
+            return DiscuzResponseFactory::JsonResponse($response)->withStatus(401);
+//            throw new PermissionDeniedException('validate_reject');
         }
         // 审核忽略
         if ($actor->status == User::STATUS_IGNORE) {
