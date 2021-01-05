@@ -62,7 +62,7 @@ class CheckUserStatus implements MiddlewareInterface
                     [
                         'status' => '401',
                         'code' => 'validate_reject',
-                        'data' => UserSignInFields::instance()->getUserRejectReason($actor->id)
+                        'data' => User::getUserReject($actor->id)
                     ]
                 ]
             ];
