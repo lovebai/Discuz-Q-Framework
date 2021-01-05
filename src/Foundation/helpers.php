@@ -164,6 +164,9 @@ if (! function_exists('ip')) {
         } elseif (Arr::has($server, 'REMOTE_ADDR') && strcasecmp(Arr::get($server, 'REMOTE_ADDR'), 'unknown')) {
             $ip = Arr::get($server, 'REMOTE_ADDR');
         }
+        //针对负载均衡的情况下会获取代理ip，这里只取第一个用户ip
+        $ip_array= explode(',', $ip);
+        $ip = $ip_array[0];
         return $ip;
     }
 }
