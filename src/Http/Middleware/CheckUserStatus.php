@@ -86,6 +86,7 @@ class CheckUserStatus implements MiddlewareInterface
                 ]
             ]
         ];
-        return DiscuzResponseFactory::JsonResponse($response)->withStatus(401);
+        header('Content-Type:application/json; charset=utf-8', true, 401);
+        exit(json_encode($response, 256));
     }
 }
