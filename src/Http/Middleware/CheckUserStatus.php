@@ -77,6 +77,10 @@ class CheckUserStatus implements MiddlewareInterface
 
     private function exceptionResponse($userId, $msg)
     {
+        $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
+        foreach ($crossHeaders as $k=>$v) {
+            header($k . ':' . $v);
+        }
         $response = [
             'errors' => [
                 [
