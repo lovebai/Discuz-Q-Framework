@@ -91,7 +91,7 @@ class DiscuzResponseFactory
         return new Response\RedirectResponse($uri, $code, $headers);
     }
 
-    protected static function getCrossHeaders()
+    public static function getCrossHeaders()
     {
         $crossConfig = app()->config('cross');
         $cross_headers = [];
