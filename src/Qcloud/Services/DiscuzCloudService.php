@@ -53,6 +53,12 @@ class DiscuzCloudService
         ]);
     }
 
+    public function statistics($body = '')
+    {
+        return $this->getHttpClient()->requestAsync('POST', 'cloud/statistics', [
+            'json' => $body
+        ]);
+    }
     /**
      * @param string $body
      * @return mixed|\Psr\Http\Message\ResponseInterface
