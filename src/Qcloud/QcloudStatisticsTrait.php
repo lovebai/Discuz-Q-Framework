@@ -62,9 +62,13 @@ trait QcloudStatisticsTrait
             'day_money' => $lastDayMoney,
             'total_money' => $totalMoney
         ];
-        $this->statistics($params)->then(function (ResponseInterface $response) {
-            $data = json_decode($response->getBody()->getContents(), true);
-            dd($data);
-        })->wait();
+        try {
+            $this->statistics($params)->then(function (ResponseInterface $response) {
+                echo 'report:'.$response->getBody()->getContents().PHP_EOL;
+            })->wait();
+        }catch (\Exception $e){
+
+        }
+
     }
 }
