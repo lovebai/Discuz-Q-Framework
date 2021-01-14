@@ -62,6 +62,11 @@ trait QcloudTrait
         return $this->getQcloud()->service('discuzcloud')->report($params);
     }
 
+    public function statistics($params = [])
+    {
+        return $this->getQcloud()->service('discuzcloud')->statistics($params);
+    }
+
     public function MsUserInfo()
     {
         return $this->getQcloud()->service('ms')->MsUserInfo();
