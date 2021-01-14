@@ -18,6 +18,7 @@
 namespace Discuz\Qcloud;
 
 
+use App\Common\Statistics;
 use App\Models\Order;
 use App\Models\Post;
 use App\Models\Setting;
@@ -33,7 +34,6 @@ trait QcloudStatisticsTrait
     {
         $setting = Setting::query()->get()->toArray();
         $setting = array_column($setting, null, 'key');
-
         $version = app()->version();
         $siteId = $setting['site_id'];
         $siteSecret = $setting['site_secret'];
@@ -48,6 +48,13 @@ trait QcloudStatisticsTrait
         $lastDayPosts = Post::query()->where(['is_first' => 0])->whereBetween('created_at', [$t1, $t2])->count();
         $lastDayMoney = Order::query()->where(['status' => 1])->whereBetween('created_at', [$t1, $t2])->sum('amount');
         $totalMoney = Order::query()->where(['status' => 1])->sum('amount');
+        $t = date('Y-m-d',strtotime('-1 day'));
+        $keyPc = 'login_pc_count:'.$t;
+        $keyH5 = 'login_h5_count:'.$t;
+        $keyMp = 'login_mp_count:'.$t;
+        $pcLogin = Statistics::get($keyPc);
+        $h5Login = Statistics::get($keyH5);
+        $mpLogin=Statistics::get($keyMp);
         $params = [
             'date' => date('Y-m-d',strtotime('-1 day')),
             'site_id' => $siteId['value'],
@@ -60,8 +67,14 @@ trait QcloudStatisticsTrait
             'day_posts' => $lastDayPosts,
             'total_posts' => $totalPosts,
             'day_money' => $lastDayMoney,
-            'total_money' => $totalMoney
+            'total_money' => $totalMoney,
+            'h5_login' => empty($h5Login) ? 0 : $h5Login,
+            'pc_login' => empty($pcLogin) ? 0 : $pcLogin,
+            'mp_login' => empty($mpLogin) ? 0 : $mpLogin
         ];
+        Statistics::delete($keyPc);
+        Statistics::delete($keyH5);
+        Statistics::delete($keyMp);
         try {
             $this->statistics($params)->then(function (ResponseInterface $response) {
                 echo 'report:'.$response->getBody()->getContents().PHP_EOL;
