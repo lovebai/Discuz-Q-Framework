@@ -19,7 +19,10 @@
 namespace Discuz\Http\Middleware;
 
 use App\Models\User;
+use App\Models\UserSignInFields;
 use Discuz\Auth\Exception\PermissionDeniedException;
+use Discuz\Common\Utils;
+use Discuz\Http\DiscuzResponseFactory;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -49,12 +52,14 @@ class CheckUserStatus implements MiddlewareInterface
         if ($actor->status == User::STATUS_MOD) {
             $path = $request->getUri()->getPath();
             if (!in_array($path, $this->noCheckAction)) {
-                throw new PermissionDeniedException('register_validate');
+                $this->exceptionResponse($actor->id,'register_validate');
             }
         }
         // 审核拒绝
         if ($actor->status == User::STATUS_REFUSE) {
-            throw new PermissionDeniedException('validate_reject');
+            $this->exceptionResponse($actor->id,'validate_reject');
+
+//            throw new PermissionDeniedException('validate_reject');
         }
         // 审核忽略
         if ($actor->status == User::STATUS_IGNORE) {
@@ -68,5 +73,24 @@ class CheckUserStatus implements MiddlewareInterface
             }
         }
         return $handler->handle($request);
+    }
+
+    private function exceptionResponse($userId, $msg)
+    {
+        $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
+        foreach ($crossHeaders as $k=>$v) {
+            header($k . ':' . $v);
+        }
+        $response = [
+            'errors' => [
+                [
+                    'status' => '401',
+                    'code' => $msg,
+                    'data' => User::getUserReject($userId)
+                ]
+            ]
+        ];
+        header('Content-Type:application/json; charset=utf-8', true, 401);
+        exit(json_encode($response, 256));
     }
 }
