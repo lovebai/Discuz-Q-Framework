@@ -75,4 +75,12 @@ class DiscuzCloudService
     {
         return $this->httpClient ?? $this->httpClient = new Client($this->config);
     }
+
+    public function uinStatistics($body = '')
+    {
+        return $this->getHttpClient()->requestAsync('POST', 'cloud/uinStatistics', [
+            'json' => $body
+        ]);
+    }
+
 }
