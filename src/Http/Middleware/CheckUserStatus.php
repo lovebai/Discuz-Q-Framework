@@ -52,21 +52,13 @@ class CheckUserStatus implements MiddlewareInterface
         if ($actor->status == User::STATUS_MOD) {
             $path = $request->getUri()->getPath();
             if (!in_array($path, $this->noCheckAction)) {
-                throw new PermissionDeniedException('register_validate');
+                $this->exceptionResponse($actor->id,'register_validate');
             }
         }
         // 审核拒绝
         if ($actor->status == User::STATUS_REFUSE) {
-            $response = [
-                'errors' => [
-                    [
-                        'status' => '401',
-                        'code' => 'validate_reject',
-                        'data' => UserSignInFields::instance()->getUserRejectReason($actor->id)
-                    ]
-                ]
-            ];
-            return DiscuzResponseFactory::JsonResponse($response)->withStatus(401);
+            $this->exceptionResponse($actor->id,'validate_reject');
+
 //            throw new PermissionDeniedException('validate_reject');
         }
         // 审核忽略
@@ -81,5 +73,24 @@ class CheckUserStatus implements MiddlewareInterface
             }
         }
         return $handler->handle($request);
+    }
+
+    private function exceptionResponse($userId, $msg)
+    {
+        $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
+        foreach ($crossHeaders as $k=>$v) {
+            header($k . ':' . $v);
+        }
+        $response = [
+            'errors' => [
+                [
+                    'status' => '401',
+                    'code' => $msg,
+                    'data' => User::getUserReject($userId)
+                ]
+            ]
+        ];
+        header('Content-Type:application/json; charset=utf-8', true, 401);
+        exit(json_encode($response, 256));
     }
 }
