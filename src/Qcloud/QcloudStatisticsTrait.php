@@ -96,11 +96,11 @@ trait QcloudStatisticsTrait
         $setting = Setting::query()->get()->toArray();
         $setting = array_column($setting, null, 'key');
         $version = app()->version();
-        $siteId = $setting['site_id'];
-        $siteSecret = $setting['site_secret'];
-        $siteInstall = $setting['site_install'];
-        $qcloudSecretId = $setting['qcloud_secret_id'];
-        $qcloudSecretKey = $setting['qcloud_secret_key'];
+        $siteId = $setting['site_id']['value'];
+        $siteSecret = $setting['site_secret']['value'];
+        $siteInstall = $setting['site_install']['value'];
+        $qcloudSecretId = $setting['qcloud_secret_id']['value'];
+        $qcloudSecretKey = $setting['qcloud_secret_key']['value'];
         if (empty($qcloudSecretId) || empty($qcloudSecretKey)) return;
         try {
             $cred = new Credential($qcloudSecretId, $qcloudSecretKey);
