@@ -60,6 +60,9 @@ trait WechatTrait
         // remark_data
         $build['remark'] = $this->matchRegular($this->firstData->remark_data);
 
+        // color
+        $build['color'] = $this->firstData->color;
+
         return $build;
     }
 
