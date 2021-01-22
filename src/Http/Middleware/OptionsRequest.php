@@ -30,11 +30,43 @@ class OptionsRequest implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if (Arr::get($request->getServerParams(), 'REQUEST_METHOD', '') == 'OPTIONS') {
+        $method = Arr::get($request->getServerParams(), 'REQUEST_METHOD', '');
+        if ($method == 'OPTIONS') {
             return DiscuzResponseFactory::EmptyResponse(200);
         } else {
+            if (strtolower($method) == 'get') {
+                if ($this->isForbidden(60)) {
+                    throw new \Exception('请求太频繁，请稍后重试');
+                }
+            } else {
+                if ($this->isForbidden(10)) {
+                    throw new \Exception('请求太频繁，请稍后重试');
+                }
+            }
             return $handler->handle($request);
         }
+    }
 
+    private function isForbidden($max = 10, $interval = 60)
+    {
+        $request = app('request');
+        $ip = ip($request->getServerParams());
+        $api = $request->getUri()->getPath();
+        if (empty($ip) || empty($api)) return false;
+        $key = 'api_limit_by_ip_' . md5($ip . $api);
+        $cache = app('cache');
+        $count = $cache->get($key);
+        if (empty($count)) {
+            $cache->put($key, 1, $interval);
+            return false;
+        } else {
+            if ($count > $max) {
+                $cache->put($key, $count, 3 * 60);
+                return true;
+            } else {
+                $cache->put($key, ++$count);
+                return false;
+            }
+        }
     }
 }
