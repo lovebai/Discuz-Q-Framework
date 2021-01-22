@@ -35,11 +35,11 @@ class OptionsRequest implements MiddlewareInterface
             return DiscuzResponseFactory::EmptyResponse(200);
         } else {
             if (strtolower($method) == 'get') {
-                if ($this->isForbidden(60)) {
+                if ($this->isForbidden(300)) {
                     throw new \Exception('请求太频繁，请稍后重试');
                 }
             } else {
-                if ($this->isForbidden(10)) {
+                if ($this->isForbidden(20)) {
                     throw new \Exception('请求太频繁，请稍后重试');
                 }
             }
