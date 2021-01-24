@@ -113,8 +113,8 @@ class AuthenticateWithHeader implements MiddlewareInterface
         $homeApi = [
             '/api/threads',
             '/api/categories',
-            'api/forum',
-            'api/users/recommended'
+            '/api/forum',
+            '/api/users/recommended'
         ];
         if (in_array($api, $homeApi) && $method == 'get') {
             $max = 1000;
