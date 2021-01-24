@@ -42,7 +42,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
         $headerLine = $request->getHeaderLine('authorization');
 
         // 允许 get、cookie 携带 Token
-        if (! $headerLine) {
+        if (!$headerLine) {
             $headerLine = Arr::get($request->getQueryParams(), 'token');
 
             if ($headerLine) {
@@ -60,14 +60,17 @@ class AuthenticateWithHeader implements MiddlewareInterface
             $server = new ResourceServer($accessTokenRepository, $publickey);
 
             $request = $server->validateAuthenticatedRequest($request);
-
+            $this->throwForbiddenException($request);
             // 获取Token位置，根据 Token 解析用户并查询到当前用户
             $actor = $this->getActor($request);
 
             if (!is_null($actor) && $actor->exists) {
                 $request = $request->withoutAttribute('oauth_access_token_id')->withoutAttribute('oauth_client_id')->withoutAttribute('oauth_user_id')->withoutAttribute('oauth_scopes')->withAttribute('actor', $actor);
             }
+        } else {
+            $this->throwForbiddenException($request);
         }
+
 
         return $handler->handle($request);
     }
@@ -78,7 +81,64 @@ class AuthenticateWithHeader implements MiddlewareInterface
         if (!is_null($actor) && $actor->exists) {
             $actor->changeUpdateAt()->save();
         }
-
         return $actor;
     }
+
+    private function throwForbiddenException(ServerRequestInterface $request)
+    {
+        $method = Arr::get($request->getServerParams(), 'REQUEST_METHOD', '');
+        $userId = $request->getAttribute('oauth_user_id');
+        if (strtolower($method) == 'get') {
+            if ($this->isForbidden($userId, $request, $method, 300)) {
+                throw new \Exception('请求太频繁，请稍后重试');
+            }
+        } else {
+            if ($this->isForbidden($userId, $request, $method, 20)) {
+                throw new \Exception('请求太频繁，请稍后重试');
+            }
+        }
+    }
+
+    private function isForbidden($userId, ServerRequestInterface $request, $method, $max = 10, $interval = 60)
+    {
+        $ip = ip($request->getServerParams());
+        $api = $request->getUri()->getPath();
+        if (empty($ip) || empty($api)) return false;
+        $method = strtolower($method);
+        $homeApi = [
+            '/api/threads',
+            '/api/categories',
+            'api/forum',
+            'api/users/recommended'
+        ];
+        if (in_array($api, $homeApi) && $method == 'get') {
+            $max = 1000;
+        }
+        if (empty($userId)) {
+            $key = 'api_limit_by_ip_' . md5($ip . $api);
+        } else {
+            $key = 'api_limit_by_uid_' . md5($userId . '_' . $api);
+        }
+        $cache = app('cache');
+        $count = $cache->get($key);
+        if (empty($count)) {
+            $cache->put($key, 1, $interval);
+            return false;
+        } else {
+            if ($count > $max) {
+                if ($method == 'get') {
+                    //api禁用三分钟
+                    $cache->put($key, $count, 3 * 60);
+                } else {
+                    //api禁用半小时
+                    $cache->put($key, $count, 30 * 60);
+                }
+                return true;
+            } else {
+                $cache->put($key, ++$count);
+                return false;
+            }
+        }
+    }
+
 }

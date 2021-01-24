@@ -30,52 +30,12 @@ class OptionsRequest implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+
         $method = Arr::get($request->getServerParams(), 'REQUEST_METHOD', '');
         if ($method == 'OPTIONS') {
             return DiscuzResponseFactory::EmptyResponse(200);
         } else {
-            if (strtolower($method) == 'get') {
-                if ($this->isForbidden($method,300)) {
-                    throw new \Exception('请求太频繁，请稍后重试');
-                }
-            } else {
-                if ($this->isForbidden($method,20)) {
-                    throw new \Exception('请求太频繁，请稍后重试');
-                }
-            }
             return $handler->handle($request);
-        }
-    }
-
-    private function isForbidden($method,$max = 10, $interval = 60)
-    {
-        $request = app('request');
-        $ip = ip($request->getServerParams());
-        $api = $request->getUri()->getPath();
-        if (empty($ip) || empty($api)) return false;
-        $homeApi=[
-            '/api/threads',
-            '/api/categories',
-            'api/forum',
-            'api/users/recommended'
-        ];
-        if (in_array($api,$homeApi) && strtolower($method) == 'get') {
-            $max = 1000;
-        }
-        $key = 'api_limit_by_ip_' . md5($ip . $api);
-        $cache = app('cache');
-        $count = $cache->get($key);
-        if (empty($count)) {
-            $cache->put($key, 1, $interval);
-            return false;
-        } else {
-            if ($count > $max) {
-                $cache->put($key, $count, 3 * 60);
-                return true;
-            } else {
-                $cache->put($key, ++$count);
-                return false;
-            }
         }
     }
 }
