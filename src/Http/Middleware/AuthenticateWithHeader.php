@@ -89,11 +89,11 @@ class AuthenticateWithHeader implements MiddlewareInterface
         $method = Arr::get($request->getServerParams(), 'REQUEST_METHOD', '');
         $userId = $request->getAttribute('oauth_user_id');
         if (strtolower($method) == 'get') {
-            if ($this->isForbidden($userId, $request, $method, 300)) {
+            if ($this->isForbidden($userId, $request, $method, 500)) {
                 throw new \Exception('请求太频繁，请稍后重试');
             }
         } else {
-            if ($this->isForbidden($userId, $request, $method, 20)) {
+            if ($this->isForbidden($userId, $request, $method, 60)) {
                 throw new \Exception('请求太频繁，请稍后重试');
             }
         }
