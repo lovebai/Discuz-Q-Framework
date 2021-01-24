@@ -31,6 +31,11 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class AuthenticateWithHeader implements MiddlewareInterface
 {
+    const MAX_GET_LIMIT_MINUTE = 500;
+    const MAX_POST_PER_MINUTE = 100;
+    const MAX_GET_FORBIDDEN_MINUTES = 3;
+    const MAX_POST_FORBIDDEN_MINUTES = 30;
+
     /**
      * @param ServerRequestInterface $request
      * @param RequestHandlerInterface $handler
@@ -60,7 +65,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
             $server = new ResourceServer($accessTokenRepository, $publickey);
 
             $request = $server->validateAuthenticatedRequest($request);
-            $this->throwForbiddenException($request);
+            $this->checkLimit($request);
             // 获取Token位置，根据 Token 解析用户并查询到当前用户
             $actor = $this->getActor($request);
 
@@ -68,7 +73,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
                 $request = $request->withoutAttribute('oauth_access_token_id')->withoutAttribute('oauth_client_id')->withoutAttribute('oauth_user_id')->withoutAttribute('oauth_scopes')->withAttribute('actor', $actor);
             }
         } else {
-            $this->throwForbiddenException($request);
+            $this->checkLimit($request);
         }
 
 
@@ -84,16 +89,16 @@ class AuthenticateWithHeader implements MiddlewareInterface
         return $actor;
     }
 
-    private function throwForbiddenException(ServerRequestInterface $request)
+    private function checkLimit(ServerRequestInterface $request)
     {
         $method = Arr::get($request->getServerParams(), 'REQUEST_METHOD', '');
         $userId = $request->getAttribute('oauth_user_id');
         if (strtolower($method) == 'get') {
-            if ($this->isForbidden($userId, $request, $method, 500)) {
+            if ($this->isForbidden($userId, $request, $method, self::MAX_GET_LIMIT_MINUTE)) {
                 throw new \Exception('请求太频繁，请稍后重试');
             }
         } else {
-            if ($this->isForbidden($userId, $request, $method, 60)) {
+            if ($this->isForbidden($userId, $request, $method, self::MAX_POST_PER_MINUTE)) {
                 throw new \Exception('请求太频繁，请稍后重试');
             }
         }
@@ -128,10 +133,10 @@ class AuthenticateWithHeader implements MiddlewareInterface
             if ($count > $max) {
                 if ($method == 'get') {
                     //api禁用三分钟
-                    $cache->put($key, $count, 3 * 60);
+                    $cache->put($key, $count, self::MAX_GET_FORBIDDEN_MINUTES * 60);
                 } else {
                     //api禁用半小时
-                    $cache->put($key, $count, 30 * 60);
+                    $cache->put($key, $count, self::MAX_POST_FORBIDDEN_MINUTES * 60);
                 }
                 return true;
             } else {
