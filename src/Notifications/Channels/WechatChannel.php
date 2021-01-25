@@ -2,13 +2,10 @@
 
 /**
  * Copyright (C) 2020 Tencent Cloud.
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,6 +15,7 @@
 
 namespace Discuz\Notifications\Channels;
 
+use App\Models\NotificationTpl;
 use Discuz\Contracts\Setting\SettingsRepository;
 use EasyWeChat\Factory;
 use EasyWeChat\Kernel\Exceptions\InvalidArgumentException;
@@ -29,8 +27,8 @@ use RuntimeException;
 
 /**
  * 微信通知 - 驱动
- *
  * Class WechatChannel
+ *
  * @package Discuz\Notifications\Channels
  */
 class WechatChannel
@@ -39,6 +37,7 @@ class WechatChannel
 
     /**
      * WechatChannel constructor.
+     *
      * @param SettingsRepository $settings
      */
     public function __construct(SettingsRepository $settings)
@@ -57,7 +56,7 @@ class WechatChannel
      */
     public function send($notifiable, Notification $notification)
     {
-        if (!empty($notifiable->wechat) && !empty($notifiable->wechat->mp_openid)) {
+        if (! empty($notifiable->wechat) && ! empty($notifiable->wechat->mp_openid)) {
 
             // wechat post json
             $build = $notification->toWechat($notifiable);
@@ -66,7 +65,11 @@ class WechatChannel
             $content = str_replace(PHP_EOL, '', Arr::get($build, 'content'));
             $build['content'] = json_decode($content, true);
 
-            // get Wechat Template ID
+            /**
+             * get Wechat Template
+             *
+             * @var NotificationTpl $notificationData
+             */
             $notificationData = $notification->getTplModel('wechat');
             $templateID = $notificationData->template_id;
 
@@ -88,13 +91,26 @@ class WechatChannel
                 'secret' => $secret,
             ]);
 
-            // send
-            $app->template_message->send([
+            // build
+            $sendBuild = [
                 'touser' => $toUser,
                 'template_id' => $templateID,
                 'url' => $url,
                 'data' => $build['content']['data'],
-            ]);
+            ];
+
+            // 判断是否开启跳转小程序
+            if ($notificationData->redirect_type == NotificationTpl::REDIRECT_TYPE_TO_MINIPROGRAM) {
+                $sendBuild = array_merge($sendBuild, [
+                    'miniprogram' => [
+                        'appid' => $this->settings->get('miniprogram_app_id', 'wx_miniprogram'),
+                        'pagepath' => $notificationData->page_path,
+                    ]
+                ]);
+            }
+
+            // send
+            $app->template_message->send($sendBuild);
         }
     }
 }
