@@ -120,6 +120,9 @@ class AuthenticateWithHeader implements MiddlewareInterface
         if (in_array($api, $homeApi) && $method == 'get') {
             $max = 1000;
         }
+        if ($this->isRegister($api)) {
+            $max = 5;
+        }
         if (empty($userId)) {
             $key = 'api_limit_by_ip_' . md5($ip . $api . $method);
         } else {
@@ -138,12 +141,20 @@ class AuthenticateWithHeader implements MiddlewareInterface
                 } else {
                     $cache->put($key, $count, self::MAX_GET_FORBIDDEN_SECONDS);
                 }
+                if ($this->isRegister($api)) {
+                    $cache->put($key, $count, 10 * 60);
+                }
                 return true;
             } else {
                 $cache->increment($key);
                 return false;
             }
         }
+    }
+
+    private function isRegister($api)
+    {
+        return $api == '/api/register';
     }
 
 }
