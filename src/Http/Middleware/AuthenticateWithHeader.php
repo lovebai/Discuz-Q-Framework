@@ -31,10 +31,10 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class AuthenticateWithHeader implements MiddlewareInterface
 {
-    const MAX_GET_PER_MINUTE = 100;
-    const MAX_POST_PER_MINUTE = 50;
+    const MAX_GET_PER_MINUTE = 500;
+    const MAX_POST_PER_MINUTE = 200;
     const MAX_GET_FORBIDDEN_SECONDS = 10;
-    const MAX_POST_FORBIDDEN_SECONDS = 20;
+    const MAX_POST_FORBIDDEN_SECONDS = 30;
 
     /**
      * @param ServerRequestInterface $request
@@ -118,7 +118,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
             '/api/users/recommended'
         ];
         if (in_array($api, $homeApi) && $method == 'get') {
-            $max = 500;
+            $max = 1000;
         }
         if (empty($userId)) {
             $key = 'api_limit_by_ip_' . md5($ip . $api . $method);
