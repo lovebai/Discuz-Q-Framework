@@ -47,7 +47,10 @@ class Utils
             $requestFrom = PubEnum::H5;
         }
 
-        $user_agent = $server['HTTP_USER_AGENT'];
+        $user_agent = '';
+        if(isset($server['HTTP_USER_AGENT'])){
+            $user_agent = $server['HTTP_USER_AGENT'];
+        }
 
         // 如果是 Windows PC 微信浏览器，返回 true 直接访问 index.html，不然打开是空白页
         if (stristr($user_agent, 'Windows NT') && stristr($user_agent, 'MicroMessenger')) {
