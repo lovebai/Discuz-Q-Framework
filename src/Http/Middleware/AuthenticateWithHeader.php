@@ -121,7 +121,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
             $max = 1000;
         }
         if ($this->isRegister($api)) {
-            $max = 5;
+            $max = 10;
         }
         if (empty($userId)) {
             $key = 'api_limit_by_ip_' . md5($ip . $api . $method);
