@@ -31,10 +31,10 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class AuthenticateWithHeader implements MiddlewareInterface
 {
-    const MAX_GET_LIMIT_MINUTE = 500;
-    const MAX_POST_PER_MINUTE = 100;
-    const MAX_GET_FORBIDDEN_MINUTES = 3;
-    const MAX_POST_FORBIDDEN_MINUTES = 30;
+    const MAX_GET_PER_MINUTE = 100;
+    const MAX_POST_PER_MINUTE = 50;
+    const MAX_GET_FORBIDDEN_SECONDS = 10;
+    const MAX_POST_FORBIDDEN_SECONDS = 20;
 
     /**
      * @param ServerRequestInterface $request
@@ -94,7 +94,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
         $method = Arr::get($request->getServerParams(), 'REQUEST_METHOD', '');
         $userId = $request->getAttribute('oauth_user_id');
         if (strtolower($method) == 'get') {
-            if ($this->isForbidden($userId, $request, $method, self::MAX_GET_LIMIT_MINUTE)) {
+            if ($this->isForbidden($userId, $request, $method, self::MAX_GET_PER_MINUTE)) {
                 throw new \Exception('请求太频繁，请稍后重试');
             }
         } else {
@@ -106,9 +106,10 @@ class AuthenticateWithHeader implements MiddlewareInterface
 
     private function isForbidden($userId, ServerRequestInterface $request, $method, $max = 10, $interval = 60)
     {
+
         $ip = ip($request->getServerParams());
         $api = $request->getUri()->getPath();
-        if (empty($ip) || empty($api)) return false;
+        if (empty($api)) return true;
         $method = strtolower($method);
         $homeApi = [
             '/api/threads',
@@ -117,30 +118,29 @@ class AuthenticateWithHeader implements MiddlewareInterface
             '/api/users/recommended'
         ];
         if (in_array($api, $homeApi) && $method == 'get') {
-            $max = 1000;
+            $max = 500;
         }
         if (empty($userId)) {
-            $key = 'api_limit_by_ip_' . md5($ip . $api);
+            $key = 'api_limit_by_ip_' . md5($ip . $api . $method);
         } else {
-            $key = 'api_limit_by_uid_' . md5($userId . '_' . $api);
+            $key = 'api_limit_by_uid_' . md5($userId . '_' . $api . $method);
         }
         $cache = app('cache');
         $count = $cache->get($key);
+
         if (empty($count)) {
-            $cache->put($key, 1, $interval);
+            $cache->add($key, 1, $interval);
             return false;
         } else {
-            if ($count > $max) {
+            if ($count >= $max) {
                 if ($method == 'get') {
-                    //api禁用三分钟
-                    $cache->put($key, $count, self::MAX_GET_FORBIDDEN_MINUTES * 60);
+                    $cache->put($key, $count, self::MAX_GET_FORBIDDEN_SECONDS);
                 } else {
-                    //api禁用半小时
-                    $cache->put($key, $count, self::MAX_POST_FORBIDDEN_MINUTES * 60);
+                    $cache->put($key, $count, self::MAX_GET_FORBIDDEN_SECONDS);
                 }
                 return true;
             } else {
-                $cache->put($key, ++$count);
+                $cache->increment($key);
                 return false;
             }
         }
