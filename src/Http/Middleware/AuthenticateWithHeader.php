@@ -106,43 +106,69 @@ class AuthenticateWithHeader implements MiddlewareInterface
 
     private function isForbidden($userId, ServerRequestInterface $request, $method, $max = 10, $interval = 60)
     {
-
         $ip = ip($request->getServerParams());
         $api = $request->getUri()->getPath();
         if (empty($api)) return true;
         $method = strtolower($method);
+        if (empty($userId)) {
+            $key = 'api_limit_by_ip_' . md5($ip . $api . $method);
+        } else {
+            $key = 'api_limit_by_uid_' . md5($userId . '_' . $api . $method);
+        }
+        if ($this->isHome($api, $method)) {
+            return $this->setLimit($key, 1000, 10);
+        }
+        if ($this->isRegister($api, $method)) {
+            return $this->setLimit($key, 5, 10 * 60);
+        }
+        if ($this->isAttachments($api, $method)) {
+            return $this->setLimit($key, 10, 10 * 60);
+        }
+        return $this->setLimit($key, $max);
+    }
+
+    private function isRegister($api, $method)
+    {
+        return $api == '/api/register' && $method == 'post';
+    }
+
+    private function isAttachments($api, $method)
+    {
+        return $api == '/api/attachments' && $method == 'post';
+    }
+
+    private function isHome($api, $method)
+    {
         $homeApi = [
             '/api/threads',
             '/api/categories',
             '/api/forum',
             '/api/users/recommended'
         ];
-        if (in_array($api, $homeApi) && $method == 'get') {
-            $max = 1000;
-        }
-        if ($this->isRegister($api)) {
-            $max = 10;
-        }
-        if (empty($userId)) {
-            $key = 'api_limit_by_ip_' . md5($ip . $api . $method);
-        } else {
-            $key = 'api_limit_by_uid_' . md5($userId . '_' . $api . $method);
-        }
+        return in_array($api, $homeApi) && $method == 'get';
+    }
+
+    /*
+     * $max interage 每分钟最大调用次数
+     * $defaultDelay Boolen 超过调用次数禁止秒数
+     */
+    private function setLimit($key, $max, $defaultDelay = null)
+    {
         $cache = app('cache');
         $count = $cache->get($key);
-
         if (empty($count)) {
-            $cache->add($key, 1, $interval);
+            $cache->add($key, 1, 60);
             return false;
         } else {
             if ($count >= $max) {
-                if ($method == 'get') {
-                    $cache->put($key, $count, self::MAX_GET_FORBIDDEN_SECONDS);
+                if ($delay == null) {
+                    if ($method == 'get') {
+                        $cache->put($key, $count, self::MAX_GET_FORBIDDEN_SECONDS);
+                    } else {
+                        $cache->put($key, $count, self::MAX_GET_FORBIDDEN_SECONDS);
+                    }
                 } else {
-                    $cache->put($key, $count, self::MAX_GET_FORBIDDEN_SECONDS);
-                }
-                if ($this->isRegister($api)) {
-                    $cache->put($key, $count, 10 * 60);
+                    $cache->put($key, $count, $delay);
                 }
                 return true;
             } else {
@@ -150,11 +176,6 @@ class AuthenticateWithHeader implements MiddlewareInterface
                 return false;
             }
         }
-    }
-
-    private function isRegister($api)
-    {
-        return $api == '/api/register';
     }
 
 }
