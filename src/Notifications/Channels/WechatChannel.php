@@ -95,7 +95,7 @@ class WechatChannel
             $sendBuild = [
                 'touser' => $toUser,
                 'template_id' => $templateID,
-                'url' => $url,
+                'url' => $notificationData->redirect_type == NotificationTpl::REDIRECT_TYPE_TO_NO ? '' : $url,
                 'data' => $build['content']['data'],
             ];
 
