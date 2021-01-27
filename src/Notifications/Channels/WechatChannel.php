@@ -16,6 +16,7 @@
 namespace Discuz\Notifications\Channels;
 
 use App\Models\NotificationTpl;
+use App\Models\SessionToken;
 use Discuz\Contracts\Setting\SettingsRepository;
 use EasyWeChat\Factory;
 use EasyWeChat\Kernel\Exceptions\InvalidArgumentException;
@@ -93,24 +94,37 @@ class WechatChannel
 
             // build
             $sendBuild = [
-                'touser' => $toUser,
+                'touser'      => $toUser,
                 'template_id' => $templateID,
-                'url' => $notificationData->redirect_type == NotificationTpl::REDIRECT_TYPE_TO_NO ? '' : $url,
-                'data' => $build['content']['data'],
+                'url'         => $notificationData->redirect_type == NotificationTpl::REDIRECT_TYPE_TO_NO ? '' : $url,
+                'data'        => $build['content']['data'],
             ];
 
             // 判断是否开启跳转小程序
             if ($notificationData->redirect_type == NotificationTpl::REDIRECT_TYPE_TO_MINIPROGRAM) {
                 $sendBuild = array_merge($sendBuild, [
                     'miniprogram' => [
-                        'appid' => $this->settings->get('miniprogram_app_id', 'wx_miniprogram'),
+                        'appid'    => $this->settings->get('miniprogram_app_id', 'wx_miniprogram'),
                         'pagepath' => $notificationData->page_path,
-                    ]
+                    ],
                 ]);
             }
 
             // send
-            $app->template_message->send($sendBuild);
+            $response = $app->template_message->send($sendBuild);
+
+            // catch error
+            $buildError = [
+                'id'         => $notificationData->id,
+                'type_name'  => $notificationData->type_name,
+                'send_build' => $sendBuild,
+            ];
+            if (isset($response['errcode']) && $response['errcode'] != 0) {
+                $response = array_merge($response, $buildError);
+                $token = SessionToken::generate(SessionToken::WECHAT_NOTICE_ERROR, $response);
+                $token->save();
+            }
         }
     }
+
 }
