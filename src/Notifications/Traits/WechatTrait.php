@@ -2,13 +2,10 @@
 
 /**
  * Copyright (C) 2020 Tencent Cloud.
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +16,7 @@
 namespace Discuz\Notifications\Traits;
 
 use Carbon\Carbon;
+use Discuz\Http\UrlGenerator;
 
 trait WechatTrait
 {
@@ -37,6 +35,7 @@ trait WechatTrait
     {
         $defaultData = [
             '{$notify_time}' => Carbon::now()->toDateTimeString(),
+            '{$site_domain}' => app(UrlGenerator::class)->to(''),
         ];
 
         $this->templateData = array_merge($build, $defaultData);
@@ -45,9 +44,10 @@ trait WechatTrait
     /**
      * 构建模板数组
      *
+     * @param array $expand 扩展数组
      * @return array
      */
-    public function compiledArray()
+    public function compiledArray($expand = [])
     {
         // first_data
         $firstData = $this->matchRegular($this->firstData->first_data);
@@ -62,6 +62,14 @@ trait WechatTrait
 
         // color
         $build['color'] = $this->firstData->color;
+
+        // redirect_url
+        if (! empty($this->firstData->redirect_url)) {
+            $redirectUrl = $this->matchRegular($this->firstData->redirect_url);
+        } else {
+            $redirectUrl = $expand['redirect_url'] ?? '';
+        }
+        $build['redirect_url'] = $redirectUrl;
 
         return $build;
     }
