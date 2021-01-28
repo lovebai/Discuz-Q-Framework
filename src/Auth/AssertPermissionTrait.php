@@ -35,6 +35,13 @@ trait AssertPermissionTrait
         }
     }
 
+    protected function assertBatchData($data)
+    {
+        if (count($data) > 100) {
+            throw new PermissionDeniedException;
+        }
+    }
+
     /**
      * @param User $actor
      * @throws NotAuthenticatedException
