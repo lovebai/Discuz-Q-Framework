@@ -189,7 +189,7 @@ abstract class AbstractSerializeController implements RequestHandlerInterface
      */
     protected function extractLimit(ServerRequestInterface $request)
     {
-        return $this->buildParameters($request)->getLimit($this->maxLimit) ?: $this->limit;
+        return $this->buildParameters($request)->getLimit($this->maxLimit) > 0 ? $this->buildParameters($request)->getLimit($this->maxLimit) : $this->limit;
     }
 
     /**

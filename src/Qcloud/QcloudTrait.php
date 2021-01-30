@@ -77,6 +77,11 @@ trait QcloudTrait
         return $this->qcloud ?? $this->qcloud = app('qcloud');
     }
 
+    public function uinStatistics($params = [])
+    {
+        return $this->getQcloud()->service('discuzcloud')->uinStatistics($params);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | 云点播

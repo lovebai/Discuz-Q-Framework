@@ -3,10 +3,13 @@
 namespace Discuz\Notifications\Messages;
 
 use App\Models\NotificationTpl;
+use Discuz\Notifications\Traits\WechatTrait;
 use Illuminate\Support\Str;
 
 abstract class SimpleMessage
 {
+    use WechatTrait;
+
     /**
      * @var NotificationTpl Collection first
      */
@@ -24,6 +27,11 @@ abstract class SimpleMessage
         }, $this->contentReplaceVars($data));
 
         return str_replace($this->getVars(), $replaceVars, $this->firstData->content);
+    }
+
+    protected function getWechatContent($data = [])
+    {
+        return NotificationTpl::getWechatFormat($this->contentReplaceVars($data));
     }
 
     protected function getVars()
