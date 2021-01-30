@@ -119,10 +119,10 @@ class AuthenticateWithHeader implements MiddlewareInterface
             return $this->setLimit($key, 1000, 10);
         }
         if ($this->isRegister($api, $method)) {
-            return $this->setLimit($key, 5, 10 * 60);
+            return $this->setLimit($key, 10, 10 * 60);
         }
         if ($this->isAttachments($api, $method)) {
-            return $this->setLimit($key, 10, 10 * 60);
+            return $this->setLimit($key, 10, 5 * 60);
         }
         return $this->setLimit($key, $max);
     }
@@ -161,14 +161,14 @@ class AuthenticateWithHeader implements MiddlewareInterface
             return false;
         } else {
             if ($count >= $max) {
-                if ($delay == null) {
+                if ($defaultDelay == null) {
                     if ($method == 'get') {
                         $cache->put($key, $count, self::MAX_GET_FORBIDDEN_SECONDS);
                     } else {
                         $cache->put($key, $count, self::MAX_GET_FORBIDDEN_SECONDS);
                     }
                 } else {
-                    $cache->put($key, $count, $delay);
+                    $cache->put($key, $count, $defaultDelay);
                 }
                 return true;
             } else {
