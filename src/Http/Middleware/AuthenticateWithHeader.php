@@ -122,7 +122,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
             return $this->setLimit($key, 10, 10 * 60);
         }
         if ($this->isAttachments($api, $method)) {
-            return $this->setLimit($key, 10, 5 * 60);
+            return $this->setLimit($key, 20, 5 * 60);
         }
         return $this->setLimit($key, $max);
     }
