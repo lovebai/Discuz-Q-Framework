@@ -24,6 +24,11 @@ use App\Models\Post;
 use App\Models\Setting;
 use App\Models\Thread;
 use Psr\Http\Message\ResponseInterface;
+use TencentCloud\Common\Credential;
+use TencentCloud\Common\Profile\ClientProfile;
+use TencentCloud\Common\Profile\HttpProfile;
+use TencentCloud\Ms\V20180408\Models\DescribeUserBaseInfoInstanceRequest;
+use TencentCloud\Ms\V20180408\MsClient;
 
 trait QcloudStatisticsTrait
 {
@@ -48,15 +53,15 @@ trait QcloudStatisticsTrait
         $lastDayPosts = Post::query()->where(['is_first' => 0])->whereBetween('created_at', [$t1, $t2])->count();
         $lastDayMoney = Order::query()->where(['status' => 1])->whereBetween('created_at', [$t1, $t2])->sum('amount');
         $totalMoney = Order::query()->where(['status' => 1])->sum('amount');
-        $t = date('Y-m-d',strtotime('-1 day'));
-        $keyPc = 'login_pc_count:'.$t;
-        $keyH5 = 'login_h5_count:'.$t;
-        $keyMp = 'login_mp_count:'.$t;
+        $t = date('Y-m-d', strtotime('-1 day'));
+        $keyPc = 'login_pc_count:' . $t;
+        $keyH5 = 'login_h5_count:' . $t;
+        $keyMp = 'login_mp_count:' . $t;
         $pcLogin = Statistics::get($keyPc);
         $h5Login = Statistics::get($keyH5);
-        $mpLogin=Statistics::get($keyMp);
+        $mpLogin = Statistics::get($keyMp);
         $params = [
-            'date' => date('Y-m-d',strtotime('-1 day')),
+            'date' => date('Y-m-d', strtotime('-1 day')),
             'site_id' => $siteId['value'],
             'site_secret' => $siteSecret['value'],
             'version' => $version,
@@ -77,9 +82,54 @@ trait QcloudStatisticsTrait
         Statistics::delete($keyMp);
         try {
             $this->statistics($params)->then(function (ResponseInterface $response) {
-                echo 'report:'.$response->getBody()->getContents().PHP_EOL;
+                echo 'report:' . $response->getBody()->getContents() . PHP_EOL;
             })->wait();
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
+
+        }
+
+    }
+
+
+    private function uinStatis()
+    {
+        $setting = Setting::query()->get()->toArray();
+        $setting = array_column($setting, null, 'key');
+        $version = app()->version();
+        $siteId = $setting['site_id']['value'];
+        $siteSecret = $setting['site_secret']['value'];
+        $siteInstall = $setting['site_install']['value'];
+        $qcloudSecretId = $setting['qcloud_secret_id']['value'];
+        $qcloudSecretKey = $setting['qcloud_secret_key']['value'];
+        if (empty($qcloudSecretId) || empty($qcloudSecretKey)) return;
+        try {
+            $cred = new Credential($qcloudSecretId, $qcloudSecretKey);
+            $httpProfile = new HttpProfile();
+            $httpProfile->setEndpoint('ms.tencentcloudapi.com');
+            $clientProfile = new ClientProfile();
+            $clientProfile->setHttpProfile($httpProfile);
+            $client = new MsClient($cred, '', $clientProfile);
+            $req = new DescribeUserBaseInfoInstanceRequest();
+            $params = '{}';
+            $req->fromJsonString($params);
+            $resp = $client->DescribeUserBaseInfoInstance($req);
+        } catch (\Exception $e) {
+            return;
+        }
+        $params = [
+            'site_id' => $siteId,
+            'site_secret' => $siteSecret,
+            'version' => $version,
+            'site_install' => $siteInstall,
+            'user_uin' => $resp->UserUin,
+            'user_app_id' => $resp->UserAppid
+        ];
+
+        try {
+            $this->uinStatistics($params)->then(function (ResponseInterface $response) {
+                echo 'report:' . $response->getBody()->getContents() . PHP_EOL;
+            })->wait();
+        } catch (\Exception $e) {
 
         }
 

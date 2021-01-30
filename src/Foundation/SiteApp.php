@@ -18,6 +18,7 @@
 
 namespace Discuz\Foundation;
 
+use App\Providers\RedPacketServiceProvider;
 use Discuz\Api\ApiServiceProvider;
 use Discuz\Auth\AuthServiceProvider;
 use Discuz\Cache\CacheServiceProvider;
@@ -83,6 +84,7 @@ class SiteApp
         $this->app->register(SocialiteServiceProvider::class);
         $this->app->register(NotificationServiceProvider::class);
         $this->app->register(WechatServiceProvider::class);
+        $this->app->register(RedPacketServiceProvider::class);
 
         $this->registerServiceProvider();
 
