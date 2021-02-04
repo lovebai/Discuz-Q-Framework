@@ -48,7 +48,12 @@ class ErrorHandler
         $response = $this->errorHandler->handle($e);
 
         $document = new Document;
-        $document->setErrors($response->getErrors());
+        $errors = $response->getErrors();
+        if(stristr(json_encode($errors,256),'SQLSTATE')){
+            $errors =  'database error';
+        }
+
+        $document->setErrors([$errors]);
 
         return DiscuzResponseFactory::JsonApiResponse($document, $response->getStatus());
     }
