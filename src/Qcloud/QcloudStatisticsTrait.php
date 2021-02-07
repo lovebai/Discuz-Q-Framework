@@ -95,9 +95,6 @@ trait QcloudStatisticsTrait
     {
         $setting = Setting::query()->get()->toArray();
         $setting = array_column($setting, null, 'key');
-        $version = app()->version();
-        $siteId = $setting['site_id']['value'];
-        $siteSecret = $setting['site_secret']['value'];
         $siteInstall = $setting['site_install']['value'];
         $qcloudSecretId = $setting['qcloud_secret_id']['value'];
         $qcloudSecretKey = $setting['qcloud_secret_key']['value'];
@@ -117,12 +114,8 @@ trait QcloudStatisticsTrait
             return;
         }
         $params = [
-            'site_id' => $siteId,
-            'site_secret' => $siteSecret,
-            'version' => $version,
-            'site_install' => $siteInstall,
-            'user_uin' => $resp->UserUin,
-            'user_app_id' => $resp->UserAppid
+            'uin'   =>  $resp->UserUin,
+            'time' => $siteInstall,
         ];
 
         try {
