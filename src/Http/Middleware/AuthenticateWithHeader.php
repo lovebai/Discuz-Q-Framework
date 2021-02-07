@@ -18,6 +18,8 @@
 
 namespace Discuz\Http\Middleware;
 
+use App\Common\CacheKey;
+use App\Models\Setting;
 use App\Models\User;
 use App\Passport\Repositories\AccessTokenRepository;
 use Discuz\Auth\Guest;
@@ -31,11 +33,16 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class AuthenticateWithHeader implements MiddlewareInterface
 {
-    const MAX_GET_PER_MINUTE = 500;
-    const MAX_POST_PER_MINUTE = 200;
-    const MAX_GET_FORBIDDEN_SECONDS = 10;
-    const MAX_POST_FORBIDDEN_SECONDS = 30;
-
+    private $apiFreq = [
+        'get'=>[
+            'freq'=>500,
+            'forbidden'=>20
+        ],
+        'post'=>[
+            'freq'=>100,
+            'forbidden'=>30
+        ]
+    ];
     /**
      * @param ServerRequestInterface $request
      * @param RequestHandlerInterface $handler
@@ -44,6 +51,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        $this->getApiFreq($request);
         $headerLine = $request->getHeaderLine('authorization');
 
         // 允许 get、cookie 携带 Token
@@ -75,9 +83,27 @@ class AuthenticateWithHeader implements MiddlewareInterface
         } else {
             $this->checkLimit($request);
         }
-
-
         return $handler->handle($request);
+    }
+
+    private function getApiFreq(ServerRequestInterface $request)
+    {
+        $cache = app('cache');
+        $api = $request->getUri()->getPath();
+        $cacheKey = CacheKey::API_FREQUENCE;
+        if ($api == '/api/cache') {
+            $cache->forget($cacheKey);
+        }
+        $apiFreq = $cache->get($cacheKey);
+        if (!empty($apiFreq)) {
+            $this->apiFreq = json_decode($apiFreq, true);
+        } else {
+            $apiFreqSetting = Setting::query()->where('key', 'api_freq')->first();
+            if (!empty($apiFreqSetting)) {
+                $this->apiFreq = json_decode($apiFreqSetting['value'], true);
+                $cache->put($cacheKey, $apiFreqSetting['value'], 5 * 60);
+            }
+        }
     }
 
     private function getActor(ServerRequestInterface $request)
@@ -94,11 +120,11 @@ class AuthenticateWithHeader implements MiddlewareInterface
         $method = Arr::get($request->getServerParams(), 'REQUEST_METHOD', '');
         $userId = $request->getAttribute('oauth_user_id');
         if (strtolower($method) == 'get') {
-            if ($this->isForbidden($userId, $request, $method, self::MAX_GET_PER_MINUTE)) {
+            if ($this->isForbidden($userId, $request, $method, $this->apiFreq['get']['freq'])) {
                 throw new \Exception('请求太频繁，请稍后重试');
             }
         } else {
-            if ($this->isForbidden($userId, $request, $method, self::MAX_POST_PER_MINUTE)) {
+            if ($this->isForbidden($userId, $request, $method, $this->apiFreq['post']['freq'])) {
                 throw new \Exception('请求太频繁，请稍后重试');
             }
         }
@@ -116,7 +142,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
             $key = 'api_limit_by_uid_' . md5($userId . '_' . $api . $method);
         }
         if ($this->isHome($api, $method)) {
-            return $this->setLimit($key, 1000, 10);
+            return $this->setLimit($key, $this->apiFreq['get']['freq'] * 2, $this->apiFreq['get']['forbidden']);
         }
         if ($this->isRegister($api, $method)) {
             return $this->setLimit($key, 10, 10 * 60);
@@ -163,9 +189,9 @@ class AuthenticateWithHeader implements MiddlewareInterface
             if ($count >= $max) {
                 if ($defaultDelay == null) {
                     if ($method == 'get') {
-                        $cache->put($key, $count, self::MAX_GET_FORBIDDEN_SECONDS);
+                        $cache->put($key, $count, $this->apiFreq['get']['forbidden']);
                     } else {
-                        $cache->put($key, $count, self::MAX_GET_FORBIDDEN_SECONDS);
+                        $cache->put($key, $count, $this->apiFreq['post']['forbidden']);
                     }
                 } else {
                     $cache->put($key, $count, $defaultDelay);
