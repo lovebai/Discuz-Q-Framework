@@ -142,15 +142,15 @@ class AuthenticateWithHeader implements MiddlewareInterface
             $key = 'api_limit_by_uid_' . md5($userId . '_' . $api . $method);
         }
         if ($this->isHome($api, $method)) {
-            return $this->setLimit($key, $this->apiFreq['get']['freq'] * 2, $this->apiFreq['get']['forbidden']);
+            return $this->setLimit($key, $method, $this->apiFreq['get']['freq'] * 2, $this->apiFreq['get']['forbidden']);
         }
         if ($this->isRegister($api, $method)) {
-            return $this->setLimit($key, 10, 10 * 60);
+            return $this->setLimit($key, $method, 10, 10 * 60);
         }
         if ($this->isAttachments($api, $method)) {
-            return $this->setLimit($key, 20, 5 * 60);
+            return $this->setLimit($key, $method, 20, 5 * 60);
         }
-        return $this->setLimit($key, $max);
+        return $this->setLimit($key, $method, $max);
     }
 
     private function isRegister($api, $method)
@@ -178,7 +178,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
      * $max interage 每分钟最大调用次数
      * $defaultDelay Boolen 超过调用次数禁止秒数
      */
-    private function setLimit($key, $max, $defaultDelay = null)
+    private function setLimit($key, $method, $max, $defaultDelay = null)
     {
         $cache = app('cache');
         $count = $cache->get($key);
