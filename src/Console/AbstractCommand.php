@@ -18,6 +18,7 @@
 
 namespace Discuz\Console;
 
+use Illuminate\Console\Parser;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -68,7 +69,15 @@ abstract class AbstractCommand extends Command
      */
     public function __construct(string $name = null)
     {
+        [$name, $arguments, $options] = Parser::parse($this->signature);
+
         parent::__construct($name);
+
+        // After parsing the signature we will spin through the arguments and options
+        // and set them on this command. These will already be changed into proper
+        // instances of these "InputArgument" and "InputOption" Symfony classes.
+        $this->getDefinition()->addArguments($arguments);
+        $this->getDefinition()->addOptions($options);
 
         $this->bufferedOutput = new BufferedOutput(16, false, clone new OutputFormatter());
     }
@@ -265,6 +274,16 @@ abstract class AbstractCommand extends Command
     }
 
     /**
+     * Get all of the options passed to the command.
+     *
+     * @return array
+     */
+    public function options()
+    {
+        return $this->option();
+    }
+
+    /**
      * Get all of the context passed to the command.
      *
      * @return array
@@ -362,6 +381,42 @@ abstract class AbstractCommand extends Command
         }
 
         return $answer;
+    }
+
+    /**
+     * Determine if the given argument is present.
+     *
+     * @param  string|int  $name
+     * @return bool
+     */
+    public function hasArgument($name)
+    {
+        return $this->input->hasArgument($name);
+    }
+
+    /**
+     * Get the value of a command argument.
+     *
+     * @param  string|null  $key
+     * @return string|array|null
+     */
+    public function argument($key = null)
+    {
+        if (is_null($key)) {
+            return $this->input->getArguments();
+        }
+
+        return $this->input->getArgument($key);
+    }
+
+    /**
+     * Get all of the arguments passed to the command.
+     *
+     * @return array
+     */
+    public function arguments()
+    {
+        return $this->argument();
     }
 
 }
