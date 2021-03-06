@@ -171,6 +171,7 @@ class SiteApp
     {
         //最后一条应为'alias' => 'log'。默认错误会输出到最后一条中
         $logs = [
+            ['alias' => 'wechatLog', 'path' => 'logs/wechatLog.log', 'level' => Logger::INFO],
             ['alias' => 'payLog', 'path' => 'logs/payLog.log', 'level' => Logger::INFO],
             ['alias' => 'qcloudLog', 'path' => 'logs/qcloudLog.log', 'level' => Logger::INFO],
             ['alias' => 'wechatOffiaccount', 'path' => 'logs/wechatOffiaccount.log', 'level' => Logger::INFO],

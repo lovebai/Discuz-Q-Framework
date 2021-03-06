@@ -20,8 +20,10 @@ abstract class SimpleMessage
     protected function getContent($data)
     {
         $replaceVars = array_map(function ($var) {
-            if (is_string($var) && $this->filterSpecialChar) {
-                $var = htmlspecialchars($var);
+            if (is_string($var)){
+                $var = str_replace("<p>", "", $var);
+                $var = str_replace("</p>", "", $var);
+                $var = Str::limit($var, 300, '...');
             }
             return $var;
         }, $this->contentReplaceVars($data));
