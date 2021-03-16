@@ -50,8 +50,8 @@ class ErrorHandler
         $document = new Document;
         $errors = $response->getErrors();
         if(stristr(json_encode($errors,256),'SQLSTATE')){
-            $errors =  ['database error'];
             $this->logger->info('database-error:'.json_encode($errors,256));
+            $errors =  ['database error'];
         }
 
         $document->setErrors($errors);
