@@ -40,7 +40,12 @@ class ErrorHandler
     public function handler(Throwable $e)
     {
         if (! $e instanceof Exception) {
-            $e = new Exception($e->getMessage().'\n'.$e->getTraceAsString(), $e->getCode(), $e);
+            $debug = app()->config('debug');
+            if($debug){
+                $e = new Exception($e->getMessage().'\n'.$e->getTraceAsString(), $e->getCode(), $e);
+            }else{
+                $e = new Exception();
+            }
         }
 
         $info = sprintf('%s: %s in %s:%s', get_class($e), $e->getMessage().'\n'.$e->getTraceAsString(), $e->getFile(), $e->getLine());
