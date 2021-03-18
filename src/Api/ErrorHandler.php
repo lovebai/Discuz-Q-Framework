@@ -43,7 +43,6 @@ class ErrorHandler extends DzqBase
 
     public function handler(Throwable $e)
     {
-        dd($e);
         if (!$e instanceof Exception) {
             $debug = app()->config('debug');
             if($debug){
