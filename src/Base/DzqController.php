@@ -222,25 +222,30 @@ abstract class DzqController implements RequestHandlerInterface
 
     /**
      * camelData
-     * @param array|string $arr   原数组
-     * @param bool|null $ucfirst   首字母大小写，false 小写，true 大写
+     * @param array|string $arr 原数组
+     * @param bool|null $ucfirst 首字母大小写，false 小写，true 大写
      */
-    public function camelData( $arr, $ucfirst = false)
+    public function camelData($arr, $ucfirst = false)
     {
-        if(is_object($arr))     $arr = $arr->toArray();
-        if(!is_array($arr)){
+        if (is_object($arr)) $arr = $arr->toArray();
+        if (!is_array($arr)) {
             //如果非数组原样返回
-            return  $arr;
+            return $arr;
         }
         $temp = [];
-        foreach ($arr as $key => $value){
+        foreach ($arr as $key => $value) {
             $key1 = Str::camel($key);           // foo_bar  --->  fooBar
-            if($ucfirst)    $key1 = Str::ucfirst($key1);
+            if ($ucfirst) $key1 = Str::ucfirst($key1);
             $value1 = self::camelData($value);
             $temp[$key1] = $value1;
         }
         return $temp;
 
+    }
+
+    public function info($tag, $params = [])
+    {
+        app('log')->info($tag . json_encode($params, 256));
     }
 
 }
