@@ -53,7 +53,7 @@ class ErrorHandler extends DzqBase
         }
 
         $info = sprintf('%s: %s in %s:%s', get_class($e), $e->getMessage() . '\n' . $e->getTraceAsString(), $e->getFile(), $e->getLine());
-        $this->logger->info($info);
+        $this->logger->info('errorhandler：'.$info);
         $response = $this->errorHandler->handle($e);
 
         $errors = $response->getErrors();
