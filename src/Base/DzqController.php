@@ -227,7 +227,7 @@ abstract class DzqController implements RequestHandlerInterface
      */
     public function camelData($arr, $ucfirst = false)
     {
-        if (is_object($arr)) $arr = $arr->toArray();
+        if(is_object($arr) && is_callable([$arr, 'toArray']))     $arr = $arr->toArray();
         if (!is_array($arr)) {
             //如果非数组原样返回
             return $arr;
