@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright (C) 2020 Tencent Cloud.
  *
@@ -16,15 +15,20 @@
  * limitations under the License.
  */
 
-namespace Discuz\Auth\Exception;
+namespace Discuz\Base;
 
-use Exception;
-use Throwable;
+use Illuminate\Support\ServiceProvider;
 
-class PermissionDeniedException extends Exception
+abstract class DzqServiceProvider extends ServiceProvider
 {
-    public function __construct($message = 'permission_denied', $code = 403, Throwable $previous = null)
-    {
-        parent::__construct($message, $code, $previous);
+    abstract public function boot();
+
+    public function outPut($code, $msg = '', $data = []){
+        $data =  [
+            'Code' => $code,
+            'Message' => $msg,
+            'Data' => $data
+        ];
+        response()->json($data)->send();
     }
 }

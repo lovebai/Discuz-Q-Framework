@@ -18,14 +18,18 @@
 
 namespace Discuz\Api;
 
+use App\Common\ResponseCode;
+use Discuz\Base\DzqBase;
 use Discuz\Http\DiscuzResponseFactory;
 use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Psr\Log\LoggerInterface;
 use Throwable;
 use Tobscure\JsonApi\Document;
 use Tobscure\JsonApi\ErrorHandler as JsonApiErrorHandler;
 
-class ErrorHandler
+class ErrorHandler extends DzqBase
 {
     protected $errorHandler;
 
@@ -39,17 +43,44 @@ class ErrorHandler
 
     public function handler(Throwable $e)
     {
-        if (! $e instanceof Exception) {
-            $e = new Exception($e->getMessage().'\n'.$e->getTraceAsString(), $e->getCode(), $e);
+        if (!$e instanceof Exception) {
+            $debug = app()->config('debug');
+            if($debug){
+                $e = new Exception($e->getMessage().'\n'.$e->getTraceAsString(), $e->getCode(), $e);
+            }else{
+                $e = new Exception();
+            }
         }
 
-        $info = sprintf('%s: %s in %s:%s', get_class($e), $e->getMessage().'\n'.$e->getTraceAsString(), $e->getFile(), $e->getLine());
-        $this->logger->info($info);
+        $info = sprintf('%s: %s in %s:%s', get_class($e), $e->getMessage() . '\n' . $e->getTraceAsString(), $e->getFile(), $e->getLine());
+        $this->logger->info('errorhandler：'.$info);
         $response = $this->errorHandler->handle($e);
 
-        $document = new Document;
-        $document->setErrors($response->getErrors());
+        $errors = $response->getErrors();
+        $path = Request::capture()->getPathInfo();
+        if (strstr($path, 'v2')) {
+            $error = Arr::first($errors);
+            if (isset($error['status'])) {
+                switch ($error['status']) {
+                    case 500:
+                        $this->outPut(ResponseCode::INTERNAL_ERROR,$e->getMessage());
+                        break;
+                    case 401:
+                        $this->outPut(ResponseCode::UNAUTHORIZED,$e->getMessage());
+                        break;
+                    default:
+                        $this->outPut(ResponseCode::UNKNOWN_ERROR,$e->getMessage());
+                        break;
+                }
+            }
+        }
 
+        if (stristr(json_encode($errors, 256), 'SQLSTATE')) {
+            $this->logger->info('database-error:' . json_encode($errors, 256));
+            $errors = ['database error'];
+        }
+        $document = new Document;
+        $document->setErrors($errors);
         return DiscuzResponseFactory::JsonApiResponse($document, $response->getStatus());
     }
 }

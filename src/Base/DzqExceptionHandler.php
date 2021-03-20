@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright (C) 2020 Tencent Cloud.
  *
@@ -16,15 +15,14 @@
  * limitations under the License.
  */
 
-namespace Discuz\Auth\Exception;
+namespace Discuz\Base;
 
-use Exception;
+
+use Laravel\Lumen\Exceptions\Handler as ExceptionHandler;
 use Throwable;
 
-class PermissionDeniedException extends Exception
+class DzqExceptionHandler extends ExceptionHandler
 {
-    public function __construct($message = 'permission_denied', $code = 403, Throwable $previous = null)
-    {
-        parent::__construct($message, $code, $previous);
-    }
+
+
 }

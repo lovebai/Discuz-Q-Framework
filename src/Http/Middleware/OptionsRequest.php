@@ -30,11 +30,12 @@ class OptionsRequest implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if (Arr::get($request->getServerParams(), 'REQUEST_METHOD', '') == 'OPTIONS') {
+
+        $method = Arr::get($request->getServerParams(), 'REQUEST_METHOD', '');
+        if ($method == 'OPTIONS') {
             return DiscuzResponseFactory::EmptyResponse(200);
         } else {
             return $handler->handle($request);
         }
-
     }
 }

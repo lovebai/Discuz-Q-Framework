@@ -23,6 +23,7 @@ use App\Models\Invite;
 use App\Models\Order;
 use Discuz\Auth\AssertPermissionTrait;
 use Discuz\Auth\Exception\PermissionDeniedException;
+use Discuz\Common\PubEnum;
 use Discuz\Contracts\Setting\SettingsRepository;
 use Discuz\Foundation\Application;
 use Illuminate\Support\Carbon;
@@ -66,9 +67,25 @@ class CheckoutSite implements MiddlewareInterface
 
         $siteMode = $this->settings->get('site_mode');
 
-        if (in_array($request->getUri()->getPath(), ['/api/login', '/api/oauth/wechat/miniprogram'])) {
+        $apiPath=$request->getUri()->getPath();
+        $apiParams = $request->getQueryParams();
+        if (in_array($apiPath, ['/api/login', '/api/oauth/wechat/miniprogram'])) {
             return $handler->handle($request);
         }
+
+        $server = $request->getServerParams();
+        $userAgent = '';
+        if(isset($server['HTTP_USER_AGENT'])){
+            $userAgent = $server['HTTP_USER_AGENT'];
+        }
+        if($reqType == PubEnum::H5 && stristr($userAgent,'MicroMessenger') && (in_array($apiPath,[
+                 '/api/oauth/wechat',
+                '/api/oauth/wechat/user',
+                '/api/forum',
+            ]) || strstr($apiPath,'/api/users'))){
+            return $handler->handle($request);
+        }
+
         $actor = $request->getAttribute('actor');
         !$siteOpen && $this->assertAdmin($actor);
 
