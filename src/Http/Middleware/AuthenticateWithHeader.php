@@ -150,6 +150,9 @@ class AuthenticateWithHeader implements MiddlewareInterface
         if ($this->isAttachments($api, $method)) {
             return $this->setLimit($key, $method, 20, 5 * 60);
         }
+        if ($this->isMessage($api, $method)) {
+            return $this->setLimit($key, $method, 300, 60);
+        }
         return $this->setLimit($key, $method, $max);
     }
 
@@ -172,6 +175,11 @@ class AuthenticateWithHeader implements MiddlewareInterface
             '/api/users/recommended'
         ];
         return in_array($api, $homeApi) && $method == 'get';
+    }
+
+    private function isMessage($api, $method)
+    {
+        return $api == '/api/dialog/message' && $method == 'get';
     }
 
     /*
