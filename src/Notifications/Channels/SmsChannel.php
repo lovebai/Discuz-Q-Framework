@@ -19,6 +19,7 @@ use App\Models\NotificationTpl;
 use App\SmsMessages\SendNoticeMessage;
 use Discuz\Contracts\Setting\SettingsRepository;
 use Discuz\Qcloud\QcloudTrait;
+use Exception;
 use Illuminate\Notifications\Notification;
 
 /**
@@ -63,11 +64,33 @@ class SmsChannel
             $notificationData = $notification->getTplModel('sms');
             $templateID = $notificationData->template_id;
 
-            /** 发送错误时，@see SendNoticeMessage 直接返回了错误信息 */
-            $this->smsSend($notifiable->getRawOriginal('mobile'), new SendNoticeMessage([
+            $sendBuild = [
                 'template_id' => $templateID,
                 'variable' => $variable
-            ]));
+            ];
+
+            /** 发送错误时，@see SendNoticeMessage 直接返回了错误信息 */
+            try {
+                $this->smsSend($notifiable->getRawOriginal('mobile'), new SendNoticeMessage($sendBuild));
+
+                // reset error status
+                if ($notificationData->is_error) {
+                    $notificationData->is_error = 0;
+                    $notificationData->error_msg = null;
+                    $notificationData->save();
+                }
+            } catch (Exception $e) {
+                // catch error
+                if (isset($e->getExceptions()['qcloud'])) {
+                    $errCode = $e->getExceptions()['qcloud']->getCode();
+                    $errMsg = $e->getExceptions()['qcloud']->getMessage();
+                } else {
+                    $errCode = 0000;
+                    $errMsg = '';
+                }
+
+                NotificationTpl::writeError($notificationData, $errCode, $errMsg, $sendBuild);
+            }
         }
     }
 }

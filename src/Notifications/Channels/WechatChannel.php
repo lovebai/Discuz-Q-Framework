@@ -16,7 +16,6 @@
 namespace Discuz\Notifications\Channels;
 
 use App\Models\NotificationTpl;
-use App\Models\SessionToken;
 use Discuz\Contracts\Setting\SettingsRepository;
 use EasyWeChat\Factory;
 use EasyWeChat\Kernel\Exceptions\InvalidArgumentException;
@@ -115,14 +114,15 @@ class WechatChannel
 
             // catch error
             if (isset($response['errcode']) && $response['errcode'] != 0) {
-                $buildError = [
-                    'id'         => $notificationData->id,
-                    'type_name'  => $notificationData->type_name,
-                    'send_build' => $sendBuild,
-                ];
-                $response = array_merge($response, $buildError);
-                $token = SessionToken::generate(SessionToken::WECHAT_NOTICE_ERROR, $response);
-                $token->save();
+                $errMsg = $response['errmsg'] ?? '';
+                NotificationTpl::writeError($notificationData, $response['errcode'], $errMsg, $sendBuild);
+            } else {
+                // reset error status
+                if ($notificationData->is_error) {
+                    $notificationData->is_error = 0;
+                    $notificationData->error_msg = null;
+                    $notificationData->save();
+                }
             }
         }
     }
