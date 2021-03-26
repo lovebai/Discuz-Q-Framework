@@ -36,14 +36,14 @@ class Anonymous extends Guest
     public function __construct(array $attributes = [])
     {
         parent::__construct(array_merge($attributes, [
-            'username' => $this->getUsername(),
+            'username' => $this->getUsername($this->id),
         ]));
     }
 
     /**
      * @return string
      */
-    public function getUsername()
+    public function getUsername($userId)
     {
         return $this->username;
     }
