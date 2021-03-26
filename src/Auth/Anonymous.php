@@ -43,7 +43,7 @@ class Anonymous extends Guest
     /**
      * @return string
      */
-    public function getUsername($userId)
+    public function getUsername($userId = null)
     {
         return $this->username;
     }
