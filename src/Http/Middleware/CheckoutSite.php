@@ -73,18 +73,18 @@ class CheckoutSite implements MiddlewareInterface
             return $handler->handle($request);
         }
 
-        $server = $request->getServerParams();
-        $userAgent = '';
-        if(isset($server['HTTP_USER_AGENT'])){
-            $userAgent = $server['HTTP_USER_AGENT'];
-        }
-        if($reqType == PubEnum::H5 && stristr($userAgent,'MicroMessenger') && (in_array($apiPath,[
-                 '/api/oauth/wechat',
-                '/api/oauth/wechat/user',
-                '/api/forum',
-            ]) || strstr($apiPath,'/api/users'))){
-            return $handler->handle($request);
-        }
+//        $server = $request->getServerParams();
+//        $userAgent = '';
+//        if(isset($server['HTTP_USER_AGENT'])){
+//            $userAgent = $server['HTTP_USER_AGENT'];
+//        }
+//        if($reqType == PubEnum::H5 && stristr($userAgent,'MicroMessenger') && (in_array($apiPath,[
+//                 '/api/oauth/wechat',
+//                '/api/oauth/wechat/user',
+//                '/api/forum',
+//            ]) || strstr($apiPath,'/api/users'))){
+//            return $handler->handle($request);
+//        }
 
         $actor = $request->getAttribute('actor');
         !$siteOpen && $this->assertAdmin($actor);
