@@ -205,6 +205,7 @@ abstract class DzqController implements RequestHandlerInterface
             'nextPageUrl' => urldecode($path . http_build_query($queryNext)),
             'prePageUrl' => urldecode($path . http_build_query($queryNext)),
             'pageLength' => count($builder),
+            'totalCount' => $count,
             'totalPage' => $count % $perPage == 0 ? $count / $perPage : intval($count / $perPage) + 1
         ];
     }
