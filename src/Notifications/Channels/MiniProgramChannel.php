@@ -88,9 +88,7 @@ class MiniProgramChannel
                 'template_id' => $templateID,                   // 所需下发的订阅模板id
                 'touser'      => $toUser,                       // 接收者（用户）的 openid
                 'page'        => $notificationData->page_path,  // 点击模板卡片后的跳转页面
-                'data'        => [                              // 模板内容，格式形如 { "key1": { "value": any }, "key2": { "value": any } }
-                    $build['content'],
-                ],
+                'data'        => $build['content'],             // 模板内容，格式形如 { "key1": { "value": any }, "key2": { "value": any } }
             ];
 
             $response = $app->subscribe_message->send($sendBuild);
