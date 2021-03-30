@@ -18,8 +18,7 @@ namespace Discuz\Notifications\Channels;
 use App\Models\NotificationTpl;
 use Discuz\Contracts\Setting\SettingsRepository;
 use Discuz\Wechat\EasyWechatTrait;
-use EasyWeChat\Kernel\Exceptions\InvalidArgumentException;
-use EasyWeChat\Kernel\Exceptions\InvalidConfigException;
+use Exception;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Notifications\Notification;
 
@@ -51,8 +50,6 @@ class MiniProgramChannel
      * @param $notifiable
      * @param Notification $notification
      * @return false
-     * @throws InvalidArgumentException
-     * @throws InvalidConfigException
      * @throws GuzzleException
      */
     public function send($notifiable, Notification $notification)
@@ -91,7 +88,12 @@ class MiniProgramChannel
                 'data'        => $build['content'],             // 模板内容，格式形如 { "key1": { "value": any }, "key2": { "value": any } }
             ];
 
-            $response = $app->subscribe_message->send($sendBuild);
+            try {
+                $response = $app->subscribe_message->send($sendBuild);
+            } catch (Exception $e) {
+                NotificationTpl::writeError($notificationData, $e->getCode(), $e->getMessage(), $sendBuild);
+                return false;
+            }
 
             // catch error
             if (isset($response['errcode']) && $response['errcode'] != 0) {
