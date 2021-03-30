@@ -31,7 +31,7 @@ use Money\Number;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-
+use Illuminate\Database\ConnectionInterface;
 abstract class DzqController implements RequestHandlerInterface
 {
     protected $request;
@@ -205,6 +205,7 @@ abstract class DzqController implements RequestHandlerInterface
             'nextPageUrl' => urldecode($path . http_build_query($queryNext)),
             'prePageUrl' => urldecode($path . http_build_query($queryNext)),
             'pageLength' => count($builder),
+            'totalCount' => $count,
             'totalPage' => $count % $perPage == 0 ? $count / $perPage : intval($count / $perPage) + 1
         ];
     }
@@ -246,6 +247,21 @@ abstract class DzqController implements RequestHandlerInterface
     public function info($tag, $params = [])
     {
         app('log')->info($tag . json_encode($params, 256));
+    }
+
+    private $connection = null;
+    public function openQueryLog()
+    {
+        $connection = app(ConnectionInterface::class);
+        $this->connection = $connection;
+        $connection->enableQueryLog();
+    }
+
+    public function ddQueryLog()
+    {
+        if(!empty($this->connection)){
+            dd(json_encode($this->connection->getQueryLog(), 256));
+        }
     }
 
 }

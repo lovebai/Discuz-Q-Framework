@@ -33,11 +33,13 @@ class Anonymous extends Guest
     /**
      * {@inheritdoc}
      */
-    public function __construct(array $attributes = [])
+    public function __construct(array $attributes = [], $updated_at = '')
     {
         parent::__construct(array_merge($attributes, [
             'username' => $this->getUsername($this->id),
+            'updated_at' => $updated_at
         ]));
+
     }
 
     /**
