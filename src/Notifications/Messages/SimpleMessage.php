@@ -4,11 +4,13 @@ namespace Discuz\Notifications\Messages;
 
 use App\Models\NotificationTpl;
 use Discuz\Notifications\Traits\VariableTemplateTrait;
+use Discuz\Wechat\EasyWechatTrait;
 use Illuminate\Support\Str;
 
 abstract class SimpleMessage
 {
     use VariableTemplateTrait;
+    use EasyWechatTrait;
 
     /**
      * @var NotificationTpl Collection first
@@ -43,7 +45,7 @@ abstract class SimpleMessage
 
     protected function getMiniProgramContent($data = [])
     {
-        return NotificationTpl::getMiniProgramContent($this->contentReplaceVars($data));
+        return NotificationTpl::getMiniProgramContent($this->contentReplaceVars($data), $this->getMiniProgramKeys($this->firstData));
     }
 
     protected function getVars()

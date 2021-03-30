@@ -18,6 +18,10 @@
 
 namespace Discuz\Wechat;
 
+use App\Common\CacheKey;
+use App\Models\NotificationTpl;
+use Illuminate\Support\Collection;
+
 /**
  * Trait EasyWechatTrait
  *
@@ -29,6 +33,11 @@ namespace Discuz\Wechat;
 trait EasyWechatTrait
 {
     protected $easyWechatFactory;
+
+    /**
+     * @var Collection
+     */
+    protected static $miniProgramTemplates = null;
 
     private function getFactory()
     {
@@ -51,5 +60,48 @@ trait EasyWechatTrait
     public function miniProgram($merge = [])
     {
         return $this->getFactory()->service('miniProgram')->build($merge);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 方法
+    |--------------------------------------------------------------------------
+    */
+
+    protected function getMiniProgramKeys(NotificationTpl $item)
+    {
+        $app = $this->miniProgram();
+        $this->cache = app('cache');
+
+        /**
+         * 由于小程序查询所有模板接口存在限制
+         * 这里先判断缓存中是否已存在数据，减少查询次数
+         */
+        if (! $this->cache->has(CacheKey::NOTICE_MINI_PROGRAM_TEMPLATES)) {
+            $response = $app->subscribe_message->getTemplates();
+            if (! isset($response['errcode']) || $response['errcode'] != 0 || count($response['data']) == 0) {
+                $errMsg = $response['errmsg'] ?? '';
+                NotificationTpl::writeError($item, $response['errcode'], $errMsg, []);
+                return [];
+            }
+
+            // set cache
+            $collect = collect($response['data']);
+            $this->cache->put(CacheKey::NOTICE_MINI_PROGRAM_TEMPLATES, $collect, 604800);
+        }
+
+        $templateCollect = $this->cache->get(CacheKey::NOTICE_MINI_PROGRAM_TEMPLATES);
+        $template = $templateCollect->where('priTmplId', $item->template_id)->first();
+        if (is_null($template)) {
+            return [];
+        }
+
+        $content = $template['content'];
+        $regex = '/{{(?<key>.*)\.DATA/';
+        if (preg_match_all($regex, $content, $keys)) {
+            return $keys['key'];
+        }
+
+        return [];
     }
 }

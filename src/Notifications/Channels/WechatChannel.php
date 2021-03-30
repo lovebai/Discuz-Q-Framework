@@ -17,13 +17,12 @@ namespace Discuz\Notifications\Channels;
 
 use App\Models\NotificationTpl;
 use Discuz\Contracts\Setting\SettingsRepository;
-use EasyWeChat\Factory;
+use Discuz\Wechat\EasyWechatTrait;
 use EasyWeChat\Kernel\Exceptions\InvalidArgumentException;
 use EasyWeChat\Kernel\Exceptions\InvalidConfigException;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Arr;
-use RuntimeException;
 
 /**
  * 微信通知 - 频道
@@ -33,6 +32,8 @@ use RuntimeException;
  */
 class WechatChannel
 {
+    use EasyWechatTrait;
+
     protected $settings;
 
     /**
@@ -50,6 +51,7 @@ class WechatChannel
      *
      * @param $notifiable
      * @param Notification $notification
+     * @return false
      * @throws InvalidArgumentException
      * @throws InvalidConfigException
      * @throws GuzzleException
@@ -77,7 +79,8 @@ class WechatChannel
             $secret = $this->settings->get('offiaccount_app_secret', 'wx_offiaccount');
 
             if (blank($templateID) || blank($appID) || blank($secret)) {
-                throw new RuntimeException('notification_is_missing_template_config_from_wechat');
+                NotificationTpl::writeError($notificationData, 0, trans('setting.template_app_id_secret_not_found'));
+                return false;
             }
 
             // to user
@@ -86,10 +89,7 @@ class WechatChannel
             // redirect
             $url = Arr::pull($build, 'content.redirect_url');
 
-            $app = Factory::officialAccount([
-                'app_id' => $appID,
-                'secret' => $secret,
-            ]);
+            $app = $this->offiaccount();
 
             // build
             $sendBuild = [

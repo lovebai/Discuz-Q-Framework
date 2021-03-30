@@ -17,9 +17,11 @@ namespace Discuz\Notifications\Channels;
 
 use App\Models\NotificationTpl;
 use Discuz\Contracts\Setting\SettingsRepository;
-use EasyWeChat\Factory;
+use Discuz\Wechat\EasyWechatTrait;
+use EasyWeChat\Kernel\Exceptions\InvalidArgumentException;
+use EasyWeChat\Kernel\Exceptions\InvalidConfigException;
+use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Notifications\Notification;
-use RuntimeException;
 
 /**
  * 小程序通知 - 频道
@@ -29,6 +31,8 @@ use RuntimeException;
  */
 class MiniProgramChannel
 {
+    use EasyWechatTrait;
+
     protected $settings;
 
     /**
@@ -46,6 +50,10 @@ class MiniProgramChannel
      *
      * @param $notifiable
      * @param Notification $notification
+     * @return false
+     * @throws InvalidArgumentException
+     * @throws InvalidConfigException
+     * @throws GuzzleException
      */
     public function send($notifiable, Notification $notification)
     {
@@ -66,16 +74,14 @@ class MiniProgramChannel
             $secret = $this->settings->get('miniprogram_app_secret', 'wx_miniprogram');
 
             if (blank($templateID) || blank($appID) || blank($secret)) {
-                throw new RuntimeException('notification_is_missing_template_config_from_miniProgram');
+                NotificationTpl::writeError($notificationData, 0, trans('setting.template_app_id_secret_not_found'));
+                return false;
             }
 
             // to user
             $toUser = $notifiable->wechat->min_openid;
 
-            $app = Factory::miniProgram([
-                'app_id' => $appID,
-                'secret' => $secret,
-            ]);
+            $app = $this->miniProgram();
 
             // build
             $sendBuild = [
