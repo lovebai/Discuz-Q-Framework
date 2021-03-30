@@ -55,7 +55,7 @@ class AuthServiceProvider extends ServiceProvider
                 return $allowed;
             }
 
-            if ($actor->isAdmin() || (! $model && $actor->hasPermission($ability))) {
+            if (! $model && $actor->hasPermission($ability)) {
                 return true;
             }
 
