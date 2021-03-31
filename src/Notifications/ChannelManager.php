@@ -114,6 +114,28 @@ class ChannelManager extends Manager implements DispatcherContract, FactoryContr
     }
 
     /**
+     * Create an instance of the Sms driver.
+     *
+     * @return mixed
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     */
+    protected function createSmsDriver()
+    {
+        return $this->container->make(Channels\SmsChannel::class);
+    }
+
+    /**
+     * Create an instance of the miniProgram driver.
+     *
+     * @return mixed
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     */
+    protected function createMiniProgramDriver()
+    {
+        return $this->container->make(Channels\MiniProgramChannel::class);
+    }
+
+    /**
      * Create a new driver instance.
      *
      * @param string $driver

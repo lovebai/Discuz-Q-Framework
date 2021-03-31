@@ -3,12 +3,14 @@
 namespace Discuz\Notifications\Messages;
 
 use App\Models\NotificationTpl;
-use Discuz\Notifications\Traits\WechatTrait;
+use Discuz\Notifications\Traits\VariableTemplateTrait;
+use Discuz\Wechat\EasyWechatTrait;
 use Illuminate\Support\Str;
 
 abstract class SimpleMessage
 {
-    use WechatTrait;
+    use VariableTemplateTrait;
+    use EasyWechatTrait;
 
     /**
      * @var NotificationTpl Collection first
@@ -34,6 +36,16 @@ abstract class SimpleMessage
     protected function getWechatContent($data = [])
     {
         return NotificationTpl::getWechatFormat($this->contentReplaceVars($data));
+    }
+
+    protected function getSmsContent($data = [])
+    {
+        return NotificationTpl::getSmsFormat($this->contentReplaceVars($data));
+    }
+
+    protected function getMiniProgramContent($data = [])
+    {
+        return NotificationTpl::getMiniProgramContent($this->contentReplaceVars($data), $this->getMiniProgramKeys($this->firstData));
     }
 
     protected function getVars()

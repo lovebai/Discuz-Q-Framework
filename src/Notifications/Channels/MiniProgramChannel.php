@@ -18,19 +18,17 @@ namespace Discuz\Notifications\Channels;
 use App\Models\NotificationTpl;
 use Discuz\Contracts\Setting\SettingsRepository;
 use Discuz\Wechat\EasyWechatTrait;
-use EasyWeChat\Kernel\Exceptions\InvalidArgumentException;
-use EasyWeChat\Kernel\Exceptions\InvalidConfigException;
+use Exception;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Arr;
 
 /**
- * 微信通知 - 频道
+ * 小程序通知 - 频道
  * Class WechatChannel
  *
  * @package Discuz\Notifications\Channels
  */
-class WechatChannel
+class MiniProgramChannel
 {
     use EasyWechatTrait;
 
@@ -52,31 +50,25 @@ class WechatChannel
      * @param $notifiable
      * @param Notification $notification
      * @return false
-     * @throws InvalidArgumentException
-     * @throws InvalidConfigException
      * @throws GuzzleException
      */
     public function send($notifiable, Notification $notification)
     {
-        if (! empty($notifiable->wechat) && ! empty($notifiable->wechat->mp_openid)) {
+        if (! empty($notifiable->wechat) && ! empty($notifiable->wechat->min_openid)) {
 
             // wechat post json
-            $build = $notification->toWechat($notifiable);
-
-            // 替换掉内容中的换行符
-            $content = str_replace(PHP_EOL, '', Arr::get($build, 'content'));
-            $build['content'] = json_decode($content, true);
+            $build = $notification->toMiniProgram($notifiable);
 
             /**
              * get Wechat Template
              *
              * @var NotificationTpl $notificationData
              */
-            $notificationData = $notification->getTplModel('wechat');
+            $notificationData = $notification->getTplModel('miniProgram');
             $templateID = $notificationData->template_id;
 
-            $appID = $this->settings->get('offiaccount_app_id', 'wx_offiaccount');
-            $secret = $this->settings->get('offiaccount_app_secret', 'wx_offiaccount');
+            $appID = $this->settings->get('miniprogram_app_id', 'wx_miniprogram');
+            $secret = $this->settings->get('miniprogram_app_secret', 'wx_miniprogram');
 
             if (blank($templateID) || blank($appID) || blank($secret)) {
                 NotificationTpl::writeError($notificationData, 0, trans('setting.template_app_id_secret_not_found'));
@@ -84,33 +76,24 @@ class WechatChannel
             }
 
             // to user
-            $toUser = $notifiable->wechat->mp_openid;
+            $toUser = $notifiable->wechat->min_openid;
 
-            // redirect
-            $url = Arr::pull($build, 'content.redirect_url');
-
-            $app = $this->offiaccount();
+            $app = $this->miniProgram();
 
             // build
             $sendBuild = [
-                'touser'      => $toUser,
-                'template_id' => $templateID,
-                'url'         => $notificationData->redirect_type == NotificationTpl::REDIRECT_TYPE_TO_NO ? '' : $url,
-                'data'        => $build['content']['data'],
+                'template_id' => $templateID,                   // 所需下发的订阅模板id
+                'touser'      => $toUser,                       // 接收者（用户）的 openid
+                'page'        => $notificationData->page_path,  // 点击模板卡片后的跳转页面
+                'data'        => $build['content'],             // 模板内容，格式形如 { "key1": { "value": any }, "key2": { "value": any } }
             ];
 
-            // 判断是否开启跳转小程序
-            if ($notificationData->redirect_type == NotificationTpl::REDIRECT_TYPE_TO_MINIPROGRAM) {
-                $sendBuild = array_merge($sendBuild, [
-                    'miniprogram' => [
-                        'appid'    => $this->settings->get('miniprogram_app_id', 'wx_miniprogram'),
-                        'pagepath' => $notificationData->page_path,
-                    ],
-                ]);
+            try {
+                $response = $app->subscribe_message->send($sendBuild);
+            } catch (Exception $e) {
+                NotificationTpl::writeError($notificationData, $e->getCode(), $e->getMessage(), $sendBuild);
+                return false;
             }
-
-            // send
-            $response = $app->template_message->send($sendBuild);
 
             // catch error
             if (isset($response['errcode']) && $response['errcode'] != 0) {

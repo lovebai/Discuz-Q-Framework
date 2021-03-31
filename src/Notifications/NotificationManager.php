@@ -2,13 +2,10 @@
 
 /**
  * Copyright (C) 2020 Tencent Cloud.
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +16,8 @@
 namespace Discuz\Notifications;
 
 use Discuz\Notifications\Services\Database;
+use Discuz\Notifications\Services\MiniProgram;
+use Discuz\Notifications\Services\Sms;
 use Discuz\Notifications\Services\Wechat;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -42,12 +41,21 @@ class NotificationManager
         return new Wechat;
     }
 
+    public function createSmsDriver()
+    {
+        return new Sms;
+    }
+
+    public function createMiniProgramDriver()
+    {
+        return new MiniProgram;
+    }
+
     /**
      * Get a driver instance.
      *
-     * @param  string|null  $driver
+     * @param string|null $driver
      * @return Database|Wechat
-     *
      * @throws \InvalidArgumentException
      */
     public function driver($driver)
@@ -69,14 +77,13 @@ class NotificationManager
     /**
      * Create a new driver instance.
      *
-     * @param  string  $driver
+     * @param string $driver
      * @return mixed
-     *
      * @throws \InvalidArgumentException
      */
     protected function createDriver($driver)
     {
-        $method = 'create'.Str::studly($driver).'Driver';
+        $method = 'create' . Str::studly($driver) . 'Driver';
 
         if (method_exists($this, $method)) {
             return $this->$method();

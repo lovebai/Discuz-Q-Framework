@@ -22,6 +22,12 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
 use RuntimeException;
 
+/**
+ * 数据库通知 - 频道
+ * Class DatabaseChannel
+ *
+ * @package Discuz\Notifications\Channels
+ */
 class DatabaseChannel
 {
     /**
