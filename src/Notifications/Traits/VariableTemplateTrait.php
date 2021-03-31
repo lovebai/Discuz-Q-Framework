@@ -15,10 +15,11 @@
 
 namespace Discuz\Notifications\Traits;
 
+use App\Models\NotificationTpl;
 use Carbon\Carbon;
 use Discuz\Http\UrlGenerator;
 
-trait WechatTrait
+trait VariableTemplateTrait
 {
     /**
      * @var array 模板变量数据
@@ -49,27 +50,43 @@ trait WechatTrait
      */
     public function compiledArray($expand = [])
     {
-        // first_data
-        $firstData = $this->matchRegular($this->firstData->first_data);
+        $build = [];
+
+        if ($this->firstData->type == NotificationTpl::WECHAT_NOTICE) {
+            // first_data
+            if (! empty($this->firstData->first_data)) {
+                $build['first'] = $this->matchRegular($this->firstData->first_data);
+            }
+
+            // remark_data
+            if (! empty($this->firstData->remark_data)) {
+                $build['remark'] = $this->matchRegular($this->firstData->remark_data);
+            }
+
+            // color
+            $build['color'] = $this->firstData->color;
+
+            // redirect_url
+            if (! empty($this->firstData->redirect_url)) {
+                $redirectUrl = $this->matchRegular($this->firstData->redirect_url);
+            } else {
+                $redirectUrl = $expand['redirect_url'] ?? '';
+            }
+            $build['redirect_url'] = $redirectUrl;
+        }
+
+        if (in_array($this->firstData->type, [NotificationTpl::WECHAT_NOTICE, NotificationTpl::MINI_PROGRAM_NOTICE])) {
+            // page_path
+            if (! empty($this->firstData->page_path)) {
+                $this->firstData->page_path = $this->matchRegular($this->firstData->page_path);
+            }
+        }
 
         // keywords_data
-        $keywords = explode(',', $this->firstData->keywords_data);
-        $build = ['first' => $firstData];
-        $this->matchKeywords($keywords, $build); // Tag &$build
-
-        // remark_data
-        $build['remark'] = $this->matchRegular($this->firstData->remark_data);
-
-        // color
-        $build['color'] = $this->firstData->color;
-
-        // redirect_url
-        if (! empty($this->firstData->redirect_url)) {
-            $redirectUrl = $this->matchRegular($this->firstData->redirect_url);
-        } else {
-            $redirectUrl = $expand['redirect_url'] ?? '';
+        if (! empty($this->firstData->keywords_data)) {
+            $keywords = explode(',', $this->firstData->keywords_data);
+            $this->matchKeywords($keywords, $build); // &$build
         }
-        $build['redirect_url'] = $redirectUrl;
 
         return $build;
     }
@@ -112,16 +129,26 @@ trait WechatTrait
     /**
      * 顺序合并替换
      *
-     * @param $build
      * @param array $target 目标数组
+     * @param $build
      */
     protected function matchKeywords(array $target, &$build)
     {
+        $keywords = [];
+        $i = 1;
         foreach ($target as $item) {
             $item = $this->matchRegular($item);
-            $key = 'keyword' . count($build);
+            $key = 'keyword' . $i;
             // Tag 按顺序合入数组
-            $build = array_merge($build, [$key => $item]);
+            $keywords = array_merge($keywords, [$key => $item]);
+            $i++;
+        }
+
+        // 短信数据 keyword 合并在一起
+        if ($this->firstData->type == NotificationTpl::SMS_NOTICE) {
+            $build['keywords'] = $keywords;
+        } else {
+            $build = array_merge($build, $keywords);
         }
     }
 }
