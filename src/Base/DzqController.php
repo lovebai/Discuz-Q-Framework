@@ -279,4 +279,12 @@ abstract class DzqController implements RequestHandlerInterface
         return app(ConnectionInterface::class);
     }
 
+    public function getIpPort()
+    {
+        $serverParams = $this->request->getServerParams();
+        $ip = ip($serverParams);
+        $port = !empty($serverParams['REMOTE_PORT']) ? $serverParams['REMOTE_PORT'] : 0;
+        return [$ip, $port];
+    }
+
 }
