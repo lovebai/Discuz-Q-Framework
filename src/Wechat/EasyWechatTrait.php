@@ -71,6 +71,9 @@ trait EasyWechatTrait
     protected function getMiniProgramKeys(NotificationTpl $item)
     {
         $app = $this->miniProgram();
+        if (is_null($app)) {
+            return [];
+        }
         $this->cache = app('cache');
 
         /**
