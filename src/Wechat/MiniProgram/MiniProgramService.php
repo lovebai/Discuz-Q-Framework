@@ -19,7 +19,6 @@
 namespace Discuz\Wechat\MiniProgram;
 
 use Discuz\Contracts\Setting\SettingsRepository;
-use EasyWeChat\MiniProgram\Application as MiniProgramApplication;
 
 class MiniProgramService
 {
@@ -56,9 +55,13 @@ class MiniProgramService
         ];
     }
 
-    public function build($params = []) : MiniProgramApplication
+    public function build($params = [])
     {
         $this->config = array_merge($this->config, $params);
+
+        if (array_search('', $this->config)) {
+            return null;
+        }
 
         return $this->easyWechatFactory::miniProgram($this->config);
     }
