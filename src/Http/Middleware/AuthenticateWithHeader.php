@@ -23,6 +23,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Passport\Repositories\AccessTokenRepository;
 use Discuz\Auth\Guest;
+use Discuz\Cache\CacheManager;
 use Illuminate\Support\Arr;
 use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\ResourceServer;
@@ -33,6 +34,15 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class AuthenticateWithHeader implements MiddlewareInterface
 {
+    const AUTH_USER_CACHE_TTL = 30;
+
+    protected $cache;
+
+    public function __construct(CacheManager $cache)
+    {
+        $this->cache = $cache;
+    }
+
     private $apiFreq = [
         'get'=>[
             'freq'=>500,
@@ -108,7 +118,28 @@ class AuthenticateWithHeader implements MiddlewareInterface
 
     private function getActor(ServerRequestInterface $request)
     {
-        $actor = User::find($request->getAttribute('oauth_user_id'));
+        $userId = $request->getAttribute('oauth_user_id');
+        if (!$userId) {
+            return null;
+        }
+
+        if (app()->config('middleware_cache')) {
+            $ttl = static::AUTH_USER_CACHE_TTL;
+            return $this->cache->remember(
+                CacheKey::AUTH_USER_PREFIX.$userId,
+                mt_rand($ttl, $ttl + 10),
+                function () use ($userId) {
+                    return $this->getActorFromDatabase($userId);
+                }
+            );
+        } else {
+            return $this->getActorFromDatabase($userId);
+        }
+    }
+
+    private function getActorFromDatabase($userId)
+    {
+        $actor = User::find($userId);
         if (!is_null($actor) && $actor->exists) {
             $actor->changeUpdateAt()->save();
         }

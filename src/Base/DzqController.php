@@ -203,7 +203,7 @@ abstract class DzqController implements RequestHandlerInterface
             'perPage' => $perPage,
             'firstPageUrl' => urldecode($path . http_build_query($queryFirst)),
             'nextPageUrl' => urldecode($path . http_build_query($queryNext)),
-            'prePageUrl' => urldecode($path . http_build_query($queryNext)),
+            'prePageUrl' => urldecode($path . http_build_query($queryPre)),
             'pageLength' => count($builder),
             'totalCount' => $count,
             'totalPage' => $count % $perPage == 0 ? $count / $perPage : intval($count / $perPage) + 1
@@ -246,10 +246,15 @@ abstract class DzqController implements RequestHandlerInterface
 
     public function info($tag, $params = [])
     {
-        app('log')->info($tag . json_encode($params, 256));
+        if (is_array($params)) {
+            app('log')->info($tag . '::' . json_encode($params, 256));
+        } else {
+            app('log')->info($tag . '::' . $params);
+        }
     }
 
     private $connection = null;
+
     public function openQueryLog()
     {
         $connection = app(ConnectionInterface::class);
@@ -259,9 +264,19 @@ abstract class DzqController implements RequestHandlerInterface
 
     public function ddQueryLog()
     {
-        if(!empty($this->connection)){
+        if (!empty($this->connection)) {
             dd(json_encode($this->connection->getQueryLog(), 256));
         }
+    }
+
+    /**
+     * @desc 获取数据库实例
+     * @param $array
+     * @return ConnectionInterface
+     */
+    public function getDB()
+    {
+        return app(ConnectionInterface::class);
     }
 
 }
