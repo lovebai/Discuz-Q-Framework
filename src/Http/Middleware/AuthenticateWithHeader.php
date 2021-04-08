@@ -123,18 +123,27 @@ class AuthenticateWithHeader implements MiddlewareInterface
             return null;
         }
 
-        $ttl = static::AUTH_USER_CACHE_TTL;
-        return $this->cache->remember(
-            CacheKey::AUTH_USER_PREFIX.$userId,
-            mt_rand($ttl, $ttl + 10),
-            function () use ($userId) {
-                $actor = User::find($userId);
-                if (!is_null($actor) && $actor->exists) {
-                    $actor->changeUpdateAt()->save();
+        if (app()->config('middleware_cache')) {
+            $ttl = static::AUTH_USER_CACHE_TTL;
+            return $this->cache->remember(
+                CacheKey::AUTH_USER_PREFIX.$userId,
+                mt_rand($ttl, $ttl + 10),
+                function () use ($userId) {
+                    return $this->getActorFromDatabase($userId);
                 }
-                return $actor;
-            }
-        );
+            );
+        } else {
+            return $this->getActorFromDatabase($userId);
+        }
+    }
+
+    private function getActorFromDatabase($userId)
+    {
+        $actor = User::find($userId);
+        if (!is_null($actor) && $actor->exists) {
+            $actor->changeUpdateAt()->save();
+        }
+        return $actor;
     }
 
     private function checkLimit(ServerRequestInterface $request)
