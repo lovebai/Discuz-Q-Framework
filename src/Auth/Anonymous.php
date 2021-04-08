@@ -36,6 +36,7 @@ class Anonymous extends Guest
     public function __construct(array $attributes = [], $updated_at = '')
     {
         parent::__construct(array_merge($attributes, [
+            'id' => $this->id,
             'username' => $this->getUsername($this->id),
             'updated_at' => $updated_at
         ]));
