@@ -58,7 +58,7 @@ class ErrorHandler extends DzqBase
 
         $errors = $response->getErrors();
         $path = Request::capture()->getPathInfo();
-        if (strstr($path, 'v2')) {
+        if (strstr($path, 'v2')||strstr($path, 'v3')) {
             $error = Arr::first($errors);
             if (isset($error['status'])) {
                 switch ($error['status']) {
