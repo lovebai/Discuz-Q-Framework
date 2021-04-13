@@ -178,13 +178,12 @@ abstract class DzqController implements RequestHandlerInterface
     /*
      * 分页
      */
-    public function pagination($currentPage, $perPage, \Illuminate\Database\Eloquent\Builder $builder, $toArray = true)
+    public function pagination($currentPage, $perPage, \Illuminate\Database\Eloquent\Builder $builder, $totalCount, $toArray = true)
     {
         $currentPage = $currentPage >= 1 ? intval($currentPage) : 1;
         $perPageMax = 50;
         $perPage = $perPage >= 1 ? intval($perPage) : 20;
         $perPage > $perPageMax && $perPage = $perPageMax;
-        $count = $builder->get()->count();
         $builder = $builder->offset(($currentPage - 1) * $perPage)->limit($perPage)->get();
         $builder = $toArray ? $builder->toArray() : $builder;
         $url = $this->request->getUri();
@@ -205,8 +204,8 @@ abstract class DzqController implements RequestHandlerInterface
             'nextPageUrl' => urldecode($path . http_build_query($queryNext)),
             'prePageUrl' => urldecode($path . http_build_query($queryPre)),
             'pageLength' => count($builder),
-            'totalCount' => $count,
-            'totalPage' => $count % $perPage == 0 ? $count / $perPage : intval($count / $perPage) + 1
+            'totalCount' => $totalCount,
+            'totalPage' => $totalCount % $perPage == 0 ? $totalCount / $perPage : intval($totalCount / $perPage) + 1
         ];
     }
 
