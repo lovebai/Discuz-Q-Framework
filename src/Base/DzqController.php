@@ -184,7 +184,7 @@ abstract class DzqController implements RequestHandlerInterface
         $perPageMax = 50;
         $perPage = $perPage >= 1 ? intval($perPage) : 20;
         $perPage > $perPageMax && $perPage = $perPageMax;
-        $count = $builder->get()->count();
+        $count = $builder->count();
         $builder = $builder->offset(($currentPage - 1) * $perPage)->limit($perPage)->get();
         $builder = $toArray ? $builder->toArray() : $builder;
         $url = $this->request->getUri();
