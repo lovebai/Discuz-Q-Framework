@@ -34,7 +34,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Illuminate\Database\ConnectionInterface;
 abstract class DzqController implements RequestHandlerInterface
 {
-    protected $request;
+    public $request;
     protected $requestId;
     protected $requestTime;
     protected $platform;
