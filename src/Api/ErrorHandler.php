@@ -55,7 +55,6 @@ class ErrorHandler extends DzqBase
         $info = sprintf('%s: %s in %s:%s', get_class($e), $e->getMessage() . '\n' . $e->getTraceAsString(), $e->getFile(), $e->getLine());
         $this->logger->info('errorhandler：'.$info);
         $response = $this->errorHandler->handle($e);
-
         $errors = $response->getErrors();
         $path = Request::capture()->getPathInfo();
         if (strstr($path, 'v2')||strstr($path, 'v3')) {

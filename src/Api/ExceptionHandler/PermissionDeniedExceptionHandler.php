@@ -18,6 +18,7 @@
 
 namespace Discuz\Api\ExceptionHandler;
 
+use App\Common\ResponseCode;
 use Discuz\Auth\Exception\PermissionDeniedException;
 use Discuz\Contracts\Setting\SettingsRepository;
 use Exception;
@@ -62,7 +63,7 @@ class PermissionDeniedExceptionHandler implements ExceptionHandlerInterface
         }else{
             $error['code'] = $e->getMessage();
         }
-        
+        Utils::outPut($error['code'] == 'site_closed'? ResponseCode::SITE_CLOSED : ResponseCode::UNAUTHORIZED);
         return new ResponseBag($status, [$error]);
     }
 }

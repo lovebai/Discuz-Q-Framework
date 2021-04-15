@@ -34,7 +34,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Illuminate\Database\ConnectionInterface;
 abstract class DzqController implements RequestHandlerInterface
 {
-    protected $request;
+    public $request;
     protected $requestId;
     protected $requestTime;
     protected $platform;
@@ -122,6 +122,34 @@ abstract class DzqController implements RequestHandlerInterface
         exit(json_encode($data, 256));
     }
 
+    /*
+     * 是否V3版本接口返回
+     */
+    public function outPutV3($code, $msg = '', $data = [])
+    {
+        if (!strpos($_SERVER['REQUEST_URI'],'apiv3')) {
+            return false;
+        }
+        if (empty($msg)) {
+            if (ResponseCode::$codeMap[$code]) {
+                $msg = ResponseCode::$codeMap[$code];
+            }
+        }
+        $data = [
+            'Code' => $code,
+            'Message' => $msg,
+            'Data' => $data,
+            'RequestId' => Str::uuid(),
+            'RequestTime' => date('Y-m-d H:i:s')
+        ];
+        $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
+        foreach ($crossHeaders as $k => $v) {
+            header($k . ':' . $v);
+        }
+        header('Content-Type:application/json; charset=utf-8', true, 200);
+        exit(json_encode($data, 256));
+    }
+
 //    public function __invoke()
 //    {
 //        $this->isDebug && $this->sendResponse();
@@ -184,7 +212,7 @@ abstract class DzqController implements RequestHandlerInterface
         $perPageMax = 50;
         $perPage = $perPage >= 1 ? intval($perPage) : 20;
         $perPage > $perPageMax && $perPage = $perPageMax;
-        $count = $builder->get()->count();
+        $count = $builder->count();
         $builder = $builder->offset(($currentPage - 1) * $perPage)->limit($perPage)->get();
         $builder = $toArray ? $builder->toArray() : $builder;
         $url = $this->request->getUri();
