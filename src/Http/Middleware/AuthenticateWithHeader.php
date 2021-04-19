@@ -34,7 +34,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class AuthenticateWithHeader implements MiddlewareInterface
 {
-    const AUTH_USER_CACHE_TTL = 30;
+    const AUTH_USER_CACHE_TTL = 300;
 
     protected $cache;
 
@@ -165,7 +165,9 @@ class AuthenticateWithHeader implements MiddlewareInterface
     {
         $ip = ip($request->getServerParams());
         $api = $request->getUri()->getPath();
-        if (empty($api)) return true;
+        if (empty($api)) {
+            return true;
+        }
         $method = strtolower($method);
         if (empty($userId)) {
             $key = 'api_limit_by_ip_' . md5($ip . $api . $method);
@@ -242,5 +244,4 @@ class AuthenticateWithHeader implements MiddlewareInterface
             }
         }
     }
-
 }
