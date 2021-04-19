@@ -48,7 +48,7 @@ class Utils
         }
 
         $user_agent = '';
-        if(isset($server['HTTP_USER_AGENT'])){
+        if(isset($server['HTTP_USER_AGENT']) && !empty($server['HTTP_USER_AGENT'])){
             $user_agent = $server['HTTP_USER_AGENT'];
         }
 
