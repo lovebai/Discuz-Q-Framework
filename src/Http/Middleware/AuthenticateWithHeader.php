@@ -123,18 +123,18 @@ class AuthenticateWithHeader implements MiddlewareInterface
             return null;
         }
 
-        if (app()->config('middleware_cache')) {
-            $ttl = static::AUTH_USER_CACHE_TTL;
-            return $this->cache->remember(
-                CacheKey::AUTH_USER_PREFIX.$userId,
-                mt_rand($ttl, $ttl + 10),
-                function () use ($userId) {
-                    return $this->getActorFromDatabase($userId);
-                }
-            );
-        } else {
+        //if (app()->config('middleware_cache')) {
+        $ttl = static::AUTH_USER_CACHE_TTL;
+        return $this->cache->remember(
+            CacheKey::AUTH_USER_PREFIX.$userId,
+            mt_rand($ttl, $ttl + 10),
+            function () use ($userId) {
+                return $this->getActorFromDatabase($userId);
+            }
+        );
+        /*} else {
             return $this->getActorFromDatabase($userId);
-        }
+        }*/
     }
 
     private function getActorFromDatabase($userId)
