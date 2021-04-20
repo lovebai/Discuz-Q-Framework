@@ -2,6 +2,11 @@
 
 namespace Discuz\Common;
 
+use App\Common\ResponseCode;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Discuz\Http\DiscuzResponseFactory;
+
 /**
  * Copyright (C) 2020 Tencent Cloud.
  *
@@ -97,5 +102,39 @@ class Utils
         } else {
             return true;
         }
+    }
+
+    /**
+     * v2,v3接口输出
+     * @param $code
+     * @param string $msg
+     * @param array $data
+     * @param null $requestId
+     * @param null $requestTime
+     */
+    public static function outPut($code, $msg = '', $data = [],$requestId=null,$requestTime=null)
+    {
+        $path = Request::capture()->getPathInfo();
+        if (strstr($path, 'v2')||strstr($path, 'v3')) {
+            if (empty($msg)) {
+                if (ResponseCode::$codeMap[$code]) {
+                    $msg = ResponseCode::$codeMap[$code];
+                }
+            }
+            $data = [
+                'Code' => $code,
+                'Message' => $msg,
+                'Data' => $data,
+                'RequestId' => Str::uuid(),
+                'RequestTime' => date('Y-m-d H:i:s')
+            ];
+            $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
+            foreach ($crossHeaders as $k => $v) {
+                header($k . ':' . $v);
+            }
+            header('Content-Type:application/json; charset=utf-8', true, 200);
+            exit(json_encode($data, 256));
+        }
+
     }
 }
