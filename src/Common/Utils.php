@@ -53,7 +53,7 @@ class Utils
         }
 
         $user_agent = '';
-        if(isset($server['HTTP_USER_AGENT']) && !empty($server['HTTP_USER_AGENT'])){
+        if (isset($server['HTTP_USER_AGENT']) && !empty($server['HTTP_USER_AGENT'])) {
             $user_agent = $server['HTTP_USER_AGENT'];
         }
 
@@ -112,29 +112,26 @@ class Utils
      * @param null $requestId
      * @param null $requestTime
      */
-    public static function outPut($code, $msg = '', $data = [],$requestId=null,$requestTime=null)
+    public static function outPut($code, $msg = '', $data = [], $requestId = null, $requestTime = null)
     {
         $path = Request::capture()->getPathInfo();
-        if (strstr($path, 'v2')||strstr($path, 'v3')) {
-            if (empty($msg)) {
-                if (ResponseCode::$codeMap[$code]) {
-                    $msg = ResponseCode::$codeMap[$code];
-                }
+        if (empty($msg)) {
+            if (ResponseCode::$codeMap[$code]) {
+                $msg = ResponseCode::$codeMap[$code];
             }
-            $data = [
-                'Code' => $code,
-                'Message' => $msg,
-                'Data' => $data,
-                'RequestId' => Str::uuid(),
-                'RequestTime' => date('Y-m-d H:i:s')
-            ];
-            $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
-            foreach ($crossHeaders as $k => $v) {
-                header($k . ':' . $v);
-            }
-            header('Content-Type:application/json; charset=utf-8', true, 200);
-            exit(json_encode($data, 256));
         }
-
+        $data = [
+            'Code' => $code,
+            'Message' => $msg,
+            'Data' => $data,
+            'RequestId' => empty($requestId) ? Str::uuid() : $requestId,
+            'RequestTime' => empty($requestTime) ? date('Y-m-d H:i:s') : $requestTime
+        ];
+        $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
+        foreach ($crossHeaders as $k => $v) {
+            header($k . ':' . $v);
+        }
+        header('Content-Type:application/json; charset=utf-8', true, 200);
+        exit(json_encode($data, 256));
     }
 }

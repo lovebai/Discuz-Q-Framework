@@ -21,6 +21,7 @@ use App\Common\ResponseCode;
 use App\Models\User;
 use App\Modules\Services\ApiCacheService;
 use DateTime;
+use Discuz\Common\Utils;
 use Discuz\Http\DiscuzResponseFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,6 +33,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Illuminate\Database\ConnectionInterface;
+
 abstract class DzqController implements RequestHandlerInterface
 {
     public $request;
@@ -102,93 +104,8 @@ abstract class DzqController implements RequestHandlerInterface
      */
     public function outPut($code, $msg = '', $data = [])
     {
-        if (empty($msg)) {
-            if (ResponseCode::$codeMap[$code]) {
-                $msg = ResponseCode::$codeMap[$code];
-            }
-        }
-        $data = [
-            'Code' => $code,
-            'Message' => $msg,
-            'Data' => $data,
-            'RequestId' => $this->requestId,
-            'RequestTime' => $this->requestTime
-        ];
-        $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
-        foreach ($crossHeaders as $k => $v) {
-            header($k . ':' . $v);
-        }
-        header('Content-Type:application/json; charset=utf-8', true, 200);
-        exit(json_encode($data, 256));
+        Utils::outPut($code, $msg, $data, $this->requestId, $this->requestTime);
     }
-
-    /*
-     * 是否V3版本接口返回
-     */
-    public function outPutV3($code, $msg = '', $data = [])
-    {
-        if (!strpos($_SERVER['REQUEST_URI'],'apiv3')) {
-            return false;
-        }
-        if (empty($msg)) {
-            if (ResponseCode::$codeMap[$code]) {
-                $msg = ResponseCode::$codeMap[$code];
-            }
-        }
-        $data = [
-            'Code' => $code,
-            'Message' => $msg,
-            'Data' => $data,
-            'RequestId' => Str::uuid(),
-            'RequestTime' => date('Y-m-d H:i:s')
-        ];
-        $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
-        foreach ($crossHeaders as $k => $v) {
-            header($k . ':' . $v);
-        }
-        header('Content-Type:application/json; charset=utf-8', true, 200);
-        exit(json_encode($data, 256));
-    }
-
-//    public function __invoke()
-//    {
-//        $this->isDebug && $this->sendResponse();
-//        try {
-//            $this->sendResponse();
-//        } catch (\Throwable $e) {
-//            $code = $e->getCode();
-//            $msg = $e->getMessage();
-//            $result = [
-//                'Code' => empty($code) ? ResponseCode::INTERNAL_ERROR : $code,
-//                'Message' => $msg,
-//                'RequestId' => $this->requestId,
-//                'RequestTime' => $this->requestTime
-//            ];
-//            $apiScope = $this->request->headers->get('Api-Scope');
-//            $this->openApiLog && Log::channel($apiScope)->info($this->requestId . ':response', [$result]);
-//            if (empty($msg)) {
-//                $result['Message'] = ResponseCode::$codeMap[ResponseCode::INTERNAL_ERROR];
-//            }
-//            response()->json($result)->setStatusCode(500)->send();
-//        }
-//    }
-//
-//    private function sendResponse()
-//    {
-//        $apiScope = $this->request->headers->get('Api-Scope');
-//        $apiCache = new ApiCacheService($this->request, static::class);
-//        $apiCache->forget();
-//        $server = $this->request->server->all();
-//        $this->openApiLog && Log::channel($apiScope)->info($this->requestId . ':request', [$server]);
-//        $isSet = $apiCache->isSetCache();
-//        $result = false;
-//        $isSet && $result = $apiCache->getValue();
-//        !$result && $result = $this->main();
-//        $isSet && $apiCache->setValue($result);
-//        $this->openApiLog && Log::channel($apiScope)->info($this->requestId . ':response', [$result]);
-//        response()->json($result)->send();
-//        exit;
-//    }
 
     /*
      * 入参判断
@@ -256,7 +173,7 @@ abstract class DzqController implements RequestHandlerInterface
      */
     public function camelData($arr, $ucfirst = false)
     {
-        if(is_object($arr) && is_callable([$arr, 'toArray']))     $arr = $arr->toArray();
+        if (is_object($arr) && is_callable([$arr, 'toArray'])) $arr = $arr->toArray();
         if (!is_array($arr)) {
             //如果非数组原样返回
             return $arr;
