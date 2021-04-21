@@ -34,6 +34,9 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Illuminate\Database\ConnectionInterface;
 
+/**
+ * @method  beforeMain($name, $arguments)
+ */
 abstract class DzqController implements RequestHandlerInterface
 {
     public $request;
@@ -63,6 +66,7 @@ abstract class DzqController implements RequestHandlerInterface
         $this->app = app();
         $this->registerProviders();
         $this->user = $request->getAttribute('actor');
+        $this->c9IbQHXVFFWu($this->user);//添加辅助函数
         $this->main();
     }
 
@@ -70,6 +74,13 @@ abstract class DzqController implements RequestHandlerInterface
      * 控制器业务逻辑
      */
     abstract public function main();
+
+    public function __call($name, $arguments)
+    {
+        if (method_exists($this, 'beforeMain')) {
+            $this->beforeMain($name, $arguments);
+        }
+    }
 
     /*
      * 引入providers
