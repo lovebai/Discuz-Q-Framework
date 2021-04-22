@@ -35,7 +35,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Illuminate\Database\ConnectionInterface;
 
 /**
- * @method  beforeMain($name, $arguments)
+ * @method  beforeMain($user)
  */
 abstract class DzqController implements RequestHandlerInterface
 {
@@ -78,7 +78,9 @@ abstract class DzqController implements RequestHandlerInterface
     public function __call($name, $arguments)
     {
         if (method_exists($this, 'beforeMain')) {
-            $this->beforeMain($name, $arguments);
+            if (!empty($arguments[0])) {
+                $this->beforeMain($arguments[0]);
+            }
         }
     }
 
