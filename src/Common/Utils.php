@@ -114,7 +114,6 @@ class Utils
      */
     public static function outPut($code, $msg = '', $data = [], $requestId = null, $requestTime = null)
     {
-        $path = Request::capture()->getPathInfo();
         if (empty($msg)) {
             if (ResponseCode::$codeMap[$code]) {
                 $msg = ResponseCode::$codeMap[$code];
