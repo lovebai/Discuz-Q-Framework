@@ -75,7 +75,7 @@ abstract class DzqController implements RequestHandlerInterface
      */
     abstract public function main();
 
-    public function __call($name, $arguments)
+    public function c9IbQHXVFFWu($name, $arguments)
     {
         if (method_exists($this, 'beforeMain')) {
             if (!empty($arguments[0])) {
@@ -220,7 +220,7 @@ abstract class DzqController implements RequestHandlerInterface
         $connection->enableQueryLog();
     }
 
-    public function ddQueryLog()
+    public function closeQueryLog()
     {
         if (!empty($this->connection)) {
             dd(json_encode($this->connection->getQueryLog(), 256));
