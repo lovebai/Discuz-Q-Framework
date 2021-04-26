@@ -75,12 +75,10 @@ abstract class DzqController implements RequestHandlerInterface
      */
     abstract public function main();
 
-    public function c9IbQHXVFFWu($name, $arguments)
+    public function c9IbQHXVFFWu($name)
     {
         if (method_exists($this, 'beforeMain')) {
-            if (!empty($arguments[0])) {
-                $this->beforeMain($arguments[0]);
-            }
+            $this->beforeMain($name);
         }
     }
 
