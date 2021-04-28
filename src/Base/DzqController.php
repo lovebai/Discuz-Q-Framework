@@ -69,8 +69,14 @@ abstract class DzqController implements RequestHandlerInterface
         $this->registerProviders();
         $this->user = $request->getAttribute('actor');
         $this->c9IbQHXVFFWu($this->user);//添加辅助函数
+        $this->checkRequestPermissions();
         $this->main();
     }
+
+    /*
+     * 控制器权限检查
+     */
+    protected function checkRequestPermissions(){}
 
     /*
      * 控制器业务逻辑
