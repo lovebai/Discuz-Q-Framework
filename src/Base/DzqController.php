@@ -295,7 +295,7 @@ abstract class DzqController implements RequestHandlerInterface
         return [$ip, $port];
     }
 
-    public function getCache()
+    public function cacheInstance()
     {
         return app('cache');
     }
