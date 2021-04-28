@@ -24,6 +24,8 @@ use DateTime;
 use Discuz\Common\Utils;
 use Discuz\Http\DiscuzResponseFactory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -166,6 +168,50 @@ abstract class DzqController implements RequestHandlerInterface
         ];
     }
 
+    public function preloadPaginiation($pageCount, $perPage, \Illuminate\Database\Eloquent\Builder $builder, $toArray = true)
+    {
+
+        $perPage = $perPage >= 1 ? intval($perPage) : 20;
+        $perPageMax = 50;
+        $perPage > $perPageMax && $perPage = $perPageMax;
+        $count = $builder->count();
+        $builder = $builder->offset(0)->limit($pageCount * $perPage)->get();
+        $builder = $toArray ? $builder->toArray() : $builder;
+        $url = $this->request->getUri();
+        $port = $url->getPort();
+        $port = $port == null ? '' : ':' . $port;
+        parse_str($url->getQuery(), $query);
+        $ret = new \Illuminate\Database\Eloquent\Collection();
+        $currentPage = 1;
+        $totalCount = $count;
+        $totalPage = $count % $perPage == 0 ? $count / $perPage : intval($count / $perPage) + 1;
+        while ($currentPage <= $pageCount) {
+            $queryFirst = $queryNext = $queryPre = $query;
+            $queryFirst['page'] = 1;
+            $queryNext['page'] = $currentPage + 1;
+            $queryPre['page'] = $currentPage <= 1 ? 1 : $currentPage - 1;
+            $path = $url->getScheme() . '://' . $url->getHost() . $port . $url->getPath() . '?';
+            $pageData = $builder->slice(($currentPage - 1) * $perPage, $perPage);
+            if ($pageData->isEmpty()) {
+                break;
+            }
+            $item = new \Illuminate\Database\Eloquent\Collection([
+                'pageData' => $pageData,
+                'currentPage' => $currentPage,
+                'perPage' => $perPage,
+                'firstPageUrl' => urldecode($path . http_build_query($queryFirst)),
+                'nextPageUrl' => urldecode($path . http_build_query($queryNext)),
+                'prePageUrl' => urldecode($path . http_build_query($queryPre)),
+                'pageLength' => count($pageData),
+                'totalCount' => $totalCount,
+                'totalPage' => $totalPage
+            ]);
+            $ret->add($item);
+            $currentPage++;
+        }
+        return $ret;
+    }
+
     /**
      * @param DateTime|null $date
      * @return string|null
@@ -243,4 +289,8 @@ abstract class DzqController implements RequestHandlerInterface
         return [$ip, $port];
     }
 
+    public function getCache()
+    {
+        return app('cache');
+    }
 }
