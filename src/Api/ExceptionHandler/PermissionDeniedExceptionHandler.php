@@ -50,18 +50,22 @@ class PermissionDeniedExceptionHandler implements ExceptionHandlerInterface
         // 站点是否关闭
         $settings = app()->make(SettingsRepository::class);
 
-        $reqType = Utils::requestFrom();
-        $siteManage = json_decode($settings->get('site_manage'), true);
-        $siteManage = array_column($siteManage,null,'key');
-        $siteOpen = true;
-        if(isset($siteManage[$reqType])){
-            $siteOpen = $siteManage[$reqType]['value'];
-        }
-        if (!$siteOpen) {
+        if ($settings->get('site_close')) {
             $error['code'] = 'site_closed';
-            $error['detail'][] = $settings->get('site_close_msg') ?: '';
-        }else{
-            $error['code'] = $e->getMessage();
+        } elseif ($e->getMessage() == 'ban_user') {
+            $error['code'] = 'ban_user';
+        } elseif ($e->getMessage() == 'register_validate') {
+            $error['code'] = 'register_validate';
+        } elseif ($e->getMessage() == 'user_deny') {
+            $error['code'] = 'user_deny';
+        } elseif ($e->getMessage() == 'validate_reject') {
+            $error['code'] = 'validate_reject';
+        } elseif ($e->getMessage() == 'validate_ignore') {
+            $error['code'] = 'validate_ignore';
+        } elseif ($e->getMessage() == 'register_close') {
+            $error['code'] = 'register_close';
+        } else {
+            $error['code'] = 'permission_denied';
         }
         Utils::outPut($error['code'] == 'site_closed'? ResponseCode::SITE_CLOSED : ResponseCode::UNAUTHORIZED);
         return new ResponseBag($status, [$error]);
