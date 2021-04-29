@@ -21,8 +21,11 @@ use App\Common\ResponseCode;
 use App\Models\User;
 use App\Modules\Services\ApiCacheService;
 use DateTime;
+use Discuz\Common\Utils;
 use Discuz\Http\DiscuzResponseFactory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -32,6 +35,10 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Illuminate\Database\ConnectionInterface;
+
+/**
+ * @method  beforeMain($user)
+ */
 abstract class DzqController implements RequestHandlerInterface
 {
     public $request;
@@ -61,13 +68,27 @@ abstract class DzqController implements RequestHandlerInterface
         $this->app = app();
         $this->registerProviders();
         $this->user = $request->getAttribute('actor');
+        $this->c9IbQHXVFFWu($this->user);//添加辅助函数
+        $this->checkRequestPermissions();
         $this->main();
     }
+
+    /*
+     * 控制器权限检查
+     */
+    protected function checkRequestPermissions(){}
 
     /*
      * 控制器业务逻辑
      */
     abstract public function main();
+
+    public function c9IbQHXVFFWu($name)
+    {
+        if (method_exists($this, 'beforeMain')) {
+            $this->beforeMain($name);
+        }
+    }
 
     /*
      * 引入providers
@@ -102,93 +123,8 @@ abstract class DzqController implements RequestHandlerInterface
      */
     public function outPut($code, $msg = '', $data = [])
     {
-        if (empty($msg)) {
-            if (ResponseCode::$codeMap[$code]) {
-                $msg = ResponseCode::$codeMap[$code];
-            }
-        }
-        $data = [
-            'Code' => $code,
-            'Message' => $msg,
-            'Data' => $data,
-            'RequestId' => $this->requestId,
-            'RequestTime' => $this->requestTime
-        ];
-        $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
-        foreach ($crossHeaders as $k => $v) {
-            header($k . ':' . $v);
-        }
-        header('Content-Type:application/json; charset=utf-8', true, 200);
-        exit(json_encode($data, 256));
+        Utils::outPut($code, $msg, $data, $this->requestId, $this->requestTime);
     }
-
-    /*
-     * 是否V3版本接口返回
-     */
-    public function outPutV3($code, $msg = '', $data = [])
-    {
-        if (!strpos($_SERVER['REQUEST_URI'],'apiv3')) {
-            return false;
-        }
-        if (empty($msg)) {
-            if (ResponseCode::$codeMap[$code]) {
-                $msg = ResponseCode::$codeMap[$code];
-            }
-        }
-        $data = [
-            'Code' => $code,
-            'Message' => $msg,
-            'Data' => $data,
-            'RequestId' => Str::uuid(),
-            'RequestTime' => date('Y-m-d H:i:s')
-        ];
-        $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
-        foreach ($crossHeaders as $k => $v) {
-            header($k . ':' . $v);
-        }
-        header('Content-Type:application/json; charset=utf-8', true, 200);
-        exit(json_encode($data, 256));
-    }
-
-//    public function __invoke()
-//    {
-//        $this->isDebug && $this->sendResponse();
-//        try {
-//            $this->sendResponse();
-//        } catch (\Throwable $e) {
-//            $code = $e->getCode();
-//            $msg = $e->getMessage();
-//            $result = [
-//                'Code' => empty($code) ? ResponseCode::INTERNAL_ERROR : $code,
-//                'Message' => $msg,
-//                'RequestId' => $this->requestId,
-//                'RequestTime' => $this->requestTime
-//            ];
-//            $apiScope = $this->request->headers->get('Api-Scope');
-//            $this->openApiLog && Log::channel($apiScope)->info($this->requestId . ':response', [$result]);
-//            if (empty($msg)) {
-//                $result['Message'] = ResponseCode::$codeMap[ResponseCode::INTERNAL_ERROR];
-//            }
-//            response()->json($result)->setStatusCode(500)->send();
-//        }
-//    }
-//
-//    private function sendResponse()
-//    {
-//        $apiScope = $this->request->headers->get('Api-Scope');
-//        $apiCache = new ApiCacheService($this->request, static::class);
-//        $apiCache->forget();
-//        $server = $this->request->server->all();
-//        $this->openApiLog && Log::channel($apiScope)->info($this->requestId . ':request', [$server]);
-//        $isSet = $apiCache->isSetCache();
-//        $result = false;
-//        $isSet && $result = $apiCache->getValue();
-//        !$result && $result = $this->main();
-//        $isSet && $apiCache->setValue($result);
-//        $this->openApiLog && Log::channel($apiScope)->info($this->requestId . ':response', [$result]);
-//        response()->json($result)->send();
-//        exit;
-//    }
 
     /*
      * 入参判断
@@ -238,6 +174,50 @@ abstract class DzqController implements RequestHandlerInterface
         ];
     }
 
+    public function preloadPaginiation($pageCount, $perPage, \Illuminate\Database\Eloquent\Builder $builder, $toArray = true)
+    {
+
+        $perPage = $perPage >= 1 ? intval($perPage) : 20;
+        $perPageMax = 50;
+        $perPage > $perPageMax && $perPage = $perPageMax;
+        $count = $builder->count();
+        $builder = $builder->offset(0)->limit($pageCount * $perPage)->get();
+        $builder = $toArray ? $builder->toArray() : $builder;
+        $url = $this->request->getUri();
+        $port = $url->getPort();
+        $port = $port == null ? '' : ':' . $port;
+        parse_str($url->getQuery(), $query);
+        $ret = new \Illuminate\Database\Eloquent\Collection();
+        $currentPage = 1;
+        $totalCount = $count;
+        $totalPage = $count % $perPage == 0 ? $count / $perPage : intval($count / $perPage) + 1;
+        while ($currentPage <= $pageCount) {
+            $queryFirst = $queryNext = $queryPre = $query;
+            $queryFirst['page'] = 1;
+            $queryNext['page'] = $currentPage + 1;
+            $queryPre['page'] = $currentPage <= 1 ? 1 : $currentPage - 1;
+            $path = $url->getScheme() . '://' . $url->getHost() . $port . $url->getPath() . '?';
+            $pageData = $builder->slice(($currentPage - 1) * $perPage, $perPage);
+            if ($pageData->isEmpty()) {
+                break;
+            }
+            $item = new \Illuminate\Database\Eloquent\Collection([
+                'pageData' => $pageData,
+                'currentPage' => $currentPage,
+                'perPage' => $perPage,
+                'firstPageUrl' => urldecode($path . http_build_query($queryFirst)),
+                'nextPageUrl' => urldecode($path . http_build_query($queryNext)),
+                'prePageUrl' => urldecode($path . http_build_query($queryPre)),
+                'pageLength' => count($pageData),
+                'totalCount' => $totalCount,
+                'totalPage' => $totalPage
+            ]);
+            $ret->add($item);
+            $currentPage++;
+        }
+        return $ret;
+    }
+
     /**
      * @param DateTime|null $date
      * @return string|null
@@ -256,7 +236,7 @@ abstract class DzqController implements RequestHandlerInterface
      */
     public function camelData($arr, $ucfirst = false)
     {
-        if(is_object($arr) && is_callable([$arr, 'toArray']))     $arr = $arr->toArray();
+        if (is_object($arr) && is_callable([$arr, 'toArray'])) $arr = $arr->toArray();
         if (!is_array($arr)) {
             //如果非数组原样返回
             return $arr;
@@ -290,7 +270,7 @@ abstract class DzqController implements RequestHandlerInterface
         $connection->enableQueryLog();
     }
 
-    public function ddQueryLog()
+    public function closeQueryLog()
     {
         if (!empty($this->connection)) {
             dd(json_encode($this->connection->getQueryLog(), 256));
@@ -315,4 +295,8 @@ abstract class DzqController implements RequestHandlerInterface
         return [$ip, $port];
     }
 
+    public function cacheInstance()
+    {
+        return app('cache');
+    }
 }
