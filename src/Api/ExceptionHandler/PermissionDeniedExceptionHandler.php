@@ -67,7 +67,11 @@ class PermissionDeniedExceptionHandler implements ExceptionHandlerInterface
         } else {
             $error['code'] = 'permission_denied';
         }
-        Utils::outPut($error['code'] == 'site_closed'? ResponseCode::SITE_CLOSED : ResponseCode::UNAUTHORIZED);
+        if($error['code'] == 'site_closed') {
+            Utils::outPut(ResponseCode::SITE_CLOSED, '', ['detail' => $settings->get('site_close_msg')?:'']);
+        } else {
+            Utils::outPut(ResponseCode::UNAUTHORIZED);
+        }
         return new ResponseBag($status, [$error]);
     }
 }
