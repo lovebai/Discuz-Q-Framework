@@ -61,7 +61,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $this->getApiFreq($request);
+//        $this->getApiFreq($request);
         $headerLine = $request->getHeaderLine('authorization');
 
         // 允许 get、cookie 携带 Token
@@ -74,7 +74,6 @@ class AuthenticateWithHeader implements MiddlewareInterface
         }
 
         $request = $request->withAttribute('actor', new Guest());
-
         if ($headerLine) {
             $accessTokenRepository = new AccessTokenRepository();
 
@@ -122,16 +121,17 @@ class AuthenticateWithHeader implements MiddlewareInterface
         if (!$userId) {
             return null;
         }
+        return $this->getActorFromDatabase($userId);
 
         //if (app()->config('middleware_cache')) {
-        $ttl = static::AUTH_USER_CACHE_TTL;
+        /*$ttl = static::AUTH_USER_CACHE_TTL;
         return $this->cache->remember(
             CacheKey::AUTH_USER_PREFIX.$userId,
             mt_rand($ttl, $ttl + 10),
             function () use ($userId) {
                 return $this->getActorFromDatabase($userId);
             }
-        );
+        );*/
         /*} else {
             return $this->getActorFromDatabase($userId);
         }*/
