@@ -119,6 +119,12 @@ class Utils
                 $msg = ResponseCode::$codeMap[$code];
             }
         }
+
+        if ($msg != '' && stristr($msg, 'SQLSTATE')) {
+            app('log')->info('database-error:' . $msg);
+            $msg = 'database error';
+        }
+
         $data = [
             'Code' => $code,
             'Message' => $msg,
