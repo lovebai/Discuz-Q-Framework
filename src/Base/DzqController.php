@@ -38,6 +38,7 @@ use Illuminate\Database\ConnectionInterface;
 
 /**
  * @method  beforeMain($user)
+ * @method  clearCache($user)
  */
 abstract class DzqController implements RequestHandlerInterface
 {
@@ -76,7 +77,9 @@ abstract class DzqController implements RequestHandlerInterface
     /*
      * 控制器权限检查
      */
-    protected function checkRequestPermissions(){}
+    protected function checkRequestPermissions()
+    {
+    }
 
     /*
      * 控制器业务逻辑
@@ -87,6 +90,9 @@ abstract class DzqController implements RequestHandlerInterface
     {
         if (method_exists($this, 'beforeMain')) {
             $this->beforeMain($name);
+        }
+        if (method_exists($this, 'clearCache')) {
+            $this->clearCache($name);
         }
     }
 
@@ -187,6 +193,7 @@ abstract class DzqController implements RequestHandlerInterface
         $port = $url->getPort();
         $port = $port == null ? '' : ':' . $port;
         parse_str($url->getQuery(), $query);
+        unset($query['preload']);
         $ret = new \Illuminate\Database\Eloquent\Collection();
         $currentPage = 1;
         $totalCount = $count;
@@ -202,7 +209,7 @@ abstract class DzqController implements RequestHandlerInterface
                 break;
             }
             $item = new \Illuminate\Database\Eloquent\Collection([
-                'pageData' => $pageData,
+                'pageData' => array_values($pageData->toArray()),
                 'currentPage' => $currentPage,
                 'perPage' => $perPage,
                 'firstPageUrl' => urldecode($path . http_build_query($queryFirst)),
