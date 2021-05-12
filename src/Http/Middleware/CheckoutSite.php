@@ -56,38 +56,14 @@ class CheckoutSite implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         // get settings
-//        $siteClose = (bool)$this->settings->get('site_close');
-
-        $reqType = Utils::requestFrom();
-        $siteManage = json_decode($this->settings->get('site_manage'), true);
-        $siteManage = array_column($siteManage,null,'key');
-        $siteOpen = true;
-        isset($siteManage[$reqType]) && $siteOpen = $siteManage[$reqType]['value'];
-
-
+        $siteClose = (bool)$this->settings->get('site_close');
         $siteMode = $this->settings->get('site_mode');
 
-        $apiPath=$request->getUri()->getPath();
-        $apiParams = $request->getQueryParams();
-        if (in_array($apiPath, ['/api/login', '/api/oauth/wechat/miniprogram'])) {
+        if (in_array($request->getUri()->getPath(), ['/api/login', '/api/oauth/wechat/miniprogram'])) {
             return $handler->handle($request);
         }
-
-//        $server = $request->getServerParams();
-//        $userAgent = '';
-//        if(isset($server['HTTP_USER_AGENT'])){
-//            $userAgent = $server['HTTP_USER_AGENT'];
-//        }
-//        if($reqType == PubEnum::H5 && stristr($userAgent,'MicroMessenger') && (in_array($apiPath,[
-//                 '/api/oauth/wechat',
-//                '/api/oauth/wechat/user',
-//                '/api/forum',
-//            ]) || strstr($apiPath,'/api/users'))){
-//            return $handler->handle($request);
-//        }
-
         $actor = $request->getAttribute('actor');
-        !$siteOpen && $this->assertAdmin($actor);
+        $siteClose && $this->assertAdmin($actor);
 
         // 处理 付费模式 逻辑， 过期之后 加入待付费组
         if (! $actor->isAdmin() && $siteMode === 'pay' && Carbon::now()->gt($actor->expired_at)) {

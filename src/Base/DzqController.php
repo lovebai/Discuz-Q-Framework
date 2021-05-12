@@ -19,19 +19,11 @@ namespace Discuz\Base;
 
 use App\Common\CacheKey;
 use App\Common\ResponseCode;
-use App\Models\User;
-use App\Modules\Services\ApiCacheService;
+use App\Repositories\UserRepository;
 use DateTime;
+use Discuz\Auth\Exception\PermissionDeniedException;
 use Discuz\Common\Utils;
-use Discuz\Http\DiscuzResponseFactory;
-use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Money\Number;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -71,15 +63,29 @@ abstract class DzqController implements RequestHandlerInterface
         $this->registerProviders();
         $this->user = $request->getAttribute('actor');
         $this->c9IbQHXVFFWu($this->user);//添加辅助函数
-        $this->checkRequestPermissions();
+
+        try {
+            if (!$this->checkRequestPermissions(app(UserRepository::class))) {
+                throw new PermissionDeniedException();
+            }
+        } catch (PermissionDeniedException $e) {
+            $this->outPut(ResponseCode::UNAUTHORIZED, $e->getMessage());
+        }
+
         $this->main();
     }
 
     /*
-     * 控制器权限检查
+     * 控制器权限检查，默认是无权限访问，每个接口必须重写该方法，按实际情况处理权限检查
+     *
+     * 权限检查失败时，
+     * 如果需要返回自定义错误消息，则抛出 PermissionDeniedException
+     * 否则直接返回 false 即可
      */
-    protected function checkRequestPermissions()
+    protected function checkRequestPermissions(UserRepository $userRepo)
     {
+        // TODO 权限改完后，改为默认 false
+        return true;
     }
 
     /*
