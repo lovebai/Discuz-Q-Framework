@@ -211,9 +211,6 @@ abstract class DzqController implements RequestHandlerInterface
             $queryPre['page'] = $currentPage <= 1 ? 1 : $currentPage - 1;
             $path = $url->getScheme() . '://' . $url->getHost() . $port . $url->getPath() . '?';
             $pageData = array_slice($builder, ($currentPage - 1) * $perPage, $perPage);
-            if (empty($pageData)) {
-                break;
-            }
             $ret[$currentPage] = [
                 'pageData' => $pageData,
                 'currentPage' => $currentPage,
@@ -225,6 +222,9 @@ abstract class DzqController implements RequestHandlerInterface
                 'totalCount' => $totalCount,
                 'totalPage' => $totalPage
             ];
+            if (empty($pageData)) {
+                break;
+            }
             $currentPage++;
         }
         return $ret;
