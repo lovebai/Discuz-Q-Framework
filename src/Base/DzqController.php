@@ -17,6 +17,7 @@
 
 namespace Discuz\Base;
 
+use App\Common\CacheKey;
 use App\Common\ResponseCode;
 use App\Models\User;
 use App\Modules\Services\ApiCacheService;
@@ -148,14 +149,14 @@ abstract class DzqController implements RequestHandlerInterface
     /*
      * 分页
      */
-    public function pagination($currentPage, $perPage, \Illuminate\Database\Eloquent\Builder $builder, $toArray = true)
+    public function pagination($page, $perPage, \Illuminate\Database\Eloquent\Builder $builder, $toArray = true)
     {
-        $currentPage = $currentPage >= 1 ? intval($currentPage) : 1;
+        $page = $page >= 1 ? intval($page) : 1;
         $perPageMax = 50;
         $perPage = $perPage >= 1 ? intval($perPage) : 20;
         $perPage > $perPageMax && $perPage = $perPageMax;
         $count = $builder->count();
-        $builder = $builder->offset(($currentPage - 1) * $perPage)->limit($perPage)->get();
+        $builder = $builder->offset(($page - 1) * $perPage)->limit($perPage)->get();
         $builder = $toArray ? $builder->toArray() : $builder;
         $url = $this->request->getUri();
         $port = $url->getPort();
@@ -163,17 +164,17 @@ abstract class DzqController implements RequestHandlerInterface
         parse_str($url->getQuery(), $query);
         $queryFirst = $queryNext = $queryPre = $query;
         $queryFirst['page'] = 1;
-        $queryNext['page'] = $currentPage + 1;
-        $queryPre['page'] = $currentPage <= 1 ? 1 : $currentPage - 1;
+        $queryNext['page'] = $page + 1;
+        $queryPre['page'] = $page <= 1 ? 1 : $page - 1;
 
         $path = $url->getScheme() . '://' . $url->getHost() . $port . $url->getPath() . '?';
         return [
             'pageData' => $builder,
-            'currentPage' => $currentPage,
+            'currentPage' => $page,
             'perPage' => $perPage,
-            'firstPageUrl' => urldecode($path . http_build_query($queryFirst)),
-            'nextPageUrl' => urldecode($path . http_build_query($queryNext)),
-            'prePageUrl' => urldecode($path . http_build_query($queryPre)),
+            'firstPageUrl' => $this->buildUrl($path, $queryFirst),
+            'nextPageUrl' => $this->buildUrl($path, $queryNext),
+            'prePageUrl' => $this->buildUrl($path, $queryPre),
             'pageLength' => count($builder),
             'totalCount' => $count,
             'totalPage' => $count % $perPage == 0 ? $count / $perPage : intval($count / $perPage) + 1
@@ -182,7 +183,6 @@ abstract class DzqController implements RequestHandlerInterface
 
     public function preloadPaginiation($pageCount, $perPage, \Illuminate\Database\Eloquent\Builder $builder, $toArray = true)
     {
-
         $perPage = $perPage >= 1 ? intval($perPage) : 20;
         $perPageMax = 50;
         $perPage > $perPageMax && $perPage = $perPageMax;
@@ -194,7 +194,7 @@ abstract class DzqController implements RequestHandlerInterface
         $port = $port == null ? '' : ':' . $port;
         parse_str($url->getQuery(), $query);
         unset($query['preload']);
-        $ret = new \Illuminate\Database\Eloquent\Collection();
+        $ret = [];
         $currentPage = 1;
         $totalCount = $count;
         $totalPage = $count % $perPage == 0 ? $count / $perPage : intval($count / $perPage) + 1;
@@ -204,25 +204,29 @@ abstract class DzqController implements RequestHandlerInterface
             $queryNext['page'] = $currentPage + 1;
             $queryPre['page'] = $currentPage <= 1 ? 1 : $currentPage - 1;
             $path = $url->getScheme() . '://' . $url->getHost() . $port . $url->getPath() . '?';
-            $pageData = $builder->slice(($currentPage - 1) * $perPage, $perPage);
-            if ($pageData->isEmpty()) {
+            $pageData = array_slice($builder, ($currentPage - 1) * $perPage, $perPage);
+            if (empty($pageData)) {
                 break;
             }
-            $item = new \Illuminate\Database\Eloquent\Collection([
-                'pageData' => array_values($pageData->toArray()),
+            $ret[$currentPage] = [
+                'pageData' => $pageData,
                 'currentPage' => $currentPage,
                 'perPage' => $perPage,
-                'firstPageUrl' => urldecode($path . http_build_query($queryFirst)),
-                'nextPageUrl' => urldecode($path . http_build_query($queryNext)),
-                'prePageUrl' => urldecode($path . http_build_query($queryPre)),
+                'firstPageUrl' => $this->buildUrl($path, $queryFirst),
+                'nextPageUrl' => $this->buildUrl($path, $queryNext),
+                'prePageUrl' => $this->buildUrl($path, $queryPre),
                 'pageLength' => count($pageData),
                 'totalCount' => $totalCount,
                 'totalPage' => $totalPage
-            ]);
-            $ret->add($item);
+            ];
             $currentPage++;
         }
         return $ret;
+    }
+
+    private function buildUrl($path, $query)
+    {
+        return urldecode($path . http_build_query($query));
     }
 
     /**
