@@ -152,11 +152,11 @@ class AuthenticateWithHeader implements MiddlewareInterface
         $userId = $request->getAttribute('oauth_user_id');
         if (strtolower($method) == 'get') {
             if ($this->isForbidden($userId, $request, $method, $this->apiFreq['get']['freq'])) {
-                throw new \Exception('请求太频繁，请稍后重试');
+                throw new \Exception('操作太频繁，请稍后重试');
             }
         } else {
             if ($this->isForbidden($userId, $request, $method, $this->apiFreq['post']['freq'])) {
-                throw new \Exception('请求太频繁，请稍后重试');
+                throw new \Exception('操作太频繁，请稍后重试');
             }
         }
     }
