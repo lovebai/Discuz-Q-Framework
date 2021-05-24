@@ -45,7 +45,7 @@ class ValidationExceptionHandler implements ExceptionHandlerInterface
         $errors = $this->buildErrors($e->validator->getMessageBag()->messages(), '/data/attributes');
         $errormsg = '';
         foreach ($errors  as $item) {
-            $errormsg .= $item['detail'][0].'\n';
+            $errormsg .= $item['detail'][0].PHP_EOL;
         }
         Utils::outPut(ResponseCode::REGISTER_DECRYPT_CODE_FAILED, $errormsg);
         return new ResponseBag(422, $errors);

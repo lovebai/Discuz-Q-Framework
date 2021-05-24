@@ -44,6 +44,9 @@ class LoginFailedExceptionHandler implements ExceptionHandlerInterface
         $path = Request::capture()->getPathInfo();
         $detail = Str::replaceFirst(':values', $e->getMessage(), app('translator')->get('login.residue_degree'));
         if (strstr($path, 'v2')||strstr($path, 'v3')) {
+            if (empty($e->getMessage())) {
+                Utils::outPut(ResponseCode::LOGIN_FAILED, app('translator')->get('login.login_info_error'));
+            }
             Utils::outPut(ResponseCode::LOGIN_FAILED, $detail);
             return null;
         }

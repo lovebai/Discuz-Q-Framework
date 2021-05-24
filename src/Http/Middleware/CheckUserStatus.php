@@ -69,7 +69,7 @@ class CheckUserStatus implements MiddlewareInterface
         if ($actor->status == User::STATUS_NEED_FIELDS) {
             $path = $request->getUri()->getPath();
             if (!in_array($path, $this->noCheckAction)) {
-                throw new PermissionDeniedException('need_ext_fields');
+//                throw new PermissionDeniedException('need_ext_fields');
             }
         }
         return $handler->handle($request);
