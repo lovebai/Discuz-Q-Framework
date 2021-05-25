@@ -124,7 +124,7 @@ class DzqCache
     }
 
     //未测试,暂不能用
-    public static function exists($key, $hashKey, callable $callBack = null)
+    public static function exists($key, $hashKey, callable $callBack = null, $autoCache = true)
     {
         $cache = app('cache');
         $data = $cache->get($key);
