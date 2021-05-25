@@ -18,7 +18,8 @@
 
 namespace Discuz\Api\Middleware;
 
-use Discuz\Http\DiscuzResponseFactory;
+use App\Common\ResponseCode;
+use Discuz\Common\Utils;
 use Illuminate\Contracts\Routing\UrlGenerator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -39,8 +40,8 @@ class InstallMiddleware implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $status = 500;
-
+        Utils::outPut(ResponseCode::NOT_INSTALL);
+        /*$status = 500;
         return DiscuzResponseFactory::JsonResponse([
             'errors' => [
                 [
@@ -51,6 +52,6 @@ class InstallMiddleware implements MiddlewareInterface
                     ]
                 ]
             ]
-        ], $status);
+        ], $status);*/
     }
 }
