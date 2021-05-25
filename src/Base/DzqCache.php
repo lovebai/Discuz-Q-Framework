@@ -39,7 +39,16 @@ class DzqCache
         }
         return true;
     }
-
+    public static function del2HashKey($key, $hashKey1,$hashKey2)
+    {
+        $cache = app('cache');
+        $data = $cache->get($key);
+        if ($data && array_key_exists($hashKey1, $data) && array_key_exists($hashKey2, $data[$hashKey1])) {
+            unset($data[$hashKey1][$hashKey2]);
+            return app('cache')->put($key, $data);
+        }
+        return true;
+    }
     public static function set($key, $value, $ttl = null)
     {
         if ($ttl) {
@@ -65,7 +74,7 @@ class DzqCache
     public static function hMSet($key, array $value, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
     {
         if (empty($value)) return false;
-        $result = self::hMSetResult($value, $indexField, $mutiColumn, $indexes, $defaultValue);
+        list($result) = self::hMSetResult($value, $indexField, $mutiColumn, $indexes, $defaultValue);
         $data = app('cache')->get($key);
         foreach ($result as $k => $v) {
             $data[$k] = $v;
@@ -75,7 +84,7 @@ class DzqCache
 
     public static function hM2Set($key, array $value, $hashKey, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
     {
-        $result = self::hMSetResult($value, $indexField, $mutiColumn, $indexes, $defaultValue);
+        list($result) = self::hMSetResult($value, $indexField, $mutiColumn, $indexes, $defaultValue);
         $data = app('cache')->get($key);
         $data[$hashKey] = $result;
         return app('cache')->put($key, $data) ? [$hashKey => $result] : false;
@@ -83,24 +92,25 @@ class DzqCache
 
     private static function hMSetResult(array $value, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
     {
-        $result = [];
+        $resultWithNull = [];
         if ($indexField) {
             if ($mutiColumn) {
                 foreach ($value as $item) {
-                    $result[$item[$indexField]][] = $item;
+                    $resultWithNull[$item[$indexField]][] = $item;
                 }
             } else {
-                $result = array_column($value, null, $indexField);
+                $resultWithNull = array_column($value, null, $indexField);
             }
         } else {
-            $result = $value;
+            $resultWithNull = $value;
         }
+        $resultNotNull = $resultWithNull;
         foreach ($indexes as $index) {
-            if (!isset($result[$index])) {
-                $result[$index] = $defaultValue;
+            if (!isset($resultWithNull[$index])) {
+                $resultWithNull[$index] = $defaultValue;
             }
         }
-        return $result;
+        return [$resultWithNull, $resultNotNull];
     }
 
     public static function hGet($key, $hashKey, callable $callBack = null, $autoCache = true)
@@ -148,6 +158,7 @@ class DzqCache
         }
     }
 
+
     public static function exists2($key, $hashKey1, $hashKey2, callable $callBack = null, $autoCache = true)
     {
         $cache = app('cache');
@@ -166,10 +177,8 @@ class DzqCache
         if (!empty($callBack)) {
             $ret = $callBack();
             !$ret && $ret = null;
-            if (!empty($data[$hashKey1])) {
-                $data[$hashKey1][$hashKey2] = $ret;
-                $autoCache && $cache->put($key, $data);
-            }
+            $data[$hashKey1][$hashKey2] = $ret;
+            $autoCache && $cache->put($key, $data);
             return !empty($ret);
         } else {
             return false;
@@ -180,10 +189,12 @@ class DzqCache
      * @param $key
      * @param $hashKeys
      * @param callable|null $callBack
+     * @param null $indexField
+     * @param bool $mutiColumn
      * @param bool $autoCache
      * @return bool|array
      */
-    public static function hMGet($key, $hashKeys, callable $callBack = null, $autoCache = true)
+    public static function hMGet($key, $hashKeys, callable $callBack = null, $indexField = null, $mutiColumn = false, $autoCache = true)
     {
         $cache = app('cache');
         $data = $cache->get($key);
@@ -191,21 +202,25 @@ class DzqCache
         if ($data && self::CACHE_SWICH) {
             foreach ($hashKeys as $hashKey) {
                 if (array_key_exists($hashKey, $data)) {
-                    $ret[$hashKey] = $data[$hashKey];
+                    if (!empty($data[$hashKey])) {
+                        $ret[$hashKey] = $data[$hashKey];
+                    }
                 } else {
                     $ret = false;
                     break;
                 }
             }
         }
-        if ($ret === false && !empty($callBack)) {
+        if (($ret === false || !$data) && !empty($callBack)) {
             $ret = $callBack($hashKeys);
+            list($resultWithNull, $resultNotNull) = self::hMSetResult($ret, $indexField, $mutiColumn, $hashKeys, null);
             if ($autoCache) {
-                foreach ($ret as $k => $v) {
+                foreach ($resultWithNull as $k => $v) {
                     $data[$k] = $v;
                 }
                 $cache->put($key, $data);
             }
+            return $resultNotNull;
         }
         return $ret;
     }
@@ -229,8 +244,8 @@ class DzqCache
         if (($ret === false || !$data) && !empty($callBack)) {
             $ret = $callBack($hashKeys);
             !$data && $data = new  Collection();
-            foreach ($ret as $key => $value) {
-                $data->put($key, $value);
+            foreach ($ret as $k => $v) {
+                $data->put($k, $v);
             }
             $cache->put($key, $data);
         }
@@ -247,8 +262,8 @@ class DzqCache
                 $ret = $data[$hashKey1][$hashKey2];
             }
         }
-        if (($ret === false || !$data) && !empty($callBack)) {
-            $ret = $callBack($hashKey1, $hashKey2);
+        if (($ret === false || !$data) && !empty($callBack) || $preload) {
+            $ret = $callBack();
             !$data && $data = [];
             if ($preload) {
                 $data[$hashKey1] = $ret;
