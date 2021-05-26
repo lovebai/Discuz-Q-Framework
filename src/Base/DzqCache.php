@@ -39,7 +39,8 @@ class DzqCache
         }
         return true;
     }
-    public static function del2HashKey($key, $hashKey1,$hashKey2)
+
+    public static function del2HashKey($key, $hashKey1, $hashKey2)
     {
         $cache = app('cache');
         $data = $cache->get($key);
@@ -49,6 +50,7 @@ class DzqCache
         }
         return true;
     }
+
     public static function set($key, $value, $ttl = null)
     {
         if ($ttl) {
@@ -113,6 +115,14 @@ class DzqCache
         return [$resultWithNull, $resultNotNull];
     }
 
+    /**
+     * @desc 获取一个key下的数据
+     * @param $key
+     * @param $hashKey
+     * @param callable|null $callBack
+     * @param bool $autoCache
+     * @return bool|mixed
+     */
     public static function hGet($key, $hashKey, callable $callBack = null, $autoCache = true)
     {
         $cache = app('cache');
@@ -133,7 +143,15 @@ class DzqCache
         return $ret;
     }
 
-    //未测试,暂不能用
+    /**
+     * @desc 查询数据是否存在
+     * todo 未测试,暂不能用
+     * @param $key
+     * @param $hashKey
+     * @param callable|null $callBack
+     * @param bool $autoCache
+     * @return bool
+     */
     public static function exists($key, $hashKey, callable $callBack = null, $autoCache = true)
     {
         $cache = app('cache');
@@ -159,6 +177,15 @@ class DzqCache
     }
 
 
+    /**
+     * @desc 二级缓存存储数据是否存在的标记
+     * @param $key
+     * @param $hashKey1
+     * @param $hashKey2
+     * @param callable|null $callBack
+     * @param bool $autoCache
+     * @return bool
+     */
     public static function exists2($key, $hashKey1, $hashKey2, callable $callBack = null, $autoCache = true)
     {
         $cache = app('cache');
@@ -186,11 +213,12 @@ class DzqCache
     }
 
     /**
+     * @desc 获取指定hashKey数组的对应数据
      * @param $key
      * @param $hashKeys
      * @param callable|null $callBack
-     * @param null $indexField
-     * @param bool $mutiColumn
+     * @param null $indexField 数据转换的字段
+     * @param bool $mutiColumn 每个字段下的数据是否保留多个
      * @param bool $autoCache
      * @return bool|array
      */
@@ -225,6 +253,14 @@ class DzqCache
         return $ret;
     }
 
+    /**
+     * @desc 附件数据获取
+     * todo 后续去除模型传递，废除该方法
+     * @param $key
+     * @param array $hashKeys
+     * @param callable|null $callBack
+     * @return bool|Collection
+     */
     public static function hMGetCollection($key, array $hashKeys, callable $callBack = null)
     {
         $cache = app('cache');
@@ -252,6 +288,15 @@ class DzqCache
         return $ret;
     }
 
+    /**
+     * @desc 帖子列表二级缓存和预加载
+     * @param $key
+     * @param $hashKey1
+     * @param $hashKey2
+     * @param callable|null $callBack
+     * @param bool $preload
+     * @return bool|mixed
+     */
     public static function hM2Get($key, $hashKey1, $hashKey2, callable $callBack = null, $preload = false)
     {
         $cache = app('cache');
@@ -262,7 +307,7 @@ class DzqCache
                 $ret = $data[$hashKey1][$hashKey2];
             }
         }
-        if (($ret === false || !$data) && !empty($callBack) || $preload) {
+        if (($ret === false || !$data) && !empty($callBack)) {
             $ret = $callBack();
             !$data && $data = [];
             if ($preload) {
