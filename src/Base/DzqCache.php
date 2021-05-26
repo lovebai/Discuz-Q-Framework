@@ -90,29 +90,6 @@ class DzqCache
         return self::set($key, $data) ? [$hashKey => $result] : false;
     }
 
-    private static function hMSetResult($values, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
-    {
-        $resultWithNull = [];
-        if ($indexField) {
-            if ($mutiColumn) {
-                foreach ($values as $item) {
-                    $resultWithNull[$item[$indexField]][] = $item;
-                }
-            } else {
-                $resultWithNull = array_column($values, null, $indexField);
-            }
-        } else {
-            $resultWithNull = $values;
-        }
-        $resultNotNull = $resultWithNull;
-        foreach ($indexes as $index) {
-            if (!isset($resultWithNull[$index])) {
-                $resultWithNull[$index] = $defaultValue;
-            }
-        }
-        return [$resultWithNull, $resultNotNull];
-    }
-
     /**
      * @desc 获取一个key下的数据
      * @param $key
@@ -311,6 +288,29 @@ class DzqCache
             self::set($key, $data);
         }
         return $ret;
+    }
+
+    private static function hMSetResult($values, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
+    {
+        $resultWithNull = [];
+        if ($indexField) {
+            if ($mutiColumn) {
+                foreach ($values as $item) {
+                    $resultWithNull[$item[$indexField]][] = $item;
+                }
+            } else {
+                $resultWithNull = array_column($values, null, $indexField);
+            }
+        } else {
+            $resultWithNull = $values;
+        }
+        $resultNotNull = $resultWithNull;
+        foreach ($indexes as $index) {
+            if (!isset($resultWithNull[$index])) {
+                $resultWithNull[$index] = $defaultValue;
+            }
+        }
+        return [$resultWithNull, $resultNotNull];
     }
 
 }
