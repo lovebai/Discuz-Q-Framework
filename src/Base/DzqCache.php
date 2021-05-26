@@ -84,7 +84,7 @@ class DzqCache
         return app('cache')->put($key, $data) ? $result : false;
     }
 
-    public static function hM2Set($key, $values, $hashKey, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
+    public static function hM2Set($key, $hashKey, array $values, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
     {
         list($result) = self::hMSetResult($values, $indexField, $mutiColumn, $indexes, $defaultValue);
         $data = app('cache')->get($key);
