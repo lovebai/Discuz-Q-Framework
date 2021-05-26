@@ -84,27 +84,27 @@ class DzqCache
         return app('cache')->put($key, $data) ? $result : false;
     }
 
-    public static function hM2Set($key, array $value, $hashKey, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
+    public static function hM2Set($key, $values, $hashKey, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
     {
-        list($result) = self::hMSetResult($value, $indexField, $mutiColumn, $indexes, $defaultValue);
+        list($result) = self::hMSetResult($values, $indexField, $mutiColumn, $indexes, $defaultValue);
         $data = app('cache')->get($key);
         $data[$hashKey] = $result;
         return app('cache')->put($key, $data) ? [$hashKey => $result] : false;
     }
 
-    private static function hMSetResult(array $value, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
+    private static function hMSetResult($values, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
     {
         $resultWithNull = [];
         if ($indexField) {
             if ($mutiColumn) {
-                foreach ($value as $item) {
+                foreach ($values as $item) {
                     $resultWithNull[$item[$indexField]][] = $item;
                 }
             } else {
-                $resultWithNull = array_column($value, null, $indexField);
+                $resultWithNull = array_column($values, null, $indexField);
             }
         } else {
-            $resultWithNull = $value;
+            $resultWithNull = $values;
         }
         $resultNotNull = $resultWithNull;
         foreach ($indexes as $index) {
