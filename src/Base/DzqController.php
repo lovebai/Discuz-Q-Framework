@@ -67,7 +67,6 @@ abstract class DzqController implements RequestHandlerInterface
         if (!$this->checkRequestPermissions(app(UserRepository::class))) {
             if ($this->user->id == 0) {
                 $this->outPut(ResponseCode::JUMP_TO_LOGIN, '没有登陆');
-                return;
             } else {
                 throw new PermissionDeniedException('没有权限');
             }
