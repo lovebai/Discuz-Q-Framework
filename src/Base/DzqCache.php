@@ -18,6 +18,7 @@
 namespace Discuz\Base;
 
 
+use App\Common\CacheKey;
 use Illuminate\Database\Eloquent\Collection;
 
 class DzqCache
@@ -100,7 +101,7 @@ class DzqCache
      */
     public static function hGet($key, $hashKey, callable $callBack = null, $autoCache = true)
     {
-        $data = self::get($key);
+        $data = self::getAppCache($key, $hasCache, $cacheData);
         $ret = false;
         if ($data && self::CACHE_SWICH) {
             if (array_key_exists($hashKey, $data)) {
@@ -112,9 +113,30 @@ class DzqCache
             if ($autoCache) {
                 $data[$hashKey] = $ret;
                 self::set($key, $data);
+                $hasCache && self::setAppCache($key, $data, $cacheData);
             }
         }
         return $ret;
+    }
+
+    private static function getAppCache($key, &$hasCache, &$cacheData = [])
+    {
+        $data = null;
+        $hasCache = app()->has(CacheKey::APP_CACHE);
+        if ($hasCache) {
+            $cacheData = app()->get(CacheKey::APP_CACHE);
+            $data = $cacheData[$key] ?? null;
+        }
+        if (empty($data)) {
+            $data = self::get($key);
+        }
+        return $data;
+    }
+
+    private static function setAppCache($key, $data, $cacheData)
+    {
+        $cacheData[$key] = $data;
+        app()->instance(CacheKey::APP_CACHE, $cacheData);
     }
 
     /**
@@ -161,7 +183,7 @@ class DzqCache
      */
     public static function exists2($key, $hashKey1, $hashKey2, callable $callBack = null, $autoCache = true)
     {
-        $data = self::get($key);
+        $data = self::getAppCache($key, $hasCache, $cacheData);
         if ($data && self::CACHE_SWICH) {
             if (!empty($data[$hashKey1])) {
                 if (array_key_exists($hashKey2, $data[$hashKey1])) {
@@ -177,6 +199,7 @@ class DzqCache
             $ret = $callBack();
             !$ret && $ret = null;
             $data[$hashKey1][$hashKey2] = $ret;
+            $hasCache && self::setAppCache($key, $data, $cacheData);
             $autoCache && self::set($key, $data);
             return !empty($ret);
         } else {
@@ -234,7 +257,7 @@ class DzqCache
      */
     public static function hMGetCollection($key, array $hashKeys, callable $callBack = null)
     {
-        $data = self::get($key);
+        $data = self::getAppCache($key, $hasCache, $cacheData);
         $ret = false;
         if ($data && self::CACHE_SWICH) {
             $ret = new  Collection();
@@ -253,6 +276,7 @@ class DzqCache
             foreach ($ret as $k => $v) {
                 $data->put($k, $v);
             }
+            $hasCache && self::setAppCache($key, $data, $cacheData);
             self::set($key, $data);
         }
         return $ret;
