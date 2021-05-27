@@ -64,12 +64,12 @@ abstract class DzqController implements RequestHandlerInterface
         $this->user = $request->getAttribute('actor');
         $this->c9IbQHXVFFWu($this->user);//添加辅助函数
 
-        if (!$this->checkRequestPermissions(app(UserRepository::class))) {
-            if ($this->user->id == 0) {
-                $this->outPut(ResponseCode::JUMP_TO_LOGIN, '没有登陆');
-            } else {
+        try {
+            if (!$this->checkRequestPermissions(app(UserRepository::class))) {
                 throw new PermissionDeniedException('没有权限');
             }
+        } catch (PermissionDeniedException $e) {
+            $this->outPut(ResponseCode::UNAUTHORIZED, $e->getMessage());
         }
 
         $this->main();
@@ -253,9 +253,7 @@ abstract class DzqController implements RequestHandlerInterface
      */
     public function camelData($arr, $ucfirst = false)
     {
-        if (is_object($arr) && is_callable([$arr, 'toArray'])) {
-            $arr = $arr->toArray();
-        }
+        if (is_object($arr) && is_callable([$arr, 'toArray'])) $arr = $arr->toArray();
         if (!is_array($arr)) {
             //如果非数组原样返回
             return $arr;
@@ -263,13 +261,12 @@ abstract class DzqController implements RequestHandlerInterface
         $temp = [];
         foreach ($arr as $key => $value) {
             $key1 = Str::camel($key);           // foo_bar  --->  fooBar
-            if ($ucfirst) {
-                $key1 = Str::ucfirst($key1);
-            }
+            if ($ucfirst) $key1 = Str::ucfirst($key1);
             $value1 = self::camelData($value);
             $temp[$key1] = $value1;
         }
         return $temp;
+
     }
 
     public function info($tag, $params = [])
