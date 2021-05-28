@@ -50,7 +50,10 @@ abstract class SimpleMessage
 
     protected function getVars()
     {
-        return array_keys(unserialize($this->firstData->vars));
+        if (!empty($this->firstData->vars)) {
+            return array_keys(unserialize($this->firstData->vars));
+        }
+        return [];
     }
 
     protected function getTitle()
