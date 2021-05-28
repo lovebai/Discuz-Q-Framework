@@ -119,26 +119,6 @@ class DzqCache
         return $ret;
     }
 
-    private static function getAppCache($key, &$hasCache, &$cacheData = [])
-    {
-        $data = null;
-        $hasCache = app()->has(CacheKey::APP_CACHE);
-        if ($hasCache) {
-            $cacheData = app()->get(CacheKey::APP_CACHE);
-            $data = $cacheData[$key] ?? null;
-        }
-        if (empty($data)) {
-            $data = self::get($key);
-        }
-        return $data;
-    }
-
-    private static function setAppCache($key, $data, $cacheData)
-    {
-        $cacheData[$key] = $data;
-        app()->instance(CacheKey::APP_CACHE, $cacheData);
-    }
-
     /**
      * @desc 查询数据是否存在
      * todo 未测试,暂不能用
@@ -335,6 +315,26 @@ class DzqCache
             }
         }
         return [$resultWithNull, $resultNotNull];
+    }
+
+    private static function getAppCache($key, &$hasCache, &$cacheData = [])
+    {
+        $data = null;
+        $hasCache = app()->has(CacheKey::APP_CACHE);
+        if ($hasCache) {
+            $cacheData = app()->get(CacheKey::APP_CACHE);
+            $data = $cacheData[$key] ?? null;
+        }
+        if (empty($data)) {
+            $data = self::get($key);
+        }
+        return $data;
+    }
+
+    private static function setAppCache($key, $data, $cacheData)
+    {
+        $cacheData[$key] = $data;
+        app()->instance(CacheKey::APP_CACHE, $cacheData);
     }
 
 }
