@@ -84,7 +84,7 @@ abstract class DzqController implements RequestHandlerInterface
      */
     protected function checkRequestPermissions(UserRepository $userRepo)
     {
-        // TODO 权限改完后，改为默认 false
+        \App\Common\Utils::logOldPermissionPosition(__METHOD__);
         return true;
     }
 
