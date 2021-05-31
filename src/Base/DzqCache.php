@@ -74,21 +74,13 @@ class DzqCache
 
     public static function hMSet($key, array $value, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
     {
-        if (empty($value)) return false;
+//        if (empty($value)) return false;
         list($result) = self::hMSetResult($value, $indexField, $mutiColumn, $indexes, $defaultValue);
         $data = self::get($key);
         foreach ($result as $k => $v) {
             $data[$k] = $v;
         }
         return self::set($key, $data) ? $result : false;
-    }
-
-    public static function hM2Set($key, $hashKey, array $values, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
-    {
-        list($result) = self::hMSetResult($values, $indexField, $mutiColumn, $indexes, $defaultValue);
-        $data = self::get($key);
-        $data[$hashKey] = $result;
-        return self::set($key, $data) ? [$hashKey => $result] : false;
     }
 
     /**
@@ -121,7 +113,6 @@ class DzqCache
 
     /**
      * @desc 查询数据是否存在
-     * todo 未测试,暂不能用
      * @param $key
      * @param $hashKey
      * @param callable|null $callBack
@@ -130,7 +121,7 @@ class DzqCache
      */
     public static function exists($key, $hashKey, callable $callBack = null, $autoCache = true)
     {
-        $data = self::get($key);
+        $data = self::getAppCache($key, $hasCache, $cacheData);
         if ($data && self::CACHE_SWICH) {
             if (array_key_exists($hashKey, $data)) {
                 if (empty($data[$hashKey])) {
@@ -144,41 +135,6 @@ class DzqCache
             $ret = $callBack();
             !$ret && $ret = null;
             $data[$hashKey] = $ret;
-            $autoCache && self::set($key, $data);
-            return !empty($ret);
-        } else {
-            return false;
-        }
-    }
-
-
-    /**
-     * @desc 二级缓存存储数据是否存在的标记
-     * @param $key
-     * @param $hashKey1
-     * @param $hashKey2
-     * @param callable|null $callBack
-     * @param bool $autoCache
-     * @return bool
-     */
-    public static function exists2($key, $hashKey1, $hashKey2, callable $callBack = null, $autoCache = true)
-    {
-        $data = self::getAppCache($key, $hasCache, $cacheData);
-        if ($data && self::CACHE_SWICH) {
-            if (!empty($data[$hashKey1])) {
-                if (array_key_exists($hashKey2, $data[$hashKey1])) {
-                    if (empty($data[$hashKey1][$hashKey2])) {
-                        return false;
-                    } else {
-                        return true;
-                    }
-                }
-            }
-        }
-        if (!empty($callBack)) {
-            $ret = $callBack();
-            !$ret && $ret = null;
-            $data[$hashKey1][$hashKey2] = $ret;
             $hasCache && self::setAppCache($key, $data, $cacheData);
             $autoCache && self::set($key, $data);
             return !empty($ret);
