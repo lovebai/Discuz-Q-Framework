@@ -84,7 +84,7 @@ abstract class DzqController implements RequestHandlerInterface
      */
     protected function checkRequestPermissions(UserRepository $userRepo)
     {
-        // TODO 权限改完后，改为默认 false
+        \App\Common\Utils::logOldPermissionPosition(__METHOD__);
         return true;
     }
 
@@ -148,7 +148,9 @@ abstract class DzqController implements RequestHandlerInterface
             $validate = app('validator');
             $validate->validate($inputArray, $rules);
         } catch (\Exception $e) {
-            $this->outPut(ResponseCode::INVALID_PARAMETER, $e->getMessage());
+            $validate_error = $e->validator->errors()->first();
+            $error_message = !empty($validate_error) ? $validate_error : $e->getMessage();
+            $this->outPut(ResponseCode::INVALID_PARAMETER, $error_message);
         }
     }
 

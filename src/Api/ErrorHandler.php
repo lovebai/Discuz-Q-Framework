@@ -68,7 +68,9 @@ class ErrorHandler extends DzqBase
                         $this->outPut(ResponseCode::UNAUTHORIZED,$e->getMessage());
                         break;
                     default:
-                        $this->outPut(ResponseCode::UNKNOWN_ERROR,$e->getMessage());
+                        $validate_error = $e->validator->errors()->first();
+                        $error_message = !empty($validate_error) ? $validate_error : $e->getMessage();
+                        $this->outPut(ResponseCode::UNKNOWN_ERROR,$error_message);
                         break;
                 }
             }
