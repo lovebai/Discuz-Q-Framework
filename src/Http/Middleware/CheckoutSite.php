@@ -103,20 +103,20 @@ class CheckoutSite implements MiddlewareInterface
     private function checkPayMode($request, $actor)
     {
         $siteMode = $this->settings->get('site_mode');
-        $apiPath = $request->getUri()->getPath();
-        $api = str_replace(['/apiv3', '/api'], '', $apiPath);
         if ($siteMode == "public") {
-            return false;
+            return;
         }
         if ($actor->isAdmin()) {
-            return false;
+            return;
         }
-        //已付费未到期
+        //普通会员已付费未到期
         if (strtotime($actor->expired_at) > time()) {
-            return false;
+            return;
         }
         $sitePrice = $this->settings->get('site_price');
         $siteExpire = $this->settings->get('site_expire');
+        $apiPath = $request->getUri()->getPath();
+        $api = str_replace(['/apiv3', '/api'], '', $apiPath);
         if (!in_array($api, $this->noCheckPayMode)) {
             Utils::outPut(ResponseCode::JUMP_TO_PAY_SITE, '', [
                 'expiredAt' => !empty($actor->expired_at) ? date('Y-m-d H:i:s', strtotime($actor->expired_at)) : null,
