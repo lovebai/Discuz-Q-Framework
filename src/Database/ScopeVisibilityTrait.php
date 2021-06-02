@@ -32,6 +32,7 @@ trait ScopeVisibilityTrait
      */
     public function scopeWhereVisibleTo(Builder $query, User $actor)
     {
+        \App\Common\Utils::logOldPermissionPosition(__METHOD__);
         static::$dispatcher->dispatch(
             new ScopeModelVisibility($query, $actor, 'view')
         );
