@@ -27,7 +27,7 @@ class DzqCache
 
     const CACHE_TTL = true;
 
-    public static function set($key, $value)
+    public static function set($key, $value, $ttl = 0)
     {
         if (self::CACHE_TTL) {
             return app('cache')->put($key, $value, 60 * 60);
@@ -47,19 +47,14 @@ class DzqCache
 
     public static function delHashKey($key, $hashKey)
     {
+        if (isset(CacheKey::$fileStore[$key])) {
+            $count = CacheKey::$fileStore[$key];
+            $fileId = intval($hashKey) % $count;
+            $key = $key . $fileId;
+        }
         $data = self::get($key);
         if ($data && array_key_exists($hashKey, $data)) {
             unset($data[$hashKey]);
-            return self::set($key, $data);
-        }
-        return true;
-    }
-
-    public static function del2HashKey($key, $hashKey1, $hashKey2)
-    {
-        $data = self::get($key);
-        if ($data && array_key_exists($hashKey1, $data) && array_key_exists($hashKey2, $data[$hashKey1])) {
-            unset($data[$hashKey1][$hashKey2]);
             return self::set($key, $data);
         }
         return true;
@@ -74,13 +69,29 @@ class DzqCache
 
     public static function hMSet($key, array $value, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
     {
-//        if (empty($value)) return false;
         list($result) = self::hMSetResult($value, $indexField, $mutiColumn, $indexes, $defaultValue);
-        $data = self::get($key);
-        foreach ($result as $k => $v) {
-            $data[$k] = $v;
+        if (isset(CacheKey::$fileStore[$key])) {
+            $count = CacheKey::$fileStore[$key];
+            $resFileId = [];
+            foreach ($result as $k1 => $v1) {
+                $fileId = $k1 % $count;
+                $resFileId[$fileId][$k1] = $v1;
+            }
+            foreach ($resFileId as $fileId => $res) {
+                $cacheKey = $key . $fileId;
+                $data = self::get($cacheKey);
+                foreach ($res as $k => $v) {
+                    $data[$k] = $v;
+                }
+                self::set($cacheKey, $data);
+            }
+        } else {
+            $data = self::get($key);
+            foreach ($result as $k => $v) {
+                $data[$k] = $v;
+            }
         }
-        return self::set($key, $data) ? $result : false;
+        return $result;
     }
 
     /**
@@ -155,28 +166,81 @@ class DzqCache
      */
     public static function hMGet($key, $hashKeys, callable $callBack = null, $indexField = null, $mutiColumn = false, $autoCache = true)
     {
-        $data = self::get($key);
-        $ret = false;
-        if ($data && self::CACHE_SWICH) {
-            foreach ($hashKeys as $hashKey) {
-                if (array_key_exists($hashKey, $data)) {
-                    if (!empty($data[$hashKey])) {
-                        $ret[$hashKey] = $data[$hashKey];
+
+        if (isset(CacheKey::$fileStore[$key])) {
+            $count = CacheKey::$fileStore[$key];
+            $resFileId = [];
+            foreach ($hashKeys as $k) {
+                $fileId = $k % $count;
+                $resFileId[$fileId][] = $k;
+            }
+            $ret = false;
+            foreach ($resFileId as $fileId => $keys) {
+                $cacheKey = $key . $fileId;
+                $data = self::get($cacheKey);
+                if (!$data) {
+                    break;
+                }
+                $dataError = false;
+                if ($data && self::CACHE_SWICH) {
+                    foreach ($keys as $hashKey) {
+                        if (array_key_exists($hashKey, $data)) {
+                            if (!empty($data[$hashKey])) {
+                                $ret[$hashKey] = $data[$hashKey];
+                            }
+                        } else {
+                            $dataError = true;
+                            break;
+                        }
                     }
-                } else {
+                }
+                if ($dataError) {
                     $ret = false;
                     break;
                 }
             }
+        } else {
+            $data = self::get($key);
+            $ret = false;
+            if ($data && self::CACHE_SWICH) {
+                foreach ($hashKeys as $hashKey) {
+                    if (array_key_exists($hashKey, $data)) {
+                        if (!empty($data[$hashKey])) {
+                            $ret[$hashKey] = $data[$hashKey];
+                        }
+                    } else {
+                        $ret = false;
+                        break;
+                    }
+                }
+            }
         }
-        if (($ret === false || !$data) && !empty($callBack)) {
+        if ($ret === false && !empty($callBack)) {
             $ret = $callBack($hashKeys);
             list($resultWithNull, $resultNotNull) = self::hMSetResult($ret, $indexField, $mutiColumn, $hashKeys, null);
             if ($autoCache) {
-                foreach ($resultWithNull as $k => $v) {
-                    $data[$k] = $v;
+                if (isset(CacheKey::$fileStore[$key])) {
+                    $count = CacheKey::$fileStore[$key];
+                    $resFileId = [];
+                    foreach ($resultWithNull as $k1 => $v1) {
+                        $fileId = $k1 % $count;
+                        $resFileId[$fileId][$k1] = $v1;
+                    }
+                    foreach ($resFileId as $fileId => $res) {
+                        $cacheKey = $key . $fileId;
+                        $data = self::get($cacheKey);
+                        foreach ($res as $k => $v) {
+                            $data[$k] = $v;
+                        }
+                        self::set($cacheKey, $data);
+                    }
+                } else {
+                    $data = self::get($key);
+                    foreach ($resultWithNull as $k => $v) {
+                        $data[$k] = $v;
+                    }
+                    self::set($key, $data);
                 }
-                self::set($key, $data);
             }
             return $resultNotNull;
         }
