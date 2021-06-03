@@ -64,7 +64,10 @@ class CheckoutSite implements MiddlewareInterface
         '/user/bind-nickname', // 绑定昵称
         '/my', // 个人中心
         '/forum/partner-invite', // 站点加入
-        '/forum'
+        '/forum',
+        '/users.list',
+        '/thread.list',
+        '/invite.detail'
     ];
 
     public function __construct(Application $app, SettingsRepository $settings)
