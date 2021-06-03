@@ -90,6 +90,7 @@ class DzqCache
             foreach ($result as $k => $v) {
                 $data[$k] = $v;
             }
+            self::set($key, $data);
         }
         return $result;
     }
