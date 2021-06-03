@@ -17,7 +17,6 @@
 
 namespace Discuz\Base;
 
-use App\Common\CacheKey;
 use App\Common\ResponseCode;
 use App\Repositories\UserRepository;
 use DateTime;
@@ -189,14 +188,14 @@ abstract class DzqController implements RequestHandlerInterface
         ];
     }
 
-    public function preloadPaginiation($pageCount, $perPage, \Illuminate\Database\Eloquent\Builder $builder, $toArray = true)
+    public function preloadPaginiation($pageCount, $perPage, \Illuminate\Database\Eloquent\Builder $builder)
     {
         $perPage = $perPage >= 1 ? intval($perPage) : 20;
         $perPageMax = 50;
         $perPage > $perPageMax && $perPage = $perPageMax;
         $count = $builder->count();
         $builder = $builder->offset(0)->limit($pageCount * $perPage)->get();
-        $builder = $toArray ? $builder->toArray() : $builder;
+        $builder = $builder->toArray();
         $url = $this->request->getUri();
         $port = $url->getPort();
         $port = $port == null ? '' : ':' . $port;
@@ -212,7 +211,7 @@ abstract class DzqController implements RequestHandlerInterface
             $queryNext['page'] = $currentPage + 1;
             $queryPre['page'] = $currentPage <= 1 ? 1 : $currentPage - 1;
             $path = $url->getScheme() . '://' . $url->getHost() . $port . $url->getPath() . '?';
-            $pageData = array_slice($builder, ($currentPage - 1) * $perPage, $perPage);
+            $pageData = (array)array_slice($builder, ($currentPage - 1) * $perPage, $perPage);
             $ret[$currentPage] = [
                 'pageData' => $pageData,
                 'currentPage' => $currentPage,
