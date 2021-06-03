@@ -232,6 +232,42 @@ abstract class DzqController implements RequestHandlerInterface
         return $ret;
     }
 
+    /*
+     * 针对特殊数据分页
+     */
+    public function specialPagination($page, $perPage, $builder, $toArray = true)
+    {
+        $page = $page >= 1 ? intval($page) : 1;
+        $perPageMax = 50;
+        $perPage = $perPage >= 1 ? intval($perPage) : 20;
+        $perPage > $perPageMax && $perPage = $perPageMax;
+        $count = is_object($builder) ? $builder->count() : count($builder) ;
+        $builder = is_object($builder) ? $builder->skip(($page - 1) * $perPage)->take($perPage) : array_slice($builder,($page - 1) * $perPage, $perPage);
+        $builder = is_object($builder) ? $toArray ? $builder->toArray() : $builder : $builder;
+        $url = $this->request->getUri();
+        $port = $url->getPort();
+        $port = $port == null ? '' : ':' . $port;
+        parse_str($url->getQuery(), $query);
+        $queryFirst = $queryNext = $queryPre = $query;
+        $queryFirst['page'] = 1;
+        $queryNext['page'] = $page + 1;
+        $queryPre['page'] = $page <= 1 ? 1 : $page - 1;
+
+        $path = $url->getScheme() . '://' . $url->getHost() . $port . $url->getPath() . '?';
+        return [
+            'pageData' => $builder,
+            'currentPage' => $page,
+            'perPage' => $perPage,
+            'firstPageUrl' => $this->buildUrl($path, $queryFirst),
+            'nextPageUrl' => $this->buildUrl($path, $queryNext),
+            'prePageUrl' => $this->buildUrl($path, $queryPre),
+            'pageLength' => count($builder),
+            'totalCount' => $count,
+            'totalPage' => $count % $perPage == 0 ? $count / $perPage : intval($count / $perPage) + 1
+        ];
+    }
+
+
     private function buildUrl($path, $query)
     {
         return urldecode($path . http_build_query($query));
