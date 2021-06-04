@@ -44,9 +44,21 @@ class CheckoutSite implements MiddlewareInterface
     protected $settings;
 
     private $noCheckPayMode = [
+        'user',
         'forum',
         'thread.list',
         'invite.detail',
+        'users.list',
+        'order.create',
+        'trade/pay/order',
+        'order.detail',
+        'wallet/cash',
+        'wallet/log',
+        'wallet/user',
+        'categories',
+        'thread.stick',
+        'tom.permissions',
+        'thread.recommends'
     ];
 
     public function __construct(Application $app, SettingsRepository $settings)
@@ -95,17 +107,10 @@ class CheckoutSite implements MiddlewareInterface
         if (strtotime($actor->expired_at) > time()) {
             return;
         }
-        $sitePrice = $this->settings->get('site_price');
-        $siteExpire = $this->settings->get('site_expire');
         $apiPath = $request->getUri()->getPath();
         $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
-
         if (!in_array($api, $this->noCheckPayMode) && !(strpos($api, 'users') === 0)) {
-//            Utils::outPut(ResponseCode::JUMP_TO_PAY_SITE, '', [
-//                'expiredAt' => !empty($actor->expired_at) ? date('Y-m-d H:i:s', strtotime($actor->expired_at)) : null,
-//                'sitePrice' => $sitePrice,
-//                'siteExpire' => $siteExpire
-//            ]);
+            Utils::outPut(ResponseCode::UNAUTHORIZED);
         }
     }
 
