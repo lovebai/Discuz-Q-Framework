@@ -163,6 +163,7 @@ class Gate implements GateContract
      */
     public function allows($ability, $arguments = [])
     {
+        \App\Common\Utils::logOldPermissionPosition(__METHOD__);
         return $this->check($ability, $arguments);
     }
 
