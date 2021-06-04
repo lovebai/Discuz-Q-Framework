@@ -101,11 +101,11 @@ class CheckoutSite implements MiddlewareInterface
         $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
 
         if (!in_array($api, $this->noCheckPayMode) && !(strpos($api, 'users') === 0)) {
-            Utils::outPut(ResponseCode::JUMP_TO_PAY_SITE, '', [
-                'expiredAt' => !empty($actor->expired_at) ? date('Y-m-d H:i:s', strtotime($actor->expired_at)) : null,
-                'sitePrice' => $sitePrice,
-                'siteExpire' => $siteExpire
-            ]);
+//            Utils::outPut(ResponseCode::JUMP_TO_PAY_SITE, '', [
+//                'expiredAt' => !empty($actor->expired_at) ? date('Y-m-d H:i:s', strtotime($actor->expired_at)) : null,
+//                'sitePrice' => $sitePrice,
+//                'siteExpire' => $siteExpire
+//            ]);
         }
     }
 
