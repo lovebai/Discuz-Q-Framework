@@ -44,30 +44,9 @@ class CheckoutSite implements MiddlewareInterface
     protected $settings;
 
     private $noCheckPayMode = [
-        '/user/login', // 登录中转
-        '/user/wx-auth', // 登录中转
-        '/user/phone-login', // 手机登录
-        '/user/username-login', // 用户名登录
-        '/user/wx-login', // 微信登录
-        '/user/wx-authorization', // 微信授权
-        '/user/wx-bind', // 微信绑定
-        '/user/wx-bind-phone', // 微信绑定手机号
-        '/user/wx-bind-qrcode', // 扫码绑定微信
-        '/user/wx-bind-username', // 微信用户名绑定
-        '/user/wx-select', // 微信落地页
-        '/user/register', // 注册
-        '/user/status', // 状态
-        '/user/supplementary', // 补充信息
-        '/user/reset-password', // 找回密码
-        '/user/agreement', // 协议
-        '/user/bind-phone', // 绑定手机号
-        '/user/bind-nickname', // 绑定昵称
-        '/my', // 个人中心
-        '/forum/partner-invite', // 站点加入
-        '/forum',
-        '/users.list',
-        '/thread.list',
-        '/invite.detail'
+        'forum',
+        'thread.list',
+        'invite.detail',
     ];
 
     public function __construct(Application $app, SettingsRepository $settings)
@@ -119,8 +98,9 @@ class CheckoutSite implements MiddlewareInterface
         $sitePrice = $this->settings->get('site_price');
         $siteExpire = $this->settings->get('site_expire');
         $apiPath = $request->getUri()->getPath();
-        $api = str_replace(['/apiv3', '/api'], '', $apiPath);
-        if (!in_array($api, $this->noCheckPayMode)) {
+        $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
+
+        if (!in_array($api, $this->noCheckPayMode) && !(strpos($api, 'users') === 0)) {
             Utils::outPut(ResponseCode::JUMP_TO_PAY_SITE, '', [
                 'expiredAt' => !empty($actor->expired_at) ? date('Y-m-d H:i:s', strtotime($actor->expired_at)) : null,
                 'sitePrice' => $sitePrice,
