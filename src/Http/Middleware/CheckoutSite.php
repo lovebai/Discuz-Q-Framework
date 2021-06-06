@@ -46,6 +46,7 @@ class CheckoutSite implements MiddlewareInterface
     private $noCheckPayMode = [
         'user',
         'forum',
+        'follow',
         'thread.list',
         'invite.detail',
         'users.list',
