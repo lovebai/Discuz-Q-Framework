@@ -59,7 +59,9 @@ class CheckoutSite implements MiddlewareInterface
         'categories',
         'thread.stick',
         'tom.permissions',
-        'thread.recommends'
+        'thread.recommends',
+        'trade/notify/wechat',
+        'threads/notify/video'
     ];
 
     public function __construct(Application $app, SettingsRepository $settings)
