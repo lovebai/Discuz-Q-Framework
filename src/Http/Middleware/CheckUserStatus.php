@@ -18,6 +18,7 @@
 
 namespace Discuz\Http\Middleware;
 
+use App\Common\ResponseCode;
 use App\Models\User;
 use App\Models\UserSignInFields;
 use Discuz\Auth\Exception\PermissionDeniedException;
@@ -46,30 +47,32 @@ class CheckUserStatus implements MiddlewareInterface
         $actor = $request->getAttribute('actor');
         // 被禁用的用户
         if ($actor->status == User::STATUS_BAN) {
-            throw new PermissionDeniedException('ban_user');
+            Utils::outPut(ResponseCode::USER_BAN);
         }
         // 审核中的用户
         if ($actor->status == User::STATUS_MOD) {
             $path = $request->getUri()->getPath();
             if (!in_array($path, $this->noCheckAction)) {
-                $this->exceptionResponse($actor->id,'register_validate');
+                Utils::outPut(ResponseCode::JUMP_TO_AUDIT);
             }
         }
         // 审核拒绝
         if ($actor->status == User::STATUS_REFUSE) {
-            $this->exceptionResponse($actor->id,'validate_reject');
-
-//            throw new PermissionDeniedException('validate_reject');
+            Utils::outPut(ResponseCode::VALIDATE_REJECT,
+                          ResponseCode::$codeMap[ResponseCode::VALIDATE_REJECT],
+                          User::getUserReject($user->id)
+            );
+//            $this->exceptionResponse($actor->id,'validate_reject');
         }
         // 审核忽略
         if ($actor->status == User::STATUS_IGNORE) {
-            throw new PermissionDeniedException('validate_ignore');
+            Utils::outPut(ResponseCode::VALIDATE_IGNORE);
         }
         // 待填写扩展审核字段的用户
         if ($actor->status == User::STATUS_NEED_FIELDS) {
             $path = $request->getUri()->getPath();
             if (!in_array($path, $this->noCheckAction)) {
-//                throw new PermissionDeniedException('need_ext_fields');
+//                Utils::outPut(ResponseCode::USER_NEED_SIGNIN_FIELDS);
             }
         }
         return $handler->handle($request);
