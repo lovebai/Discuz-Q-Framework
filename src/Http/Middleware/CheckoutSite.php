@@ -112,7 +112,7 @@ class CheckoutSite implements MiddlewareInterface
         }
         $apiPath = $request->getUri()->getPath();
         $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
-        if (!in_array($api, $this->noCheckPayMode) && !(strpos($api, 'users') === 0)) {
+        if (!in_array($api, $this->noCheckPayMode) && !(strpos($api, 'users') === 0) && !(strpos($api, 'backAdmin') === 0)) {
             Utils::outPut(ResponseCode::UNAUTHORIZED);
         }
     }
