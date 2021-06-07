@@ -46,6 +46,7 @@ class CheckoutSite implements MiddlewareInterface
     private $noCheckPayMode = [
         'user',
         'forum',
+        'follow',
         'thread.list',
         'invite.detail',
         'users.list',
@@ -58,7 +59,9 @@ class CheckoutSite implements MiddlewareInterface
         'categories',
         'thread.stick',
         'tom.permissions',
-        'thread.recommends'
+        'thread.recommends',
+        'trade/notify/wechat',
+        'threads/notify/video'
     ];
 
     public function __construct(Application $app, SettingsRepository $settings)
@@ -109,7 +112,7 @@ class CheckoutSite implements MiddlewareInterface
         }
         $apiPath = $request->getUri()->getPath();
         $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
-        if (!in_array($api, $this->noCheckPayMode) && !(strpos($api, 'users') === 0)) {
+        if (!in_array($api, $this->noCheckPayMode) && !(strpos($api, 'users') === 0) && !(strpos($api, 'backAdmin') === 0)) {
             Utils::outPut(ResponseCode::UNAUTHORIZED);
         }
     }
