@@ -338,6 +338,34 @@ class DzqCache
         return [$resultWithNull, $resultNotNull];
     }
 
+    /**
+     * @desc 缓存分片存储
+     * @param $key
+     * @param $cacheData
+     * @return bool
+     */
+    private static function fragmentFileStore($key, $cacheData)
+    {
+        if (isset(CacheKey::$fileStore[$key])) {
+            $count = CacheKey::$fileStore[$key];
+            $resFileId = [];
+            foreach ($cacheData as $k1 => $v1) {
+                $fileId = $k1 % $count;
+                $resFileId[$fileId][$k1] = $v1;
+            }
+            foreach ($resFileId as $fileId => $res) {
+                $cacheKey = $key . $fileId;
+                $data = self::get($cacheKey);
+                foreach ($res as $k => $v) {
+                    $data[$k] = $v;
+                }
+                self::set($cacheKey, $data);
+            }
+            return true;
+        }
+        return false;
+    }
+
     private static function getAppCache($key, &$hasCache, &$cacheData = [])
     {
         $data = null;
