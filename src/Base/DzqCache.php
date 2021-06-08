@@ -71,20 +71,7 @@ class DzqCache
     {
         list($result) = self::hMSetResult($value, $indexField, $mutiColumn, $indexes, $defaultValue);
         if (isset(CacheKey::$fileStore[$key])) {
-            $count = CacheKey::$fileStore[$key];
-            $resFileId = [];
-            foreach ($result as $k1 => $v1) {
-                $fileId = $k1 % $count;
-                $resFileId[$fileId][$k1] = $v1;
-            }
-            foreach ($resFileId as $fileId => $res) {
-                $cacheKey = $key . $fileId;
-                $data = self::get($cacheKey);
-                foreach ($res as $k => $v) {
-                    $data[$k] = $v;
-                }
-                self::set($cacheKey, $data);
-            }
+            self::putFragmentFileStore($key, $result);
         } else {
             $data = self::get($key);
             foreach ($result as $k => $v) {
@@ -167,39 +154,8 @@ class DzqCache
      */
     public static function hMGet($key, $hashKeys, callable $callBack = null, $indexField = null, $mutiColumn = false, $autoCache = true)
     {
-
         if (isset(CacheKey::$fileStore[$key])) {
-            $count = CacheKey::$fileStore[$key];
-            $resFileId = [];
-            foreach ($hashKeys as $k) {
-                $fileId = $k % $count;
-                $resFileId[$fileId][] = $k;
-            }
-            $ret = false;
-            foreach ($resFileId as $fileId => $keys) {
-                $cacheKey = $key . $fileId;
-                $data = self::get($cacheKey);
-                if (!$data) {
-                    break;
-                }
-                $dataError = false;
-                if ($data && self::CACHE_SWICH) {
-                    foreach ($keys as $hashKey) {
-                        if (array_key_exists($hashKey, $data)) {
-                            if (!empty($data[$hashKey])) {
-                                $ret[$hashKey] = $data[$hashKey];
-                            }
-                        } else {
-                            $dataError = true;
-                            break;
-                        }
-                    }
-                }
-                if ($dataError) {
-                    $ret = false;
-                    break;
-                }
-            }
+            $ret = self::getFragmentFileStore($key, $hashKeys);
         } else {
             $data = self::get($key);
             $ret = false;
@@ -221,20 +177,7 @@ class DzqCache
             list($resultWithNull, $resultNotNull) = self::hMSetResult($ret, $indexField, $mutiColumn, $hashKeys, null);
             if ($autoCache) {
                 if (isset(CacheKey::$fileStore[$key])) {
-                    $count = CacheKey::$fileStore[$key];
-                    $resFileId = [];
-                    foreach ($resultWithNull as $k1 => $v1) {
-                        $fileId = $k1 % $count;
-                        $resFileId[$fileId][$k1] = $v1;
-                    }
-                    foreach ($resFileId as $fileId => $res) {
-                        $cacheKey = $key . $fileId;
-                        $data = self::get($cacheKey);
-                        foreach ($res as $k => $v) {
-                            $data[$k] = $v;
-                        }
-                        self::set($cacheKey, $data);
-                    }
+                    self::putFragmentFileStore($key, $resultWithNull);
                 } else {
                     $data = self::get($key);
                     foreach ($resultWithNull as $k => $v) {
@@ -344,26 +287,58 @@ class DzqCache
      * @param $cacheData
      * @return bool
      */
-    private static function fragmentFileStore($key, $cacheData)
+    private static function putFragmentFileStore($key, $cacheData)
     {
-        if (isset(CacheKey::$fileStore[$key])) {
-            $count = CacheKey::$fileStore[$key];
-            $resFileId = [];
-            foreach ($cacheData as $k1 => $v1) {
-                $fileId = $k1 % $count;
-                $resFileId[$fileId][$k1] = $v1;
-            }
-            foreach ($resFileId as $fileId => $res) {
-                $cacheKey = $key . $fileId;
-                $data = self::get($cacheKey);
-                foreach ($res as $k => $v) {
-                    $data[$k] = $v;
-                }
-                self::set($cacheKey, $data);
-            }
-            return true;
+        $count = CacheKey::$fileStore[$key];
+        $resFileId = [];
+        foreach ($cacheData as $k1 => $v1) {
+            $fileId = $k1 % $count;
+            $resFileId[$fileId][$k1] = $v1;
         }
-        return false;
+        foreach ($resFileId as $fileId => $res) {
+            $cacheKey = $key . $fileId;
+            $data = self::get($cacheKey);
+            foreach ($res as $k => $v) {
+                $data[$k] = $v;
+            }
+            self::set($cacheKey, $data);
+        }
+    }
+
+    private static function getFragmentFileStore($key, $hashKeys)
+    {
+        $count = CacheKey::$fileStore[$key];
+        $resFileId = [];
+        foreach ($hashKeys as $k) {
+            $fileId = $k % $count;
+            $resFileId[$fileId][] = $k;
+        }
+        $ret = false;
+        foreach ($resFileId as $fileId => $keys) {
+            $cacheKey = $key . $fileId;
+            $data = self::get($cacheKey);
+            if (!$data) {
+                break;
+            }
+            $dataError = false;
+            if ($data && self::CACHE_SWICH) {
+                foreach ($keys as $hashKey) {
+                    if (array_key_exists($hashKey, $data)) {
+                        if (!empty($data[$hashKey])) {
+                            $ret[$hashKey] = $data[$hashKey];
+                        }
+                    } else {
+                        $dataError = true;
+                        break;
+                    }
+                }
+            }
+            if ($dataError) {
+                $ret = false;
+                break;
+            }
+        }
+        return $ret;
     }
 
     private static function getAppCache($key, &$hasCache, &$cacheData = [])

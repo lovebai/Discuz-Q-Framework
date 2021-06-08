@@ -60,7 +60,7 @@ class CheckUserStatus implements MiddlewareInterface
         if ($actor->status == User::STATUS_REFUSE) {
             Utils::outPut(ResponseCode::VALIDATE_REJECT,
                           ResponseCode::$codeMap[ResponseCode::VALIDATE_REJECT],
-                          User::getUserReject($user->id)
+                          User::getUserReject($actor->id)
             );
 //            $this->exceptionResponse($actor->id,'validate_reject');
         }
