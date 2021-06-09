@@ -114,6 +114,7 @@ class Utils
      */
     public static function outPut($code, $msg = '', $data = [], $requestId = null, $requestTime = null)
     {
+        $request = app('request');
         if (empty($msg)) {
             if (ResponseCode::$codeMap[$code]) {
                 $msg = ResponseCode::$codeMap[$code];
@@ -121,8 +122,12 @@ class Utils
         }
 
         if ($msg != '' && stristr($msg, 'SQLSTATE')) {
-            app('log')->info('database-error:' . $msg);
+            app('log')->info('database-error:' . $msg.' api:'.$request->getUri()->getPath());
             $msg = 'database error';
+        }
+
+        if ($code != 0) {
+            app('log')->info('result error:' . $code.' api:'.$request->getUri()->getPath());
         }
 
         $data = [
