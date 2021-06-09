@@ -348,9 +348,4 @@ abstract class DzqController implements RequestHandlerInterface
         $port = !empty($serverParams['REMOTE_PORT']) ? $serverParams['REMOTE_PORT'] : 0;
         return [$ip, $port];
     }
-
-    public function cacheInstance()
-    {
-        return app('cache');
-    }
 }
