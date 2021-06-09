@@ -176,6 +176,9 @@ class SiteApp
             ['alias' => 'qcloudLog', 'path' => 'logs/qcloudLog.log', 'level' => Logger::INFO],
             ['alias' => 'wechatOffiaccount', 'path' => 'logs/wechatOffiaccount.log', 'level' => Logger::INFO],
             ['alias' => 'performancelog', 'path' => 'logs/performance.log', 'level' => Logger::INFO],
+            ['alias' => 'loginLog', 'path' => 'logs/loginLog.log', 'level' => Logger::INFO],
+            ['alias' => 'adminLog', 'path' => 'logs/adminLog.log', 'level' => Logger::INFO],
+            ['alias' => 'apiLog', 'path' => 'logs/apiLog.log', 'level' => Logger::INFO],
             ['alias' => 'errorLog', 'path' => 'logs/errorLog.log', 'level' => Logger::INFO],
             ['alias' => 'log', 'path' => 'logs/log.log', 'level' => Logger::INFO],
         ];
