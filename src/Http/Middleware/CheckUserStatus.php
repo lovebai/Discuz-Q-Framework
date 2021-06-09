@@ -80,7 +80,7 @@ class CheckUserStatus implements MiddlewareInterface
         if ($actor->status == User::STATUS_MOD) {
             $apiPath = $request->getUri()->getPath();
             $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
-            if (!in_array($api, $this->noAuditAction)) {
+            if (!in_array($api, $this->noAuditAction) && !(strpos($api, 'users') === 0)) {
                 Utils::outPut(ResponseCode::JUMP_TO_AUDIT);
             }
         }
@@ -100,7 +100,7 @@ class CheckUserStatus implements MiddlewareInterface
         if ($actor->status == User::STATUS_NEED_FIELDS) {
             $apiPath = $request->getUri()->getPath();
             $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
-            if (!in_array($api, $this->noAuditAction)) {
+            if (!in_array($api, $this->noAuditAction) && !(strpos($api, 'users') === 0)) {
                 Utils::outPut(ResponseCode::JUMP_TO_SIGIN_FIELDS);
 //                Utils::outPut(ResponseCode::USER_NEED_SIGNIN_FIELDS);
             }
