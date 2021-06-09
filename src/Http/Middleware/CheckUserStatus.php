@@ -60,7 +60,9 @@ class CheckUserStatus implements MiddlewareInterface
         'thread.stick', // 置顶
         'forum', // 首页配置接口
         'categories', //分类接口
-        'user' // 用户信息
+        'user', // 用户信息
+        'unreadnotification', // 消息
+        'thread.recommends' // 帖子
     ];
 
     /**
