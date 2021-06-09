@@ -63,7 +63,8 @@ class CheckUserStatus implements MiddlewareInterface
         'user', // 用户信息
         'unreadnotification', // 消息
         'thread.recommends', // 帖子
-        'posts'
+        'posts', // 帖子
+        'tom.permissions' //权限
     ];
 
     /**
