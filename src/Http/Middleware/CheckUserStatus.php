@@ -57,8 +57,10 @@ class CheckUserStatus implements MiddlewareInterface
         'user/signinfields', // 查询、提交扩展字段
         'thread.detail', // 帖子详情
         'thread.list', // 帖子列表
+        'thread.stick', // 置顶
         'forum', // 首页配置接口
-        'categories' //分类接口
+        'categories', //分类接口
+        'user' // 用户信息
     ];
 
     /**
