@@ -62,7 +62,8 @@ class CheckUserStatus implements MiddlewareInterface
         'categories', //分类接口
         'user', // 用户信息
         'unreadnotification', // 消息
-        'thread.recommends' // 帖子
+        'thread.recommends', // 帖子
+        'posts'
     ];
 
     /**
