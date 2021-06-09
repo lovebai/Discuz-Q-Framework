@@ -31,9 +31,34 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class CheckUserStatus implements MiddlewareInterface
 {
-    private $noCheckAction = [
-        '/api/user/signinfields',
-        '/api/attachments'
+    //用户状态路由白名单：审核中、扩展字段
+    private $noAuditAction = [
+        'users/pc/wechat/h5.genqrcode', // h5二维码生成
+        'users/pc/wechat/miniprogram.genqrcode', // 小程序二维码生成
+        'users/pc/wechat/h5.login', // h5登录轮询
+        'users/pc/wechat/miniprogram.login', //小程序登录轮询
+        'users/mobilebrowser/wechat/miniprogram.genscheme', //小程序Scheme拉起
+        'users/username.login', // 用户名登录
+        'users/username.register', // 用户名注册
+        'users/username.login.isdisplay', // 用户名入口是否展示
+        'users/username.check', // 用户名检测
+        'users/sms.send', // 手机号发送
+        'users/sms.verify', // 手机号验证用户
+        'users/sms.login', // 手机号登录
+        'users/sms.bind', // 手机号绑定
+        'users/wechat/h5.oauth', // h5授权
+        'users/wechat/h5.login', // h5登录
+        'users/wechat/h5.bind', // h5绑定
+        'users/wechat/miniprogram.login', // 小程序登录
+        'users/wechat/miniprogram.bind', // 小程序绑定
+        'users/wechat/transition/username.autobind', // 过渡开关打开微信绑定自动创建账号
+        'users/wechat/transition/sms.bind', // 过渡流程绑定手机号
+        'users/nickname.set', // 登录页昵称设置
+        'user/signinfields', // 查询、提交扩展字段
+        'thread.detail', // 帖子详情
+        'thread.list', // 帖子列表
+        'forum', // 首页配置接口
+        'categories' //分类接口
     ];
 
     /**
@@ -51,8 +76,9 @@ class CheckUserStatus implements MiddlewareInterface
         }
         // 审核中的用户
         if ($actor->status == User::STATUS_MOD) {
-            $path = $request->getUri()->getPath();
-            if (!in_array($path, $this->noCheckAction)) {
+            $apiPath = $request->getUri()->getPath();
+            $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
+            if (!in_array($api, $this->noAuditAction)) {
                 Utils::outPut(ResponseCode::JUMP_TO_AUDIT);
             }
         }
@@ -70,8 +96,10 @@ class CheckUserStatus implements MiddlewareInterface
         }
         // 待填写扩展审核字段的用户
         if ($actor->status == User::STATUS_NEED_FIELDS) {
-            $path = $request->getUri()->getPath();
-            if (!in_array($path, $this->noCheckAction)) {
+            $apiPath = $request->getUri()->getPath();
+            $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
+            if (!in_array($api, $this->noAuditAction)) {
+                Utils::outPut(ResponseCode::JUMP_TO_SIGIN_FIELDS);
 //                Utils::outPut(ResponseCode::USER_NEED_SIGNIN_FIELDS);
             }
         }
