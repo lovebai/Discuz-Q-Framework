@@ -65,7 +65,15 @@ class CheckUserStatus implements MiddlewareInterface
         'thread.recommends', // 帖子
         'posts', // 帖子
         'tom.permissions', //权限
-        'order.create' // 订单创建
+        'order.create', // 订单创建
+        'wallet/user', // 用户钱包
+        'wallet/log',
+        'wallet/cash',
+        'order.create',
+        'order.detail',
+        'trade/notify/wechat',
+        'trade/pay/order',
+        'threads/notify/video'
     ];
 
     /**
