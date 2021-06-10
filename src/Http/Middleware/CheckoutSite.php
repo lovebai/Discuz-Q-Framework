@@ -60,7 +60,8 @@ class CheckoutSite implements MiddlewareInterface
         'thread.recommends',
         'trade/notify/wechat',
         'threads/notify/video',
-        'offiaccount/jssdk'
+        'offiaccount/jssdk',
+        'attachment.download'
     ];
 
     public function __construct(Application $app, SettingsRepository $settings)
