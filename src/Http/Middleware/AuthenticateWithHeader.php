@@ -166,7 +166,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
     private function isForbidden($api, $userId, ServerRequestInterface $request, $method, $max = 10, $interval = 60)
     {
         $ip = ip($request->getServerParams());
-        if (empty($api)) {
+        if (empty($api) || strstr($api, 'backAdmin')) {
             return true;
         }
         $method = strtolower($method);
