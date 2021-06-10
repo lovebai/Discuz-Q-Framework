@@ -152,6 +152,9 @@ class AuthenticateWithHeader implements MiddlewareInterface
     {
         $method = Arr::get($request->getServerParams(), 'REQUEST_METHOD', '');
         $userId = $request->getAttribute('oauth_user_id');
+        if(strstr($api, 'backAdmin')){
+            return;
+        }
         if (strtolower($method) == 'get') {
             if ($this->isForbidden($api, $userId, $request, $method, $this->apiFreq['get']['freq'])) {
                 throw new \Exception('操作太频繁，请稍后重试');
@@ -165,8 +168,9 @@ class AuthenticateWithHeader implements MiddlewareInterface
 
     private function isForbidden($api, $userId, ServerRequestInterface $request, $method, $max = 10, $interval = 60)
     {
+
         $ip = ip($request->getServerParams());
-        if (empty($api) || strstr($api, 'backAdmin')) {
+        if (empty($api)) {
             return true;
         }
         $method = strtolower($method);
