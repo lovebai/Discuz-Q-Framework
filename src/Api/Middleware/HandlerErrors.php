@@ -18,7 +18,9 @@
 
 namespace Discuz\Api\Middleware;
 
+use App\Common\ResponseCode;
 use Discuz\Api\ErrorHandler;
+use Discuz\Common\Utils;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -39,7 +41,8 @@ class HandlerErrors implements MiddlewareInterface
         try {
             return $handler->handle($request);
         } catch (Throwable $e) {
-            return $this->errorHandler->handler($e);
+            Utils::outPut(ResponseCode::INTERNAL_ERROR,$e->getMessage());
+//            return $this->errorHandler->handler($e);
         }
     }
 }
