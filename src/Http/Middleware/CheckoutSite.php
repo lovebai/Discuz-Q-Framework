@@ -61,7 +61,8 @@ class CheckoutSite implements MiddlewareInterface
         'trade/notify/wechat',
         'threads/notify/video',
         'offiaccount/jssdk',
-        'attachment.download'
+        'attachment.download',
+        'user/signinfields' // 查询、提交扩展字段
     ];
 
     public function __construct(Application $app, SettingsRepository $settings)
@@ -113,6 +114,12 @@ class CheckoutSite implements MiddlewareInterface
         $apiPath = $request->getUri()->getPath();
         $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
         if (!in_array($api, $this->noCheckPayMode) && !(strpos($api, 'users') === 0) && !(strpos($api, 'backAdmin') === 0)) {
+            app('log')->info(
+                '[infoParam:]'
+                . '[apiPath:]' . $apiPath
+                . ';[remake:]' . '当前用户没有访问付费站点的权限'
+                . ';[user:]' . json_encode($actor)
+            );
             Utils::outPut(ResponseCode::UNAUTHORIZED);
         }
     }
