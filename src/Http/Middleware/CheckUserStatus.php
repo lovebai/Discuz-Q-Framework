@@ -73,7 +73,8 @@ class CheckUserStatus implements MiddlewareInterface
         'order.detail',
         'trade/notify/wechat',
         'trade/pay/order',
-        'threads/notify/video'
+        'threads/notify/video',
+        'attachments' //上传图片、附件
     ];
 
     /**
