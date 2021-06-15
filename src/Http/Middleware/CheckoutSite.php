@@ -62,7 +62,8 @@ class CheckoutSite implements MiddlewareInterface
         'threads/notify/video',
         'offiaccount/jssdk',
         'attachment.download',
-        'user/signinfields' // 查询、提交扩展字段
+        'user/signinfields', // 查询、提交扩展字段
+        'attachments' //上传图片、附件
     ];
 
     public function __construct(Application $app, SettingsRepository $settings)
