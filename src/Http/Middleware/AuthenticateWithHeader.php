@@ -152,7 +152,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
     {
         $method = Arr::get($request->getServerParams(), 'REQUEST_METHOD', '');
         $userId = $request->getAttribute('oauth_user_id');
-        if(strstr($api, 'backAdmin')){
+        if (strstr($api, 'backAdmin')) {
             return;
         }
         if (strtolower($method) == 'get') {
@@ -186,7 +186,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
             return $this->setLimit($key, $method, 20, 5 * 60);
         }
         if ($this->isPoll($api)) {
-            return $this->setLimit($key, $method, 300, 60);
+            return $this->setLimit($key, $method, 200, 60);
         }
         return $this->setLimit($key, $method, $max);
     }
@@ -206,6 +206,10 @@ class AuthenticateWithHeader implements MiddlewareInterface
     {
         $pollapi = [
             'users/pc/wechat/h5.login',
+            'users/pc/wechat/h5.bind',
+            'users/pc/wechat/miniprogram.bind',
+            'users/pc/wechat/miniprogram.login',
+            'users/pc/wechat.rebind.poll',
             'dialog/message',
             'unreadnotification',
             'dialog.update'
