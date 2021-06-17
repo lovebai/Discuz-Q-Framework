@@ -24,6 +24,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Passport\Repositories\AccessTokenRepository;
 use Discuz\Auth\Guest;
+use Discuz\Base\DzqLog;
 use Discuz\Cache\CacheManager;
 use Discuz\Common\Utils;
 use Illuminate\Support\Arr;
@@ -94,7 +95,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
                     'token'         =>  $headerLine,
                     'errorMessage'  =>  $e->getMessage()
                 ];
-                app('errorLog')->info(json_encode($data, 256));
+                app(DzqLog::LOG_ERROR)->info(json_encode($data, 256));
                 Utils::outPut(ResponseCode::INVALID_TOKEN);
             }
 

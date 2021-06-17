@@ -3,6 +3,7 @@
 namespace Discuz\Common;
 
 use App\Common\ResponseCode;
+use Discuz\Base\DzqLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Discuz\Http\DiscuzResponseFactory;
@@ -115,6 +116,15 @@ class Utils
     public static function outPut($code, $msg = '', $data = [], $requestId = null, $requestTime = null)
     {
         $request = app('request');
+
+        $apiPath = $request->getUri()->getPath();
+        $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
+        $dzqLog = null;
+        $hasLOG = app()->has(DzqLog::APP_DZQLOG);
+        if ($hasLOG) {
+            $dzqLog = app()->get(DzqLog::APP_DZQLOG);
+        }
+
         if (empty($msg)) {
             if (ResponseCode::$codeMap[$code]) {
                 $msg = ResponseCode::$codeMap[$code];
@@ -137,6 +147,15 @@ class Utils
             'RequestId' => empty($requestId) ? Str::uuid() : $requestId,
             'RequestTime' => empty($requestTime) ? date('Y-m-d H:i:s') : $requestTime
         ];
+
+        if (strpos($api, 'backAdmin') === 0) {
+            DzqLog::inPutLog(DzqLog::LOG_ADMIN);
+            DzqLog::outPutLog($data, DzqLog::LOG_ADMIN);
+        } elseif (! empty($dzqLog['openApiLog'])) {
+            DzqLog::inPutLog(DzqLog::LOG_API);
+            DzqLog::outPutLog($data, DzqLog::LOG_API);
+        }
+
         $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
         foreach ($crossHeaders as $k => $v) {
             header($k . ':' . $v);

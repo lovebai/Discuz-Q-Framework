@@ -21,6 +21,7 @@ namespace Discuz\Foundation;
 use App\Providers\RedPacketServiceProvider;
 use Discuz\Api\ApiServiceProvider;
 use Discuz\Auth\AuthServiceProvider;
+use Discuz\Base\DzqLog;
 use Discuz\Cache\CacheServiceProvider;
 use Discuz\Database\DatabaseServiceProvider;
 use Discuz\Database\MigrationServiceProvider;
@@ -171,16 +172,16 @@ class SiteApp
     {
         //最后一条应为'alias' => 'log'。默认错误会输出到最后一条中
         $logs = [
-            ['alias' => 'wechatLog', 'path' => 'logs/wechatLog.log', 'level' => Logger::INFO],
-            ['alias' => 'payLog', 'path' => 'logs/payLog.log', 'level' => Logger::INFO],
-            ['alias' => 'qcloudLog', 'path' => 'logs/qcloudLog.log', 'level' => Logger::INFO],
-            ['alias' => 'wechatOffiaccount', 'path' => 'logs/wechatOffiaccount.log', 'level' => Logger::INFO],
-            ['alias' => 'performancelog', 'path' => 'logs/performance.log', 'level' => Logger::INFO],
-            ['alias' => 'loginLog', 'path' => 'logs/loginLog.log', 'level' => Logger::INFO],
-            ['alias' => 'adminLog', 'path' => 'logs/adminLog.log', 'level' => Logger::INFO],
-            ['alias' => 'apiLog', 'path' => 'logs/apiLog.log', 'level' => Logger::INFO],
-            ['alias' => 'errorLog', 'path' => 'logs/errorLog.log', 'level' => Logger::INFO],
-            ['alias' => 'log', 'path' => 'logs/log.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_WECHAT, 'path' => 'logs/'.DzqLog::LOG_WECHAT.'.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_PAY, 'path' => 'logs/'.DzqLog::LOG_PAY.'.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_QCLOUND, 'path' => 'logs/'.DzqLog::LOG_QCLOUND.'.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_WECHAT_OFFIACCOUNT, 'path' => 'logs/'.DzqLog::LOG_WECHAT_OFFIACCOUNT.'.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_PERFORMANCE, 'path' => 'logs/'.DzqLog::LOG_PERFORMANCE.'.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_LOGIN, 'path' => 'logs/'.DzqLog::LOG_LOGIN.'.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_ADMIN, 'path' => 'logs/'.DzqLog::LOG_ADMIN.'.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_API, 'path' => 'logs/'.DzqLog::LOG_API.'.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_ERROR, 'path' => 'logs/'.DzqLog::LOG_ERROR.'.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_INFO, 'path' => 'logs/'.DzqLog::LOG_INFO.'.log', 'level' => Logger::INFO],
         ];
 
         foreach ($logs as $log) {
