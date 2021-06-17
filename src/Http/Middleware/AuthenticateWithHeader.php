@@ -19,11 +19,13 @@
 namespace Discuz\Http\Middleware;
 
 use App\Common\CacheKey;
+use App\Common\ResponseCode;
 use App\Models\Setting;
 use App\Models\User;
 use App\Passport\Repositories\AccessTokenRepository;
 use Discuz\Auth\Guest;
 use Discuz\Cache\CacheManager;
+use Discuz\Common\Utils;
 use Illuminate\Support\Arr;
 use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\ResourceServer;
@@ -84,7 +86,18 @@ class AuthenticateWithHeader implements MiddlewareInterface
 
             $server = new ResourceServer($accessTokenRepository, $publickey);
 
-            $request = $server->validateAuthenticatedRequest($request);
+            try {
+                $request = $server->validateAuthenticatedRequest($request);
+            } catch (\Exception $e){
+                $data = [
+                    'api'           =>  $api,
+                    'token'         =>  $headerLine,
+                    'errorMessage'  =>  $e->getMessage()
+                ];
+                app('errorLog')->info(json_encode($data, 256));
+                Utils::outPut(ResponseCode::INVALID_TOKEN);
+            }
+
             $this->checkLimit($api, $request);
             // 获取Token位置，根据 Token 解析用户并查询到当前用户
             $actor = $this->getActor($request);
