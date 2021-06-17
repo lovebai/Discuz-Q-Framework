@@ -244,7 +244,7 @@ class DzqCache
                 $ret = $data[$hashKey1][$hashKey2];
             }
         }
-        if (($ret === false || !$data || $preload) && !empty($callBack)) {
+        if (($ret === false || !$data) && !empty($callBack)) {
             $ret = $callBack();
             !$data && $data = [];
             if ($preload) {
