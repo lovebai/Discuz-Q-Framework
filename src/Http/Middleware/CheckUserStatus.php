@@ -84,6 +84,11 @@ class CheckUserStatus implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        $apiPath = $request->getUri()->getPath();
+        $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
+        if ($api === 'forum') {
+            return $handler->handle($request);
+        }
 
         $actor = $request->getAttribute('actor');
         // 被禁用的用户
@@ -92,8 +97,6 @@ class CheckUserStatus implements MiddlewareInterface
         }
         // 审核中的用户
         if ($actor->status == User::STATUS_MOD) {
-            $apiPath = $request->getUri()->getPath();
-            $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
             if (!in_array($api, $this->noAuditAction) && !(strpos($api, 'users') === 0)) {
                 Utils::outPut(ResponseCode::JUMP_TO_AUDIT);
             }
@@ -112,11 +115,8 @@ class CheckUserStatus implements MiddlewareInterface
         }
         // 待填写扩展审核字段的用户
         if ($actor->status == User::STATUS_NEED_FIELDS) {
-            $apiPath = $request->getUri()->getPath();
-            $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
             if (!in_array($api, $this->noAuditAction) && !(strpos($api, 'users') === 0)) {
                 Utils::outPut(ResponseCode::JUMP_TO_SIGIN_FIELDS);
-//                Utils::outPut(ResponseCode::USER_NEED_SIGNIN_FIELDS);
             }
         }
         return $handler->handle($request);
