@@ -149,11 +149,11 @@ class Utils
         ];
 
         if (strpos($api, 'backAdmin') === 0) {
-            DzqLog::inPutLog(DzqLog::LOG_ADMIN);
-            DzqLog::outPutLog($data, DzqLog::LOG_ADMIN);
+            DzqLog::inPut(DzqLog::LOG_ADMIN);
+            DzqLog::outPut($data, DzqLog::LOG_ADMIN);
         } elseif (! empty($dzqLog['openApiLog'])) {
-            DzqLog::inPutLog(DzqLog::LOG_API);
-            DzqLog::outPutLog($data, DzqLog::LOG_API);
+            DzqLog::inPut(DzqLog::LOG_API);
+            DzqLog::outPut($data, DzqLog::LOG_API);
         }
 
         $crossHeaders = DiscuzResponseFactory::getCrossHeaders();

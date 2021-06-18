@@ -92,10 +92,9 @@ class AuthenticateWithHeader implements MiddlewareInterface
             } catch (\Exception $e){
                 $data = [
                     'api'           =>  $api,
-                    'token'         =>  $headerLine,
-                    'errorMessage'  =>  $e->getMessage()
+                    'token'         =>  $headerLine
                 ];
-                app(DzqLog::LOG_ERROR)->info(json_encode($data, 256));
+                DzqLog::error('无效token', $data, $e->getMessage());
                 Utils::outPut(ResponseCode::INVALID_TOKEN);
             }
 

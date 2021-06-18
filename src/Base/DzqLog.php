@@ -50,14 +50,14 @@ class DzqLog
     }
 
     //接口入参日志
-    public static function inPutLog($logType = DzqLog::LOG_INFO){
+    public static function inPut($logType = DzqLog::LOG_INFO){
         $baseData           = self::baseData();
         $baseData['IO']     = 'input';
         app($logType)->info(json_encode($baseData, 320));
     }
 
     //接口出参日志
-    public static function outPutLog($data = [], $logType = DzqLog::LOG_INFO){
+    public static function outPut($data = [], $logType = DzqLog::LOG_INFO){
         $baseData                   = self::baseData();
         $baseData['IO']             = 'output';
         $baseData['outPutData']     = $data;
@@ -65,16 +65,16 @@ class DzqLog
     }
 
     //异常日志
-    public static function errorLog($errorMessage = '', $tag = 'tag', $data = [], $logType = DzqLog::LOG_ERROR){
+    public static function error($tag = 'tag', $data = [], $errorMessage = '', $logType = DzqLog::LOG_ERROR){
         $baseData = self::baseData();
         $baseData['IO']             = 'errorOutput';
-        $baseData['errorMessage']   = $errorMessage;
         $baseData['messageData']    = $data;
+        $baseData['errorMessage']   = $errorMessage;
         app($logType)->info($tag.'::'.json_encode($baseData, 320));
     }
 
     //普通日志
-    public static function infoLog($tag = 'tag', $data = [], $logType = DzqLog::LOG_INFO){
+    public static function info($tag = 'tag', $data = [], $logType = DzqLog::LOG_INFO){
         $baseData = self::baseData();
         $baseData['IO']             = 'processOutput';
         $baseData['processData']    = $data;
