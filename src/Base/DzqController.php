@@ -21,7 +21,6 @@ use App\Common\ResponseCode;
 use App\Repositories\UserRepository;
 use DateTime;
 use Discuz\Auth\Exception\PermissionDeniedException;
-use Discuz\Base\DzqLog;
 use Discuz\Common\Utils;
 use Illuminate\Support\Str;
 use Psr\Http\Message\ResponseInterface;
