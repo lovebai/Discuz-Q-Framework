@@ -39,7 +39,7 @@ abstract class DzqController implements RequestHandlerInterface
     protected $requestTime;
     protected $platform;
     protected $app;
-    protected $openApiLog = true;//后台是否开启接口层日志
+    protected $openApiLog = false;//后台是否开启接口层日志
     protected $user = null;
     protected $isLogin = false;
 
@@ -62,6 +62,7 @@ abstract class DzqController implements RequestHandlerInterface
         $this->registerProviders();
         $this->user = $request->getAttribute('actor');
         $this->c9IbQHXVFFWu($this->user);//添加辅助函数
+        $this->dzqLogInit();
 
         try {
             if (!$this->checkRequestPermissions(app(UserRepository::class))) {
@@ -127,12 +128,6 @@ abstract class DzqController implements RequestHandlerInterface
         if (isset($this->parseBody[$name])) {
             $p = $this->parseBody[$name];
         }
-        if ($this->openApiLog) {
-            $this->inPutLog($name, 'apiLog');
-        }
-        if ($this->isAdminRoute()) {
-            $this->inPutLog($name, 'adminLog');
-        }
         return $p;
     }
 
@@ -141,75 +136,7 @@ abstract class DzqController implements RequestHandlerInterface
      */
     public function outPut($code, $msg = '', $data = [])
     {
-        if ($this->openApiLog) {
-            $this->outPutLog($code, $msg, $data, 'apiLog');
-        }
-        if ($this->isAdminRoute()) {
-            $this->outPutLog($code, $msg, $data, 'adminLog');
-        }
         Utils::outPut($code, $msg, $data, $this->requestId, $this->requestTime);
-    }
-
-    /*
-     * 接口入参日志
-     */
-    public function inPutLog($name = '',$logTye = 'log'){
-        $userId = !empty($this->user->id) ? $this->user->id : 0;
-        if (!is_array($name)) {
-            $p = '';
-            if (isset($this->queryParams[$name])) {
-                $p = $this->queryParams[$name];
-            }
-            if (isset($this->parseBody[$name])) {
-                $p = $this->parseBody[$name];
-            }
-            app($logTye)->info(
-                '[inPutParam:]'
-                . '[requestId:]' . $this->requestId
-                . ';[requestIP:]' . ip($this->request->getServerParams())
-                . ';[requestTarget:]' . $this->request->getRequestTarget()
-                . ';[userId:]' . $userId
-                . ';[inPutData:]'
-                . ';[' . $name . ':]' . json_encode($p)
-            );
-        } else {
-            app($logTye)->info(
-                '[inPutParam:]'
-                . '[requestId:]' . $this->requestId
-                . ';[requestIP:]' . ip($this->request->getServerParams())
-                . ';[requestTarget:]' . $this->request->getRequestTarget()
-                . ';[userId:]' . $userId
-                . ';[inPutData:]' . json_encode($name)
-            );
-        }
-
-    }
-
-    /*
-     * 接口出参日志
-     */
-    public function outPutLog($code = '', $msg = '', $data = [], $logTye = 'log'){
-        $userId = !empty($this->user->id) ? $this->user->id : 0;
-        app($logTye)->info(
-            '[outPutParam:]'
-            . '[requestId:]' . $this->requestId
-            . ';[requestIP:]' . ip($this->request->getServerParams())
-            . ';[requestTarget:]' . $this->request->getRequestTarget()
-            . ';[userId:]' . $userId
-            . ';[outPutData:]'
-            . ';[code:]' . $code
-            . ';[msg:]' . json_encode($msg)
-            . ';[data:]' . json_encode($data)
-        );
-    }
-
-    public function isAdminRoute(){
-        $apiPath = $this->request->getUri()->getPath();
-        $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
-        if (strpos($api, 'backAdmin') === 0) {
-            return true;
-        }
-        return false;
     }
 
     /*
@@ -421,5 +348,15 @@ abstract class DzqController implements RequestHandlerInterface
         $ip = ip($serverParams);
         $port = !empty($serverParams['REMOTE_PORT']) ? $serverParams['REMOTE_PORT'] : 0;
         return [$ip, $port];
+    }
+
+    private function dzqLogInit(){
+        $userId = !empty($this->user->id) ? $this->user->id : 0;
+        app()->instance(DzqLog::APP_DZQLOG, [
+            'request'       =>  $this->request,
+            'requestId'     =>  $this->requestId,
+            'userId'        =>  $userId,
+            'openApiLog'    =>  $this->openApiLog
+        ]);
     }
 }
