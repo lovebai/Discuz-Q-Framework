@@ -86,7 +86,7 @@ class CheckUserStatus implements MiddlewareInterface
     {
         $apiPath = $request->getUri()->getPath();
         $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
-        if ($api === 'forum') {
+        if ($api === 'forum' || $api === 'user') {
             return $handler->handle($request);
         }
 
