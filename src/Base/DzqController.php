@@ -354,6 +354,7 @@ abstract class DzqController implements RequestHandlerInterface
     private function dzqLogInit(){
         $userId = !empty($this->user->id) ? $this->user->id : 0;
         app()->instance(DzqLog::APP_DZQLOG, [
+            'request'       =>  $this->request,
             'requestId'     =>  $this->requestId,
             'userId'        =>  $userId,
             'openApiLog'    =>  $this->openApiLog
