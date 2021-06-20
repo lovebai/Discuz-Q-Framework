@@ -206,7 +206,7 @@ class DzqCache
         if ($data && self::CACHE_SWICH) {
             $ret = new  Collection();
             foreach ($hashKeys as $hashKey) {
-                if ($data->has($hashKey)) {
+                if (!empty($data[$hashKey])) {
                     $ret->put($hashKey, $data[$hashKey]);
                 } else {
                     $ret = false;
