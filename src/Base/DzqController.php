@@ -66,9 +66,15 @@ abstract class DzqController implements RequestHandlerInterface
 
         try {
             if (!$this->checkRequestPermissions(app(UserRepository::class))) {
+                DzqLog::info('dzqController_handle_no_permission', [
+                    'user' => $this->user
+                ]);
                 throw new PermissionDeniedException('没有权限');
             }
         } catch (PermissionDeniedException $e) {
+            DzqLog::info('dzqController_handle_no_permission', [
+                'errorMessage' => $e->getMessage()
+            ]);
             $this->outPut(ResponseCode::UNAUTHORIZED, $e->getMessage());
         }
 

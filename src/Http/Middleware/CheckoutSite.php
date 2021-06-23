@@ -24,6 +24,7 @@ use App\Models\Invite;
 use App\Models\Order;
 use Discuz\Auth\AssertPermissionTrait;
 use Discuz\Auth\Exception\PermissionDeniedException;
+use Discuz\Base\DzqLog;
 use Discuz\Contracts\Setting\SettingsRepository;
 use Discuz\Foundation\Application;
 use Illuminate\Support\Carbon;
@@ -118,13 +119,10 @@ class CheckoutSite implements MiddlewareInterface
         $apiPath = $request->getUri()->getPath();
         $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
         if (!in_array($api, $this->noCheckPayMode) && !(strpos($api, 'users') === 0) && !(strpos($api, 'backAdmin') === 0)) {
-            app('log')->info(
-                '[infoParam:]'
-                . '[apiPath:]' . $apiPath
-                . ';[remake:]' . '当前用户没有访问付费站点的权限'
-                . ';[user:]' . json_encode($actor)
-            );
-            Utils::outPut(ResponseCode::UNAUTHORIZED);
+            DzqLog::info('checkout_site_no_permission', [
+                'user' => $actor
+            ]);
+            Utils::outPut(ResponseCode::UNAUTHORIZED,'无权限访问付费站点');
         }
     }
 
