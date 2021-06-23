@@ -39,7 +39,7 @@ abstract class DzqController implements RequestHandlerInterface
     protected $requestTime;
     protected $platform;
     protected $app;
-    protected $openApiLog = false;//后台是否开启接口层日志
+    protected $openApiLog = true;//后台是否开启接口层日志
     protected $user = null;
     protected $isLogin = false;
 
