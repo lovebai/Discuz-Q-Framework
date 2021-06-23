@@ -30,7 +30,7 @@ class DzqCache
     public static function set($key, $value, $ttl = 0)
     {
         if (self::CACHE_TTL) {
-            return app('cache')->put($key, $value, 60 * 60);
+            return app('cache')->put($key, $value, 10 * 60);
         }
         return app('cache')->put($key, $value);
     }
