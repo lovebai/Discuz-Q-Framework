@@ -39,7 +39,6 @@ abstract class DzqController implements RequestHandlerInterface
     protected $requestTime;
     protected $platform;
     protected $app;
-    protected $openApiLog = true;//后台是否开启接口层日志
     protected $user = null;
     protected $isLogin = false;
 
@@ -358,11 +357,13 @@ abstract class DzqController implements RequestHandlerInterface
 
     private function dzqLogInit(){
         $userId = !empty($this->user->id) ? $this->user->id : 0;
+        $settings = app(\App\Settings\SettingsRepository::class);
+        $openApiLog = $settings->get('open_api_log'); // 从缓存中获取配置
         app()->instance(DzqLog::APP_DZQLOG, [
             'request'       =>  $this->request,
             'requestId'     =>  $this->requestId,
             'userId'        =>  $userId,
-            'openApiLog'    =>  $this->openApiLog
+            'openApiLog'    =>  !empty($openApiLog)
         ]);
     }
 }
