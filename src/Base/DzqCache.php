@@ -94,7 +94,7 @@ class DzqCache
     {
         $data = self::getAppCache($key, $hasCache, $cacheData);
         $ret = false;
-        if ($data && self::CACHE_SWICH) {
+        if (!is_null($hashKey) && $data && self::CACHE_SWICH) {
             if (array_key_exists($hashKey, $data)) {
                 $ret = $data[$hashKey];
             }
