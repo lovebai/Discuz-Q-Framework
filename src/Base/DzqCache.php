@@ -101,7 +101,7 @@ class DzqCache
         }
         if ($ret === false && !empty($callBack)) {
             $ret = $callBack($hashKey);
-            if ($autoCache) {
+            if ($autoCache && !is_null($hashKey)) {
                 $data[$hashKey] = $ret;
                 self::set($key, $data);
                 $hasCache && self::setAppCache($key, $data, $cacheData);
