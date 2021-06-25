@@ -20,6 +20,7 @@ namespace Discuz\Api\ExceptionHandler;
 
 use App\Common\ResponseCode;
 use Discuz\Auth\Exception\NotAuthenticatedException;
+use Discuz\Base\DzqLog;
 use Exception;
 use Tobscure\JsonApi\Exception\Handler\ExceptionHandlerInterface;
 use Tobscure\JsonApi\Exception\Handler\ResponseBag;
@@ -45,8 +46,11 @@ class NotAuthenticatedExceptionHandler implements ExceptionHandlerInterface
             'code' => 'not_authenticated'
         ];
 
-
-        Utils::outPut(ResponseCode::UNAUTHORIZED, ResponseCode::$codeMap[ResponseCode::UNAUTHORIZED]);
+        DzqLog::info('not_authenticated_exception_handler', [
+            'status'    => $status,
+            'error'     => $error
+        ]);
+        Utils::outPut(ResponseCode::UNAUTHORIZED);
         return new ResponseBag($status, [$error]);
     }
 }

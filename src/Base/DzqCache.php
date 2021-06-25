@@ -30,7 +30,7 @@ class DzqCache
     public static function set($key, $value, $ttl = 0)
     {
         if (self::CACHE_TTL) {
-            return app('cache')->put($key, $value, 60 * 60);
+            return app('cache')->put($key, $value, 10 * 60);
         }
         return app('cache')->put($key, $value);
     }
@@ -94,14 +94,14 @@ class DzqCache
     {
         $data = self::getAppCache($key, $hasCache, $cacheData);
         $ret = false;
-        if ($data && self::CACHE_SWICH) {
+        if (!is_null($hashKey) && $data && self::CACHE_SWICH) {
             if (array_key_exists($hashKey, $data)) {
                 $ret = $data[$hashKey];
             }
         }
         if ($ret === false && !empty($callBack)) {
             $ret = $callBack($hashKey);
-            if ($autoCache) {
+            if ($autoCache && !is_null($hashKey)) {
                 $data[$hashKey] = $ret;
                 self::set($key, $data);
                 $hasCache && self::setAppCache($key, $data, $cacheData);

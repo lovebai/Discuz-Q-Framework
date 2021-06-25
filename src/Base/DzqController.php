@@ -39,7 +39,7 @@ abstract class DzqController implements RequestHandlerInterface
     protected $requestTime;
     protected $platform;
     protected $app;
-    protected $openApiLog = false;//后台是否开启接口层日志
+    protected $openApiLog = true;//后台是否开启接口层日志
     protected $user = null;
     protected $isLogin = false;
 
@@ -66,9 +66,15 @@ abstract class DzqController implements RequestHandlerInterface
 
         try {
             if (!$this->checkRequestPermissions(app(UserRepository::class))) {
+                DzqLog::info('dzqController_handle_no_permission', [
+                    'user' => $this->user
+                ]);
                 throw new PermissionDeniedException('没有权限');
             }
         } catch (PermissionDeniedException $e) {
+            DzqLog::info('dzqController_handle_no_permission', [
+                'errorMessage' => $e->getMessage()
+            ]);
             $this->outPut(ResponseCode::UNAUTHORIZED, $e->getMessage());
         }
 

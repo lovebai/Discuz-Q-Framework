@@ -41,8 +41,8 @@ class DzqLog
         $method = $request->getMethod();
         $serverParams = $request->getServerParams();
         $ip = ip($serverParams);;
-        $requestId = $appLog['requestId'] ?: 0;
-        $userId = $appLog['userId'] ?: 0;
+        $requestId = $appLog['requestId'] ?? '';
+        $userId = $appLog['userId'] ?? 0;
         $payload = $request->getParsedBody();
         $port = empty($uri->getPort())?'':':'.$uri->getPort();
         $url = $uri->getScheme().'://'.$uri->getHost().$port.$uri->getPath().'?'.$uri->getQuery();
