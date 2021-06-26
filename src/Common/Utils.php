@@ -133,7 +133,7 @@ class Utils
 
         if ($msg != '' && stristr($msg, 'SQLSTATE')) {
             app('log')->info('database-error:' . $msg.' api:'.$request->getUri()->getPath());
-            $msg = 'database error';
+            $msg = '数据库异常';
         }
 
         if ($code != 0) {
