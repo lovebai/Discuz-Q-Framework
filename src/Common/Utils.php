@@ -137,7 +137,7 @@ class Utils
         }
 
         if ($code != 0) {
-            app('log')->info('result error:' . $code.' api:'.$request->getUri()->getPath());
+            app('log')->info('result error:' . $code.' api:'.$request->getUri()->getPath().' msg:'.$msg);
         }
 
         $data = [
