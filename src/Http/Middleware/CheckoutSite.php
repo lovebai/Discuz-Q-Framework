@@ -85,12 +85,17 @@ class CheckoutSite implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         // get settings
+        $actor = $request->getAttribute('actor');
         $siteClose = (bool)$this->settings->get('site_close');
         $siteMode = $this->settings->get('site_mode');
+        if ($siteClose && !$actor->isAdmin()) {
+            $siteCloseMsg = $this->settings->get('site_close_msg');
+            Utils::outPut(ResponseCode::SITE_CLOSED, '', ['detail' => $siteCloseMsg]);
+        }
+
 //        if (in_array($request->getUri()->getPath(), ['/api/login', '/api/oauth/wechat/miniprogram'])) {
 //            return $handler->handle($request);
 //        }
-        $actor = $request->getAttribute('actor');
         $siteClose && $this->assertAdmin($actor);
         $this->checkPayMode($request, $actor);
         // 处理 付费模式 逻辑， 过期之后 加入待付费组
