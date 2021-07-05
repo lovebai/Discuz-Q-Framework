@@ -132,8 +132,12 @@ class Utils
         }
 
         if ($msg != '' && stristr($msg, 'SQLSTATE')) {
-            app('log')->info('database-error:' . $msg.' api:'.$request->getUri()->getPath());
-            $msg = '数据库异常';
+            app('log')->info('database-error:' . $msg . ' api:' . $request->getUri()->getPath());
+            if (app()->config('debug')) {
+                $msg = '数据库异常' . $msg;
+            } else {
+                $msg = '数据库异常';
+            }
         }
 
         if ($code != 0) {
