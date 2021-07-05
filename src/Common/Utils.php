@@ -141,7 +141,7 @@ class Utils
         }
 
         if ($code != 0) {
-            app('log')->info('result error:' . $code.' api:'.$request->getUri()->getPath());
+            app('log')->info('result error:' . $code.' api:'.$request->getUri()->getPath().' msg:'.$msg);
         }
 
         $data = [
@@ -165,6 +165,10 @@ class Utils
             header($k . ':' . $v);
         }
         header('Content-Type:application/json; charset=utf-8', true, 200);
+        $t1 = DISCUZ_START;
+        $t2 = microtime(true);
+        header('Dzq-CostTime:'.(($t2 - $t1)*1000).'ms');
+
         exit(json_encode($data, 256));
     }
 }
