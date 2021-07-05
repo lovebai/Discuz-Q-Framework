@@ -18,6 +18,8 @@
 
 namespace Discuz\Foundation;
 
+use App\Common\ResponseCode;
+use Discuz\Base\DzqLog;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\Factory;
 use Illuminate\Validation\ValidationException;
@@ -46,6 +48,13 @@ abstract class AbstractValidator
         $validator = $this->make($attributes);
 
         if ($validator->fails()) {
+            $errorMessage = $validator->errors()->first();
+            DzqLog::error('valid_error', [
+                'attributes' => $attributes
+            ], $errorMessage);
+            if (! empty($errorMessage)) {
+                \Discuz\Common\Utils::outPut(ResponseCode::INVALID_PARAMETER, $errorMessage);
+            }
             throw new ValidationException($validator);
         }
     }

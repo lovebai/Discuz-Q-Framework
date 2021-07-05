@@ -43,6 +43,7 @@ class Server extends SiteApp
         } catch (Throwable $e) {
             exit($this->formatBootException($e));
         }
+        $this->isDebug();
         $pipe = new MiddlewarePipe();
 
         $pipe->pipe(new RequestHandler([
@@ -71,6 +72,17 @@ class Server extends SiteApp
 
         //增加性能日志
         //$this->addPerformanceLog();
+    }
+
+    private function isDebug()
+    {
+        if (app()->config('debug')) {//dev
+            error_reporting(E_ALL);
+            ini_set('display_errors', 'On');
+        } else {//prod
+            error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+            ini_set('display_errors', 'Off');
+        }
     }
 
     /**

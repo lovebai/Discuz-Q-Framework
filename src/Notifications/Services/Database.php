@@ -18,10 +18,42 @@
 
 namespace Discuz\Notifications\Services;
 
+use App\Models\Thread;
+use Illuminate\Support\Str;
+
 class Database extends AbstractDriver
 {
     public function build()
     {
-        return $this->notification->render();
+        $notification = $this->notification->render();
+
+        // 对title/content进行截取
+        if (isset($notification['title']) && !empty($notification['title']) && mb_strlen($notification['title']) > Thread::TITLE_LENGTH) {
+            $notification['title'] = $this->getThreadTitleOrContent($notification['title'], Thread::TITLE_LENGTH);
+        }
+
+        if (isset($notification['thread_title']) && !empty($notification['thread_title']) && mb_strlen($notification['thread_title']) > Thread::TITLE_LENGTH) {
+            $notification['thread_title'] = $this->getThreadTitleOrContent($notification['thread_title'], Thread::TITLE_LENGTH);
+        }
+
+        if (isset($notification['content']) && !empty($notification['content']) && mb_strlen($notification['content']) > Thread::NOTICE_CONTENT_LENGTH) {
+            $notification['content'] = $this->getThreadTitleOrContent($notification['content'], Thread::NOTICE_CONTENT_LENGTH);
+        }
+
+        if (isset($notification['post_content']) && !empty($notification['post_content']) && mb_strlen($notification['post_content']) > Thread::NOTICE_CONTENT_LENGTH) {
+            $notification['post_content'] = $this->getThreadTitleOrContent($notification['post_content'], Thread::NOTICE_CONTENT_LENGTH);
+        }
+
+        if (isset($notification['reply_post_content']) && !empty($notification['reply_post_content']) && mb_strlen($notification['reply_post_content']) > Thread::NOTICE_CONTENT_LENGTH) {
+            $notification['reply_post_content'] = $this->getThreadTitleOrContent($notification['reply_post_content'], Thread::NOTICE_CONTENT_LENGTH);
+        }
+        // dd($notification);
+        return $notification;
+    }
+
+    private function getThreadTitleOrContent($titleOrContent, $length)
+    {
+        $titleOrContent = Str::substr(strip_tags($titleOrContent), 0, $length);
+        return $titleOrContent;
     }
 }
