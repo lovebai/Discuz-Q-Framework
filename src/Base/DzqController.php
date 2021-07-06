@@ -30,7 +30,8 @@ use Illuminate\Database\ConnectionInterface;
 
 /**
  * @method  beforeMain($user)
- * @method  clearCache($user)
+ * @method  prefixClearCache($user) 前置缓存清理
+ * @method  suffixClearCache($user) 后置缓存清理
  */
 abstract class DzqController implements RequestHandlerInterface
 {
@@ -103,8 +104,8 @@ abstract class DzqController implements RequestHandlerInterface
         if (method_exists($this, 'beforeMain')) {
             $this->beforeMain($name);
         }
-        if (method_exists($this, 'clearCache')) {
-            $this->clearCache($name);
+        if (method_exists($this, 'prefixClearCache')) {
+            $this->prefixClearCache($name);
         }
     }
 
@@ -141,6 +142,9 @@ abstract class DzqController implements RequestHandlerInterface
      */
     public function outPut($code, $msg = '', $data = [])
     {
+        if (method_exists($this, 'suffixClearCache')) {
+            $this->suffixClearCache($this->user);
+        }
         Utils::outPut($code, $msg, $data, $this->requestId, $this->requestTime);
     }
 
