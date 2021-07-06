@@ -40,7 +40,7 @@ class CheckUserStatus implements MiddlewareInterface
         'users/mobilebrowser/wechat/miniprogram.genscheme', //小程序Scheme拉起
         'users/username.login', // 用户名登录
         'users/username.register', // 用户名注册
-        'users/username.login.isdisplay', // 用户名入口是否展示
+//        'users/username.login.isdisplay', // 用户名入口是否展示
         'users/username.check', // 用户名检测
         'users/sms.send', // 手机号发送
         'users/sms.verify', // 手机号验证用户
