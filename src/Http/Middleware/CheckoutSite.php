@@ -47,7 +47,6 @@ class CheckoutSite implements MiddlewareInterface
         'forum',
         'follow',
         'thread.list',
-        'invite.detail',
         'users.list',
         'order.create',
         'trade/pay/order',
