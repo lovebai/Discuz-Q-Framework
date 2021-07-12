@@ -54,27 +54,31 @@ class CheckUserStatus implements MiddlewareInterface
         'users/wechat/transition/username.autobind', // 过渡开关打开微信绑定自动创建账号
         'users/wechat/transition/sms.bind', // 过渡流程绑定手机号
         'users/nickname.set', // 登录页昵称设置
-        'user/signinfields', // 查询、提交扩展字段
-        'thread.detail', // 帖子详情
-        'thread.list', // 帖子列表
-        'thread.stick', // 置顶
-        'forum', // 首页配置接口
-        'categories', //分类接口
+
         'user', // 用户信息
-        'unreadnotification', // 消息
-        'thread.recommends', // 帖子
-        'posts', // 帖子
-        'tom.permissions', //权限
+        'forum', // 首页配置接口
+//        'follow',
+        'thread.list', // 帖子列表
+        'users.list',
         'order.create', // 订单创建
-        'wallet/user', // 用户钱包
-        'wallet/log',
-        'wallet/cash',
-        'order.create',
-        'order.detail',
-        'trade/notify/wechat',
         'trade/pay/order',
+        'order.detail',
+        'wallet/cash',
+        'wallet/log',
+        'wallet/user', // 用户钱包
+        'categories', //分类接口
+        'thread.stick', // 置顶
+        'tom.permissions', //权限
+        'thread.recommends', // 帖子
+        'trade/notify/wechat',
         'threads/notify/video',
-        'attachments' //上传图片、附件
+        'offiaccount/jssdk',
+//        'attachment.download',
+        'user/signinfields', // 查询、提交扩展字段
+        'attachments', //上传图片、附件
+        'unreadnotification', // 消息
+        'thread.detail', // 帖子详情
+        'posts', // 帖子
     ];
 
     /**
