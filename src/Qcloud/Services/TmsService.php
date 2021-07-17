@@ -18,8 +18,8 @@
 
 namespace Discuz\Qcloud\Services;
 
-use TencentCloud\Tms\V20201229\TmsClient;
-use TencentCloud\Tms\V20201229\Models\TextModerationRequest;
+use TencentCloud\Tms\V20200713\TmsClient;
+use TencentCloud\Tms\V20200713\Models\TextModerationRequest;
 
 class TmsService extends AbstractService
 {
