@@ -18,8 +18,8 @@
 
 namespace Discuz\Qcloud\Services;
 
-use TencentCloud\Ims\V20201229\ImsClient;
-use TencentCloud\Ims\V20201229\Models\ImageModerationRequest;
+use TencentCloud\Ims\V20200713\ImsClient;
+use TencentCloud\Ims\V20200713\Models\ImageModerationRequest;
 
 class ImsService extends AbstractService
 {
