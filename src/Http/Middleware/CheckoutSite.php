@@ -87,7 +87,7 @@ class CheckoutSite implements MiddlewareInterface
         $actor = $request->getAttribute('actor');
         $siteClose = (bool)$this->settings->get('site_close');
         $siteMode = $this->settings->get('site_mode');
-        if ($siteClose && !$actor->isAdmin()) {
+        if ($siteClose && !$actor->isAdmin() && $request->getUri()->getPath() != '/api/backAdmin/login') {
             $siteCloseMsg = $this->settings->get('site_close_msg');
             Utils::outPut(ResponseCode::SITE_CLOSED, '', ['detail' => $siteCloseMsg]);
         }
@@ -95,7 +95,7 @@ class CheckoutSite implements MiddlewareInterface
 //        if (in_array($request->getUri()->getPath(), ['/api/login', '/api/oauth/wechat/miniprogram'])) {
 //            return $handler->handle($request);
 //        }
-        $siteClose && $this->assertAdmin($actor);
+        // $siteClose && $this->assertAdmin($actor);
         $this->checkPayMode($request, $actor);
         // 处理 付费模式 逻辑， 过期之后 加入待付费组
         if (!$actor->isAdmin() && $siteMode === 'pay' && Carbon::now()->gt($actor->expired_at)) {
@@ -126,7 +126,7 @@ class CheckoutSite implements MiddlewareInterface
             DzqLog::info('checkout_site_no_permission', [
                 'user' => $actor
             ]);
-            Utils::outPut(ResponseCode::UNAUTHORIZED,'无权限访问付费站点');
+            Utils::outPut(ResponseCode::CURRENT_IS_PAY_SITE);
         }
     }
 

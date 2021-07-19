@@ -168,6 +168,7 @@ class Utils
         $t1 = DISCUZ_START;
         $t2 = microtime(true);
         header('Dzq-CostTime:'.(($t2 - $t1)*1000).'ms');
+        header('Dzq-DB-CostTime:'.$GLOBALS["mysql_time"].'ms');
 
         exit(json_encode($data, 256));
     }

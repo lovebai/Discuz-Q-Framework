@@ -36,24 +36,33 @@ class Database extends AbstractDriver
             $notification['thread_title'] = $this->getThreadTitleOrContent($notification['thread_title'], Thread::TITLE_LENGTH);
         }
 
-        if (isset($notification['content']) && !empty($notification['content']) && mb_strlen($notification['content']) > Thread::NOTICE_CONTENT_LENGTH) {
-            $notification['content'] = $this->getThreadTitleOrContent($notification['content'], Thread::NOTICE_CONTENT_LENGTH);
+        // content的去标签和截断处理在 Discuz\Notifications\Messages\SimpleMessage 中处理
+        if (isset($notification['content']) && empty($notification['content'])) {
+            $notification['content'] = '[图片]';
         }
 
-        if (isset($notification['post_content']) && !empty($notification['post_content']) && mb_strlen($notification['post_content']) > Thread::NOTICE_CONTENT_LENGTH) {
-            $notification['post_content'] = $this->getThreadTitleOrContent($notification['post_content'], Thread::NOTICE_CONTENT_LENGTH);
+        if (isset($notification['post_content'])) {
+            if (empty($notification['post_content'])) {
+                $notification['post_content'] = '[图片]';
+            } elseif (mb_strlen($notification['post_content']) > Thread::NOTICE_CONTENT_LENGTH) {
+                $notification['post_content'] = $this->getThreadTitleOrContent($notification['post_content'], Thread::NOTICE_CONTENT_LENGTH);
+            }
         }
 
-        if (isset($notification['reply_post_content']) && !empty($notification['reply_post_content']) && mb_strlen($notification['reply_post_content']) > Thread::NOTICE_CONTENT_LENGTH) {
-            $notification['reply_post_content'] = $this->getThreadTitleOrContent($notification['reply_post_content'], Thread::NOTICE_CONTENT_LENGTH);
+        if (isset($notification['reply_post_content'])) {
+            if (empty($notification['reply_post_content'])) {
+                $notification['reply_post_content'] = '[图片]';
+            } elseif (mb_strlen($notification['reply_post_content']) > Thread::NOTICE_CONTENT_LENGTH) {
+                $notification['reply_post_content'] = $this->getThreadTitleOrContent($notification['reply_post_content'], Thread::NOTICE_CONTENT_LENGTH);
+            }
         }
-        // dd($notification);
+
         return $notification;
     }
 
     private function getThreadTitleOrContent($titleOrContent, $length)
     {
-        $titleOrContent = Str::substr(strip_tags($titleOrContent), 0, $length);
+        $titleOrContent = Str::substr(strip_tags($titleOrContent), 0, $length) . '...';
         return $titleOrContent;
     }
 }

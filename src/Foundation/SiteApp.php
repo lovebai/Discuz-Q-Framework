@@ -46,6 +46,7 @@ use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
+use Discuz\Foundation\SqlProfileServiceProvider;
 
 class SiteApp
 {
@@ -86,6 +87,7 @@ class SiteApp
         $this->app->register(NotificationServiceProvider::class);
         $this->app->register(WechatServiceProvider::class);
         $this->app->register(RedPacketServiceProvider::class);
+        $this->app->register(SqlProfileServiceProvider::class);
 
         $this->registerServiceProvider();
 
