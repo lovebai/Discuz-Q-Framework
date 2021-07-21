@@ -22,7 +22,6 @@ class SqlProfileListener
      */
     public function handle(QueryExecuted $event)
     {
-        $temp = $GLOBALS["mysql_time"];
-        $GLOBALS["mysql_time"] = $temp + $event->time;
+        $GLOBALS["mysql_time"] += $event->time;
     }
 }
