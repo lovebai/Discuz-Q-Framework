@@ -136,12 +136,13 @@ class CheckoutSite implements MiddlewareInterface
             return false;
         }
         return $actor->orders()
-            ->where('type', Order::ORDER_TYPE_REGISTER)
+            ->whereIn('type', [Order::ORDER_TYPE_REGISTER, Order::ORDER_TYPE_RENEW])
             ->where('status', Order::ORDER_STATUS_PAID)
             ->where(function ($query) {
                 $query->where('expired_at', '>', Carbon::now()->toDateTimeString())
                     ->orWhere('expired_at', null);
             })
+            ->orderBy('id', 'desc')
             ->first();
     }
 
