@@ -127,7 +127,7 @@ class CheckoutSite implements MiddlewareInterface
             DzqLog::info('checkout_site_no_permission', [
                 'user' => $actor
             ]);
-            Utils::outPut(ResponseCode::CURRENT_IS_PAY_SITE);
+            Utils::outPut(ResponseCode::JUMP_TO_PAY_SITE);
         }
     }
 
