@@ -66,7 +66,8 @@ class CheckoutSite implements MiddlewareInterface
         'attachments', //上传图片、附件
         'unreadnotification',
         'thread.detail', // 帖子详情
-        'posts' // 帖子
+        'posts', // 帖子
+        'backAdmin/login'
     ];
 
     public function __construct(Application $app, SettingsRepository $settings)

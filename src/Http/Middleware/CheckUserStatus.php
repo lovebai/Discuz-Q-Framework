@@ -23,6 +23,7 @@ use App\Models\User;
 use App\Models\UserSignInFields;
 use Discuz\Auth\Exception\PermissionDeniedException;
 use Discuz\Common\Utils;
+use Discuz\Contracts\Setting\SettingsRepository;
 use Discuz\Http\DiscuzResponseFactory;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -79,6 +80,7 @@ class CheckUserStatus implements MiddlewareInterface
         'unreadnotification', // 消息
         'thread.detail', // 帖子详情
         'posts', // 帖子
+        'backAdmin/login'
     ];
 
     /**
@@ -95,6 +97,9 @@ class CheckUserStatus implements MiddlewareInterface
         }
 
         $actor = $request->getAttribute('actor');
+        if ($actor->isGuest()) {
+            $handler->handle($request);
+        }
         // 被禁用的用户
         if ($actor->status == User::STATUS_BAN) {
             Utils::outPut(ResponseCode::USER_BAN);
@@ -118,7 +123,7 @@ class CheckUserStatus implements MiddlewareInterface
             Utils::outPut(ResponseCode::VALIDATE_IGNORE);
         }
         // 待填写扩展审核字段的用户
-        if ($actor->status == User::STATUS_NEED_FIELDS) {
+        if ($actor->status == User::STATUS_NEED_FIELDS || $this->isJumpSiginFields($actor)) {
             if (!in_array($api, $this->noAuditAction) && !(strpos($api, 'users') === 0)) {
                 Utils::outPut(ResponseCode::JUMP_TO_SIGIN_FIELDS);
             }
@@ -143,5 +148,16 @@ class CheckUserStatus implements MiddlewareInterface
         ];
         header('Content-Type:application/json; charset=utf-8', true, 401);
         exit(json_encode($response, 256));
+    }
+
+    private function isJumpSiginFields($actor){
+        $userId = !empty($actor->id) ? (int)$actor->id : 0;
+        $settings = app(SettingsRepository::class);
+        $openExtFields = $settings->get('open_ext_fields');
+        $userSignInFields = UserSignInFields::query()->where('user_id', $userId)->exists();
+        if ($actor->status == USER::STATUS_NORMAL && !empty($openExtFields) && !$userSignInFields && !$actor->isAdmin()) {
+            return true;
+        }
+        return false;
     }
 }
