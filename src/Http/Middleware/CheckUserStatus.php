@@ -80,7 +80,9 @@ class CheckUserStatus implements MiddlewareInterface
         'unreadnotification', // 消息
         'thread.detail', // 帖子详情
         'posts', // 帖子
-        'backAdmin/login'
+        'backAdmin/login',
+        'emoji',
+        'view.count'
     ];
 
     /**
