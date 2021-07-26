@@ -18,6 +18,8 @@
 
 namespace Discuz\Api\ExceptionHandler;
 
+use App\Common\ResponseCode;
+use Discuz\Common\Utils;
 use Exception;
 use Illuminate\Validation\ValidationException;
 use Tobscure\JsonApi\Exception\Handler\ExceptionHandlerInterface;
@@ -39,8 +41,13 @@ class ValidationExceptionHandler implements ExceptionHandlerInterface
 
     public function handle(Exception $e): ResponseBag
     {
-        $errors = $this->buildErrors($e->validator->getMessageBag()->messages(), '/data/attributes');
 
+        $errors = $this->buildErrors($e->validator->getMessageBag()->messages(), '/data/attributes');
+        $errormsg = '';
+        foreach ($errors  as $item) {
+            $errormsg .= $item['detail'][0].PHP_EOL;
+        }
+        Utils::outPut(ResponseCode::REGISTER_DECRYPT_CODE_FAILED, $errormsg);
         return new ResponseBag(422, $errors);
     }
 

@@ -19,6 +19,7 @@
 namespace Discuz\Wechat\Offiaccount;
 
 use Discuz\Contracts\Setting\SettingsRepository;
+use Discuz\Wechat\LumenCache;
 use EasyWeChat\OfficialAccount\Application as OfficialAccountApplication;
 
 class OffiaccountService
@@ -60,6 +61,8 @@ class OffiaccountService
     {
         $this->config = array_merge($this->config, $params);
 
-        return $this->easyWechatFactory::officialAccount($this->config);
+        $offiaccount =  $this->easyWechatFactory::officialAccount($this->config);
+        $offiaccount->rebind('cache', app(LumenCache::class));
+        return $offiaccount;
     }
 }

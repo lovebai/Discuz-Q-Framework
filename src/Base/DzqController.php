@@ -18,28 +18,28 @@
 namespace Discuz\Base;
 
 use App\Common\ResponseCode;
-use App\Models\User;
-use App\Modules\Services\ApiCacheService;
+use App\Repositories\UserRepository;
 use DateTime;
-use Discuz\Http\DiscuzResponseFactory;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
+use Discuz\Auth\Exception\PermissionDeniedException;
+use Discuz\Common\Utils;
 use Illuminate\Support\Str;
-use Money\Number;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Illuminate\Database\ConnectionInterface;
+
+/**
+ * @method  beforeMain($user)
+ * @method  prefixClearCache($user) 前置缓存清理
+ * @method  suffixClearCache($user) 后置缓存清理
+ */
 abstract class DzqController implements RequestHandlerInterface
 {
-    protected $request;
+    public $request;
     protected $requestId;
     protected $requestTime;
     protected $platform;
     protected $app;
-    protected $openApiLog = true;//后台是否开启接口层日志
     protected $user = null;
     protected $isLogin = false;
 
@@ -61,13 +61,53 @@ abstract class DzqController implements RequestHandlerInterface
         $this->app = app();
         $this->registerProviders();
         $this->user = $request->getAttribute('actor');
+        $this->c9IbQHXVFFWu($this->user);//添加辅助函数
+        $this->dzqLogInit();
+
+        try {
+            if (!$this->checkRequestPermissions(app(UserRepository::class))) {
+                DzqLog::info('dzqController_handle_no_permission', [
+                    'user' => $this->user
+                ]);
+                throw new PermissionDeniedException('没有权限');
+            }
+        } catch (PermissionDeniedException $e) {
+            DzqLog::info('dzqController_handle_no_permission', [
+                'errorMessage' => $e->getMessage()
+            ]);
+            $this->outPut(ResponseCode::UNAUTHORIZED, $e->getMessage());
+        }
+
         $this->main();
+    }
+
+    /*
+     * 控制器权限检查，默认是无权限访问，每个接口必须重写该方法，按实际情况处理权限检查
+     *
+     * 权限检查失败时，
+     * 如果需要返回自定义错误消息，则抛出 PermissionDeniedException
+     * 否则直接返回 false 即可
+     */
+    protected function checkRequestPermissions(UserRepository $userRepo)
+    {
+        \App\Common\Utils::logOldPermissionPosition(__METHOD__);
+        return true;
     }
 
     /*
      * 控制器业务逻辑
      */
     abstract public function main();
+
+    public function c9IbQHXVFFWu($name)
+    {
+        if (method_exists($this, 'beforeMain')) {
+            $this->beforeMain($name);
+        }
+        if (method_exists($this, 'prefixClearCache')) {
+            $this->prefixClearCache($name);
+        }
+    }
 
     /*
      * 引入providers
@@ -102,65 +142,11 @@ abstract class DzqController implements RequestHandlerInterface
      */
     public function outPut($code, $msg = '', $data = [])
     {
-        if (empty($msg)) {
-            if (ResponseCode::$codeMap[$code]) {
-                $msg = ResponseCode::$codeMap[$code];
-            }
+        if (method_exists($this, 'suffixClearCache')) {
+            $this->suffixClearCache($this->user);
         }
-        $data = [
-            'Code' => $code,
-            'Message' => $msg,
-            'Data' => $data,
-            'RequestId' => $this->requestId,
-            'RequestTime' => $this->requestTime
-        ];
-        $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
-        foreach ($crossHeaders as $k => $v) {
-            header($k . ':' . $v);
-        }
-        header('Content-Type:application/json; charset=utf-8', true, 200);
-        exit(json_encode($data, 256));
+        Utils::outPut($code, $msg, $data, $this->requestId, $this->requestTime);
     }
-
-//    public function __invoke()
-//    {
-//        $this->isDebug && $this->sendResponse();
-//        try {
-//            $this->sendResponse();
-//        } catch (\Throwable $e) {
-//            $code = $e->getCode();
-//            $msg = $e->getMessage();
-//            $result = [
-//                'Code' => empty($code) ? ResponseCode::INTERNAL_ERROR : $code,
-//                'Message' => $msg,
-//                'RequestId' => $this->requestId,
-//                'RequestTime' => $this->requestTime
-//            ];
-//            $apiScope = $this->request->headers->get('Api-Scope');
-//            $this->openApiLog && Log::channel($apiScope)->info($this->requestId . ':response', [$result]);
-//            if (empty($msg)) {
-//                $result['Message'] = ResponseCode::$codeMap[ResponseCode::INTERNAL_ERROR];
-//            }
-//            response()->json($result)->setStatusCode(500)->send();
-//        }
-//    }
-//
-//    private function sendResponse()
-//    {
-//        $apiScope = $this->request->headers->get('Api-Scope');
-//        $apiCache = new ApiCacheService($this->request, static::class);
-//        $apiCache->forget();
-//        $server = $this->request->server->all();
-//        $this->openApiLog && Log::channel($apiScope)->info($this->requestId . ':request', [$server]);
-//        $isSet = $apiCache->isSetCache();
-//        $result = false;
-//        $isSet && $result = $apiCache->getValue();
-//        !$result && $result = $this->main();
-//        $isSet && $apiCache->setValue($result);
-//        $this->openApiLog && Log::channel($apiScope)->info($this->requestId . ':response', [$result]);
-//        response()->json($result)->send();
-//        exit;
-//    }
 
     /*
      * 入参判断
@@ -171,21 +157,23 @@ abstract class DzqController implements RequestHandlerInterface
             $validate = app('validator');
             $validate->validate($inputArray, $rules);
         } catch (\Exception $e) {
-            $this->outPut(ResponseCode::INVALID_PARAMETER, $e->getMessage());
+            $validate_error = $e->validator->errors()->first();
+            $error_message = !empty($validate_error) ? $validate_error : $e->getMessage();
+            $this->outPut(ResponseCode::INVALID_PARAMETER, $error_message);
         }
     }
 
     /*
      * 分页
      */
-    public function pagination($currentPage, $perPage, \Illuminate\Database\Eloquent\Builder $builder, $toArray = true)
+    public function pagination($page, $perPage, \Illuminate\Database\Eloquent\Builder $builder, $toArray = true)
     {
-        $currentPage = $currentPage >= 1 ? intval($currentPage) : 1;
+        $page = $page >= 1 ? intval($page) : 1;
         $perPageMax = 50;
         $perPage = $perPage >= 1 ? intval($perPage) : 20;
         $perPage > $perPageMax && $perPage = $perPageMax;
         $count = $builder->count();
-        $builder = $builder->offset(($currentPage - 1) * $perPage)->limit($perPage)->get();
+        $builder = $builder->offset(($page - 1) * $perPage)->limit($perPage)->get();
         $builder = $toArray ? $builder->toArray() : $builder;
         $url = $this->request->getUri();
         $port = $url->getPort();
@@ -193,21 +181,105 @@ abstract class DzqController implements RequestHandlerInterface
         parse_str($url->getQuery(), $query);
         $queryFirst = $queryNext = $queryPre = $query;
         $queryFirst['page'] = 1;
-        $queryNext['page'] = $currentPage + 1;
-        $queryPre['page'] = $currentPage <= 1 ? 1 : $currentPage - 1;
+        $queryNext['page'] = $page + 1;
+        $queryPre['page'] = $page <= 1 ? 1 : $page - 1;
 
         $path = $url->getScheme() . '://' . $url->getHost() . $port . $url->getPath() . '?';
         return [
             'pageData' => $builder,
-            'currentPage' => $currentPage,
+            'currentPage' => $page,
             'perPage' => $perPage,
-            'firstPageUrl' => urldecode($path . http_build_query($queryFirst)),
-            'nextPageUrl' => urldecode($path . http_build_query($queryNext)),
-            'prePageUrl' => urldecode($path . http_build_query($queryPre)),
+            'firstPageUrl' => $this->buildUrl($path, $queryFirst),
+            'nextPageUrl' => $this->buildUrl($path, $queryNext),
+            'prePageUrl' => $this->buildUrl($path, $queryPre),
             'pageLength' => count($builder),
             'totalCount' => $count,
             'totalPage' => $count % $perPage == 0 ? $count / $perPage : intval($count / $perPage) + 1
         ];
+    }
+
+    public function preloadPaginiation($pageCount, $perPage, \Illuminate\Database\Eloquent\Builder $builder)
+    {
+        $perPage = $perPage >= 1 ? intval($perPage) : 20;
+        $perPageMax = 50;
+        $perPage > $perPageMax && $perPage = $perPageMax;
+        $count = $builder->count();
+        $builder = $builder->offset(0)->limit($pageCount * $perPage)->get();
+        $builder = $builder->toArray();
+        $url = $this->request->getUri();
+        $port = $url->getPort();
+        $port = $port == null ? '' : ':' . $port;
+        parse_str($url->getQuery(), $query);
+        unset($query['preload']);
+        $ret = [];
+        $currentPage = 1;
+        $totalCount = $count;
+        $totalPage = $count % $perPage == 0 ? $count / $perPage : intval($count / $perPage) + 1;
+        while ($currentPage <= $pageCount) {
+            $queryFirst = $queryNext = $queryPre = $query;
+            $queryFirst['page'] = 1;
+            $queryNext['page'] = $currentPage + 1;
+            $queryPre['page'] = $currentPage <= 1 ? 1 : $currentPage - 1;
+            $path = $url->getScheme() . '://' . $url->getHost() . $port . $url->getPath() . '?';
+            $pageData = (array)array_slice($builder, ($currentPage - 1) * $perPage, $perPage);
+            $ret[$currentPage] = [
+                'pageData' => $pageData,
+                'currentPage' => $currentPage,
+                'perPage' => $perPage,
+                'firstPageUrl' => $this->buildUrl($path, $queryFirst),
+                'nextPageUrl' => $this->buildUrl($path, $queryNext),
+                'prePageUrl' => $this->buildUrl($path, $queryPre),
+                'pageLength' => count($pageData),
+                'totalCount' => $totalCount,
+                'totalPage' => $totalPage
+            ];
+            if (empty($pageData)) {
+                break;
+            }
+            $currentPage++;
+        }
+        return $ret;
+    }
+
+    /*
+     * 针对特殊数据分页
+     */
+    public function specialPagination($page, $perPage, $builder, $toArray = true)
+    {
+        $page = $page >= 1 ? intval($page) : 1;
+        $perPageMax = 50;
+        $perPage = $perPage >= 1 ? intval($perPage) : 20;
+        $perPage > $perPageMax && $perPage = $perPageMax;
+        $count = is_object($builder) ? $builder->count() : count($builder) ;
+        $builder = is_object($builder) ? $builder->skip(($page - 1) * $perPage)->take($perPage) : array_slice($builder,($page - 1) * $perPage, $perPage);
+        $builder = is_object($builder) ? $toArray ? $builder->toArray() : $builder : $builder;
+        $url = $this->request->getUri();
+        $port = $url->getPort();
+        $port = $port == null ? '' : ':' . $port;
+        parse_str($url->getQuery(), $query);
+        $queryFirst = $queryNext = $queryPre = $query;
+        $queryFirst['page'] = 1;
+        $queryNext['page'] = $page + 1;
+        $queryPre['page'] = $page <= 1 ? 1 : $page - 1;
+
+        $path = $url->getScheme() . '://' . $url->getHost() . $port . $url->getPath() . '?';
+        return [
+            'pageData' => $builder,
+            'currentPage' => $page,
+            'perPage' => $perPage,
+            'firstPageUrl' => $this->buildUrl($path, $queryFirst),
+            'nextPageUrl' => $this->buildUrl($path, $queryNext),
+            'prePageUrl' => $this->buildUrl($path, $queryPre),
+            'pageLength' => count($builder),
+            'totalCount' => $count,
+            'totalPage' => $count % $perPage == 0 ? $count / $perPage : intval($count / $perPage) + 1
+        ];
+    }
+
+
+    private function buildUrl($path, $query)
+    {
+        return urldecode($path . http_build_query($query));
     }
 
     /**
@@ -228,7 +300,7 @@ abstract class DzqController implements RequestHandlerInterface
      */
     public function camelData($arr, $ucfirst = false)
     {
-        if(is_object($arr) && is_callable([$arr, 'toArray']))     $arr = $arr->toArray();
+        if (is_object($arr) && is_callable([$arr, 'toArray'])) $arr = $arr->toArray();
         if (!is_array($arr)) {
             //如果非数组原样返回
             return $arr;
@@ -262,7 +334,7 @@ abstract class DzqController implements RequestHandlerInterface
         $connection->enableQueryLog();
     }
 
-    public function ddQueryLog()
+    public function closeQueryLog()
     {
         if (!empty($this->connection)) {
             dd(json_encode($this->connection->getQueryLog(), 256));
@@ -287,4 +359,15 @@ abstract class DzqController implements RequestHandlerInterface
         return [$ip, $port];
     }
 
+    private function dzqLogInit(){
+        $userId = !empty($this->user->id) ? $this->user->id : 0;
+        $settings = app(\App\Settings\SettingsRepository::class);
+        $openApiLog = $settings->get('open_api_log'); // 从缓存中获取配置
+        app()->instance(DzqLog::APP_DZQLOG, [
+            'request'       =>  $this->request,
+            'requestId'     =>  $this->requestId,
+            'userId'        =>  $userId,
+            'openApiLog'    =>  !empty($openApiLog)
+        ]);
+    }
 }

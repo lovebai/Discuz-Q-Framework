@@ -3,6 +3,7 @@
 namespace Discuz\Notifications\Messages;
 
 use App\Models\NotificationTpl;
+use App\Models\Thread;
 use Discuz\Notifications\Traits\VariableTemplateTrait;
 use Discuz\Wechat\EasyWechatTrait;
 use Illuminate\Support\Str;
@@ -23,9 +24,9 @@ abstract class SimpleMessage
     {
         $replaceVars = array_map(function ($var) {
             if (is_string($var)){
-                $var = str_replace("<p>", "", $var);
-                $var = str_replace("</p>", "", $var);
-                $var = Str::limit($var, 300, '...');
+                if (mb_strlen($var) > Thread::NOTICE_CONTENT_LENGTH) {
+                    $var = Str::substr(strip_tags($var), 0, Thread::NOTICE_CONTENT_LENGTH) . '...';
+                }
             }
             return $var;
         }, $this->contentReplaceVars($data));
@@ -50,7 +51,10 @@ abstract class SimpleMessage
 
     protected function getVars()
     {
-        return array_keys(unserialize($this->firstData->vars));
+        if (!empty($this->firstData->vars)) {
+            return array_keys(unserialize($this->firstData->vars));
+        }
+        return [];
     }
 
     protected function getTitle()

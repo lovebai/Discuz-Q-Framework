@@ -2,6 +2,12 @@
 
 namespace Discuz\Common;
 
+use App\Common\ResponseCode;
+use Discuz\Base\DzqLog;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Discuz\Http\DiscuzResponseFactory;
+
 /**
  * Copyright (C) 2020 Tencent Cloud.
  *
@@ -48,7 +54,7 @@ class Utils
         }
 
         $user_agent = '';
-        if(isset($server['HTTP_USER_AGENT']) && !empty($server['HTTP_USER_AGENT'])){
+        if (isset($server['HTTP_USER_AGENT']) && !empty($server['HTTP_USER_AGENT'])) {
             $user_agent = $server['HTTP_USER_AGENT'];
         }
 
@@ -97,5 +103,73 @@ class Utils
         } else {
             return true;
         }
+    }
+
+    /**
+     * v2,v3接口输出
+     * @param $code
+     * @param string $msg
+     * @param array $data
+     * @param null $requestId
+     * @param null $requestTime
+     */
+    public static function outPut($code, $msg = '', $data = [], $requestId = null, $requestTime = null)
+    {
+        $request = app('request');
+
+        $apiPath = $request->getUri()->getPath();
+        $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
+        $dzqLog = null;
+        $hasLOG = app()->has(DzqLog::APP_DZQLOG);
+        if ($hasLOG) {
+            $dzqLog = app()->get(DzqLog::APP_DZQLOG);
+        }
+
+        if (empty($msg)) {
+            if (ResponseCode::$codeMap[$code]) {
+                $msg = ResponseCode::$codeMap[$code];
+            }
+        }
+
+        if ($msg != '' && stristr($msg, 'SQLSTATE')) {
+            app('log')->info('database-error:' . $msg . ' api:' . $request->getUri()->getPath());
+            if (app()->config('debug')) {
+                $msg = '数据库异常' . $msg;
+            } else {
+                $msg = '数据库异常';
+            }
+        }
+
+        if ($code != 0) {
+            app('log')->info('result error:' . $code.' api:'.$request->getUri()->getPath().' msg:'.$msg);
+        }
+
+        $data = [
+            'Code' => $code,
+            'Message' => $msg,
+            'Data' => $data,
+            'RequestId' => empty($requestId) ? Str::uuid() : $requestId,
+            'RequestTime' => empty($requestTime) ? date('Y-m-d H:i:s') : $requestTime
+        ];
+
+        if (strpos($api, 'backAdmin') === 0) {
+            DzqLog::inPut(DzqLog::LOG_ADMIN);
+            DzqLog::outPut($data, DzqLog::LOG_ADMIN);
+        } elseif (! empty($dzqLog['openApiLog'])) {
+            DzqLog::inPut(DzqLog::LOG_API);
+            DzqLog::outPut($data, DzqLog::LOG_API);
+        }
+
+        $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
+        foreach ($crossHeaders as $k => $v) {
+            header($k . ':' . $v);
+        }
+        header('Content-Type:application/json; charset=utf-8', true, 200);
+        $t1 = DISCUZ_START;
+        $t2 = microtime(true);
+        header('Dzq-CostTime:'.(($t2 - $t1)*1000).'ms');
+//        header('Dzq-DB-CostTime:'.$GLOBALS["mysql_time"].'ms');
+
+        exit(json_encode($data, 256));
     }
 }

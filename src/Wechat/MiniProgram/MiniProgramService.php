@@ -19,6 +19,7 @@
 namespace Discuz\Wechat\MiniProgram;
 
 use Discuz\Contracts\Setting\SettingsRepository;
+use Discuz\Wechat\LumenCache;
 
 class MiniProgramService
 {
@@ -62,7 +63,8 @@ class MiniProgramService
         if (array_search('', $this->config)) {
             return null;
         }
-
-        return $this->easyWechatFactory::miniProgram($this->config);
+        $miniprogram = $this->easyWechatFactory::miniProgram($this->config);
+        $miniprogram->rebind('cache',  app(LumenCache::class));
+        return $miniprogram;
     }
 }

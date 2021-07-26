@@ -25,7 +25,9 @@ use Discuz\Qcloud\Services\CaptchaService;
 use Discuz\Qcloud\Services\CmsService;
 use Discuz\Qcloud\Services\DiscuzCloudService;
 use Discuz\Qcloud\Services\FaceidService;
+use Discuz\Qcloud\Services\ImsService;
 use Discuz\Qcloud\Services\SmsService;
+use Discuz\Qcloud\Services\TmsService;
 use Discuz\Qcloud\Services\VodService;
 use Discuz\Qcloud\Services\YunsouService;
 use Discuz\Qcloud\Services\MsService;
@@ -70,6 +72,16 @@ class QcloudManage extends Manager implements Factory
     public function createCmsDriver()
     {
         return $this->buildService(CmsService::class, $this->qcloudConfig);
+    }
+
+    public function createTmsDriver()
+    {
+        return $this->buildService(TmsService::class, $this->qcloudConfig);
+    }
+
+    public function createImsDriver()
+    {
+        return $this->buildService(ImsService::class, $this->qcloudConfig);
     }
 
     public function createSmsDriver()

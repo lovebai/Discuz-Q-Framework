@@ -18,12 +18,13 @@
 
 namespace Discuz\Http\Middleware;
 
+use App\Common\ResponseCode;
 use App\Models\Group;
 use App\Models\Invite;
 use App\Models\Order;
 use Discuz\Auth\AssertPermissionTrait;
 use Discuz\Auth\Exception\PermissionDeniedException;
-use Discuz\Common\PubEnum;
+use Discuz\Base\DzqLog;
 use Discuz\Contracts\Setting\SettingsRepository;
 use Discuz\Foundation\Application;
 use Illuminate\Support\Carbon;
@@ -41,6 +42,36 @@ class CheckoutSite implements MiddlewareInterface
 
     protected $settings;
 
+    private $noCheckPayMode = [
+        'user',
+        'forum',
+        'follow',
+        'thread.list',
+        'users.list',
+        'order.create',
+        'trade/pay/order',
+        'order.detail',
+        'wallet/cash',
+        'wallet/log',
+        'wallet/user',
+        'categories',
+        'thread.stick',
+        'tom.permissions',
+        'thread.recommends',
+        'trade/notify/wechat',
+        'threads/notify/video',
+        'offiaccount/jssdk',
+        'attachment.download',
+        'user/signinfields', // 查询、提交扩展字段
+        'attachments', //上传图片、附件
+        'unreadnotification',
+        'thread.detail', // 帖子详情
+        'posts', // 帖子
+        'backAdmin/login',
+        'emoji',
+        'view.count'
+    ];
+
     public function __construct(Application $app, SettingsRepository $settings)
     {
         $this->app = $app;
@@ -56,41 +87,21 @@ class CheckoutSite implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         // get settings
-//        $siteClose = (bool)$this->settings->get('site_close');
-
-        $reqType = Utils::requestFrom();
-        $siteManage = json_decode($this->settings->get('site_manage'), true);
-        $siteManage = array_column($siteManage,null,'key');
-        $siteOpen = true;
-        isset($siteManage[$reqType]) && $siteOpen = $siteManage[$reqType]['value'];
-
-
+        $actor = $request->getAttribute('actor');
+        $siteClose = (bool)$this->settings->get('site_close');
         $siteMode = $this->settings->get('site_mode');
-
-        $apiPath=$request->getUri()->getPath();
-        $apiParams = $request->getQueryParams();
-        if (in_array($apiPath, ['/api/login', '/api/oauth/wechat/miniprogram'])) {
-            return $handler->handle($request);
+        if ($siteClose && !$actor->isAdmin() && $request->getUri()->getPath() != '/api/backAdmin/login') {
+            $siteCloseMsg = $this->settings->get('site_close_msg');
+            Utils::outPut(ResponseCode::SITE_CLOSED, '', ['detail' => $siteCloseMsg]);
         }
 
-//        $server = $request->getServerParams();
-//        $userAgent = '';
-//        if(isset($server['HTTP_USER_AGENT'])){
-//            $userAgent = $server['HTTP_USER_AGENT'];
-//        }
-//        if($reqType == PubEnum::H5 && stristr($userAgent,'MicroMessenger') && (in_array($apiPath,[
-//                 '/api/oauth/wechat',
-//                '/api/oauth/wechat/user',
-//                '/api/forum',
-//            ]) || strstr($apiPath,'/api/users'))){
+//        if (in_array($request->getUri()->getPath(), ['/api/login', '/api/oauth/wechat/miniprogram'])) {
 //            return $handler->handle($request);
 //        }
-
-        $actor = $request->getAttribute('actor');
-        !$siteOpen && $this->assertAdmin($actor);
-
+        // $siteClose && $this->assertAdmin($actor);
+        $this->checkPayMode($request, $actor);
         // 处理 付费模式 逻辑， 过期之后 加入待付费组
-        if (! $actor->isAdmin() && $siteMode === 'pay' && Carbon::now()->gt($actor->expired_at)) {
+        if (!$actor->isAdmin() && $siteMode === 'pay' && Carbon::now()->gt($actor->expired_at)) {
             if (!$this->getOrder($actor) && !$this->getInvite($actor)) {
                 $actor->setRelation('groups', Group::query()->where('id', Group::UNPAID)->get());
             }
@@ -99,18 +110,42 @@ class CheckoutSite implements MiddlewareInterface
         return $handler->handle($request);
     }
 
+    private function checkPayMode($request, $actor)
+    {
+        $siteMode = $this->settings->get('site_mode');
+        if ($siteMode == "public") {
+            return;
+        }
+        if ($actor->isAdmin()) {
+            return;
+        }
+        //普通会员已付费未到期
+        if (strtotime($actor->expired_at) > time()) {
+            return;
+        }
+        $apiPath = $request->getUri()->getPath();
+        $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
+        if (!in_array($api, $this->noCheckPayMode) && !(strpos($api, 'users') === 0) && !(strpos($api, 'backAdmin') === 0)) {
+            DzqLog::info('checkout_site_no_permission', [
+                'user' => $actor
+            ]);
+            Utils::outPut(ResponseCode::JUMP_TO_PAY_SITE);
+        }
+    }
+
     private function getOrder($actor)
     {
         if ($actor->isGuest()) {
             return false;
         }
         return $actor->orders()
-            ->where('type', Order::ORDER_TYPE_REGISTER)
+            ->whereIn('type', [Order::ORDER_TYPE_REGISTER, Order::ORDER_TYPE_RENEW])
             ->where('status', Order::ORDER_STATUS_PAID)
             ->where(function ($query) {
                 $query->where('expired_at', '>', Carbon::now()->toDateTimeString())
-                      ->orWhere('expired_at', null);
+                    ->orWhere('expired_at', null);
             })
+            ->orderBy('id', 'desc')
             ->first();
     }
 
