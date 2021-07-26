@@ -100,7 +100,7 @@ class CheckUserStatus implements MiddlewareInterface
 
         $actor = $request->getAttribute('actor');
         if ($actor->isGuest()) {
-            $handler->handle($request);
+            return $handler->handle($request);
         }
         // 被禁用的用户
         if ($actor->status == User::STATUS_BAN) {
