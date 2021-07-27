@@ -45,6 +45,11 @@ class DzqCache
         return app('cache')->forget($key);
     }
 
+    public static function clear()
+    {
+        return app('cache')->flush();
+    }
+
     public static function delHashKey($key, $hashKey)
     {
         if (isset(CacheKey::$fileStore[$key])) {
