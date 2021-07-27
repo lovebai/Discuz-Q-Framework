@@ -17,18 +17,15 @@
 
 namespace Discuz\Base;
 
+use Discuz\Common\Utils;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 abstract class DzqServiceProvider extends ServiceProvider
 {
     abstract public function boot();
 
     public function outPut($code, $msg = '', $data = []){
-        $data =  [
-            'Code' => $code,
-            'Message' => $msg,
-            'Data' => $data
-        ];
-        response()->json($data)->send();
+        Utils::outPut($code, $msg, $data, Str::uuid(), date('Y-m-d H:i:s'));
     }
 }

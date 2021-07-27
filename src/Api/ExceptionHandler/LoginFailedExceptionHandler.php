@@ -18,12 +18,14 @@
 
 namespace Discuz\Api\ExceptionHandler;
 
+use App\Common\ResponseCode;
 use Discuz\Auth\Exception\LoginFailedException;
 use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Tobscure\JsonApi\Exception\Handler\ExceptionHandlerInterface;
 use Tobscure\JsonApi\Exception\Handler\ResponseBag;
-
+use Discuz\Common\Utils;
 class LoginFailedExceptionHandler implements ExceptionHandlerInterface
 {
     /**
@@ -39,15 +41,24 @@ class LoginFailedExceptionHandler implements ExceptionHandlerInterface
      */
     public function handle(Exception $e)
     {
-        $status = $e->getCode();
+        $path = Request::capture()->getPathInfo();
+        $detail = Str::replaceFirst(':values', $e->getMessage(), app('translator')->get('login.residue_degree'));
+        if (strstr($path, 'v2')||strstr($path, 'v3')) {
+            if (empty($e->getMessage())) {
+                Utils::outPut(ResponseCode::LOGIN_FAILED, app('translator')->get('login.login_info_error'));
+            }
+            Utils::outPut(ResponseCode::LOGIN_FAILED, $detail);
+            return null;
+        }
 
+        $status = $e->getCode();
         $error = [
             'status' => (string) $status,
             'code' => 'login_failed',
         ];
 
         if (is_numeric($e->getMessage())) {
-            $error['detail'] = [Str::replaceFirst(':values', $e->getMessage(), app('translator')->get('login.residue_degree'))];
+            $error['detail'] = [$detail];
         }
 
         return new ResponseBag($status, [$error]);

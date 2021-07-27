@@ -19,7 +19,9 @@ namespace Discuz\Base;
 
 
 use Closure;
+use Discuz\Common\Utils;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Laravel\Lumen\Application;
 use Ramsey\Uuid\Uuid;
 
@@ -42,12 +44,8 @@ class DzqMiddleware
         return $next($request);
     }
 
-    public function outPut($code, $msg = '', $data = []){
-        $data =  [
-            'Code' => $code,
-            'Message' => $msg,
-            'Data' => $data
-        ];
-        response()->json($data)->send();
+    public function outPut($code, $msg = '', $data = [])
+    {
+        Utils::outPut($code, $msg, $data, Str::uuid(), date('Y-m-d H:i:s'));
     }
 }

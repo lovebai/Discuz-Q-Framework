@@ -18,10 +18,12 @@
 
 namespace Discuz\Http\Middleware;
 
+use App\Common\ResponseCode;
 use App\Models\User;
 use App\Models\UserSignInFields;
 use Discuz\Auth\Exception\PermissionDeniedException;
 use Discuz\Common\Utils;
+use Discuz\Contracts\Setting\SettingsRepository;
 use Discuz\Http\DiscuzResponseFactory;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -30,9 +32,57 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class CheckUserStatus implements MiddlewareInterface
 {
-    private $noCheckAction = [
-        '/api/user/signinfields',
-        '/api/attachments'
+    //用户状态路由白名单：审核中、扩展字段
+    private $noAuditAction = [
+        'users/pc/wechat/h5.genqrcode', // h5二维码生成
+        'users/pc/wechat/miniprogram.genqrcode', // 小程序二维码生成
+        'users/pc/wechat/h5.login', // h5登录轮询
+        'users/pc/wechat/miniprogram.login', //小程序登录轮询
+        'users/mobilebrowser/wechat/miniprogram.genscheme', //小程序Scheme拉起
+        'users/username.login', // 用户名登录
+        'users/username.register', // 用户名注册
+//        'users/username.login.isdisplay', // 用户名入口是否展示
+        'users/username.check', // 用户名检测
+        'users/sms.send', // 手机号发送
+        'users/sms.verify', // 手机号验证用户
+        'users/sms.login', // 手机号登录
+        'users/sms.bind', // 手机号绑定
+        'users/wechat/h5.oauth', // h5授权
+        'users/wechat/h5.login', // h5登录
+        'users/wechat/h5.bind', // h5绑定
+        'users/wechat/miniprogram.login', // 小程序登录
+        'users/wechat/miniprogram.bind', // 小程序绑定
+        'users/wechat/transition/username.autobind', // 过渡开关打开微信绑定自动创建账号
+        'users/wechat/transition/sms.bind', // 过渡流程绑定手机号
+        'users/nickname.set', // 登录页昵称设置
+
+        'user', // 用户信息
+        'forum', // 首页配置接口
+//        'follow',
+        'thread.list', // 帖子列表
+        'users.list',
+        'order.create', // 订单创建
+        'trade/pay/order',
+        'order.detail',
+        'wallet/cash',
+        'wallet/log',
+        'wallet/user', // 用户钱包
+        'categories', //分类接口
+        'thread.stick', // 置顶
+        'tom.permissions', //权限
+        'thread.recommends', // 帖子
+        'trade/notify/wechat',
+        'threads/notify/video',
+        'offiaccount/jssdk',
+//        'attachment.download',
+        'user/signinfields', // 查询、提交扩展字段
+        'attachments', //上传图片、附件
+        'unreadnotification', // 消息
+        'thread.detail', // 帖子详情
+        'posts', // 帖子
+        'backAdmin/login',
+        'emoji',
+        'view.count'
     ];
 
     /**
@@ -42,34 +92,42 @@ class CheckUserStatus implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        $apiPath = $request->getUri()->getPath();
+        $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
+        if ($api === 'forum' || $api === 'user') {
+            return $handler->handle($request);
+        }
 
         $actor = $request->getAttribute('actor');
+        if ($actor->isGuest()) {
+            return $handler->handle($request);
+        }
         // 被禁用的用户
         if ($actor->status == User::STATUS_BAN) {
-            throw new PermissionDeniedException('ban_user');
+            Utils::outPut(ResponseCode::USER_BAN);
         }
         // 审核中的用户
         if ($actor->status == User::STATUS_MOD) {
-            $path = $request->getUri()->getPath();
-            if (!in_array($path, $this->noCheckAction)) {
-                $this->exceptionResponse($actor->id,'register_validate');
+            if (!in_array($api, $this->noAuditAction) && !(strpos($api, 'users') === 0)) {
+                Utils::outPut(ResponseCode::JUMP_TO_AUDIT);
             }
         }
         // 审核拒绝
         if ($actor->status == User::STATUS_REFUSE) {
-            $this->exceptionResponse($actor->id,'validate_reject');
-
-//            throw new PermissionDeniedException('validate_reject');
+            Utils::outPut(ResponseCode::VALIDATE_REJECT,
+                          ResponseCode::$codeMap[ResponseCode::VALIDATE_REJECT],
+                          User::getUserReject($actor->id)
+            );
+//            $this->exceptionResponse($actor->id,'validate_reject');
         }
         // 审核忽略
         if ($actor->status == User::STATUS_IGNORE) {
-            throw new PermissionDeniedException('validate_ignore');
+            Utils::outPut(ResponseCode::VALIDATE_IGNORE);
         }
         // 待填写扩展审核字段的用户
-        if ($actor->status == User::STATUS_NEED_FIELDS) {
-            $path = $request->getUri()->getPath();
-            if (!in_array($path, $this->noCheckAction)) {
-                throw new PermissionDeniedException('need_ext_fields');
+        if ($actor->status == User::STATUS_NEED_FIELDS || $this->isJumpSiginFields($actor)) {
+            if (!in_array($api, $this->noAuditAction) && !(strpos($api, 'users') === 0)) {
+                Utils::outPut(ResponseCode::JUMP_TO_SIGIN_FIELDS);
             }
         }
         return $handler->handle($request);
@@ -92,5 +150,16 @@ class CheckUserStatus implements MiddlewareInterface
         ];
         header('Content-Type:application/json; charset=utf-8', true, 401);
         exit(json_encode($response, 256));
+    }
+
+    private function isJumpSiginFields($actor){
+        $userId = !empty($actor->id) ? (int)$actor->id : 0;
+        $settings = app(SettingsRepository::class);
+        $openExtFields = $settings->get('open_ext_fields');
+        $userSignInFields = UserSignInFields::query()->where('user_id', $userId)->exists();
+        if ($actor->status == USER::STATUS_NORMAL && !empty($openExtFields) && !$userSignInFields && !$actor->isAdmin()) {
+            return true;
+        }
+        return false;
     }
 }

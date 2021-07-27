@@ -38,12 +38,8 @@ class FilesystemServiceProvider extends ServiceProvider
         $this->app->make('filesystem')->extend('cos', function ($app, $config) {
             $settings = $this->app->make(SettingsRepository::class);
             $qcloud = $settings->tag('qcloud');
-
-            $server = $app['request']->getServerParams();
-
-            $container = Arr::get($server, 'KUBERNETES_SERVICE_HOST');
-
-            if (!is_null($container) && Arr::get($qcloud, 'qcloud_cos')) {
+            $container = getenv('KUBERNETES_SERVICE_HOST');
+            if ($container && Arr::get($qcloud, 'qcloud_cos')) {
                 $data = $this->getTmpSecret($app);
                 if ($data) {
                     $qcloud['qcloud_secret_id'] = Arr::get($data, 'TmpSecretId');

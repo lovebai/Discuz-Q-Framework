@@ -19,11 +19,14 @@
 namespace Discuz\Http\Middleware;
 
 use App\Common\CacheKey;
+use App\Common\ResponseCode;
 use App\Models\Setting;
 use App\Models\User;
 use App\Passport\Repositories\AccessTokenRepository;
 use Discuz\Auth\Guest;
+use Discuz\Base\DzqLog;
 use Discuz\Cache\CacheManager;
+use Discuz\Common\Utils;
 use Illuminate\Support\Arr;
 use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\ResourceServer;
@@ -44,15 +47,16 @@ class AuthenticateWithHeader implements MiddlewareInterface
     }
 
     private $apiFreq = [
-        'get'=>[
-            'freq'=>500,
-            'forbidden'=>20
+        'get' => [
+            'freq' => 500,
+            'forbidden' => 20
         ],
-        'post'=>[
-            'freq'=>100,
-            'forbidden'=>30
+        'post' => [
+            'freq' => 100,
+            'forbidden' => 30
         ]
     ];
+
     /**
      * @param ServerRequestInterface $request
      * @param RequestHandlerInterface $handler
@@ -61,7 +65,9 @@ class AuthenticateWithHeader implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-//        $this->getApiFreq($request);
+        $api = str_replace(['/apiv3/', '/api/'], '', $request->getUri()->getPath());
+        $this->getApiFreq($api);
+
         $headerLine = $request->getHeaderLine('authorization');
 
         // 允许 get、cookie 携带 Token
@@ -74,7 +80,6 @@ class AuthenticateWithHeader implements MiddlewareInterface
         }
 
         $request = $request->withAttribute('actor', new Guest());
-
         if ($headerLine) {
             $accessTokenRepository = new AccessTokenRepository();
 
@@ -82,25 +87,35 @@ class AuthenticateWithHeader implements MiddlewareInterface
 
             $server = new ResourceServer($accessTokenRepository, $publickey);
 
-            $request = $server->validateAuthenticatedRequest($request);
-            $this->checkLimit($request);
+            try {
+                $request = $server->validateAuthenticatedRequest($request);
+            } catch (\Exception $e){
+                $data = [
+                    'api'           =>  $api,
+                    'token'         =>  $headerLine
+                ];
+                DzqLog::error('invalid_token', $data, $e->getMessage());
+                Utils::outPut(ResponseCode::INVALID_TOKEN);
+            }
+
+            $this->checkLimit($api, $request);
             // 获取Token位置，根据 Token 解析用户并查询到当前用户
             $actor = $this->getActor($request);
+
             if (!is_null($actor) && $actor->exists) {
                 $request = $request->withoutAttribute('oauth_access_token_id')->withoutAttribute('oauth_client_id')->withoutAttribute('oauth_user_id')->withoutAttribute('oauth_scopes')->withAttribute('actor', $actor);
             }
         } else {
-            $this->checkLimit($request);
+            $this->checkLimit($api, $request);
         }
         return $handler->handle($request);
     }
 
-    private function getApiFreq(ServerRequestInterface $request)
+    private function getApiFreq($api)
     {
         $cache = app('cache');
-        $api = $request->getUri()->getPath();
         $cacheKey = CacheKey::API_FREQUENCE;
-        if ($api == '/api/cache') {
+        if ($api == 'cache.delete') {
             $cache->forget($cacheKey);
         }
         $apiFreq = $cache->get($cacheKey);
@@ -146,25 +161,28 @@ class AuthenticateWithHeader implements MiddlewareInterface
         return $actor;
     }
 
-    private function checkLimit(ServerRequestInterface $request)
+    private function checkLimit($api, ServerRequestInterface $request)
     {
         $method = Arr::get($request->getServerParams(), 'REQUEST_METHOD', '');
         $userId = $request->getAttribute('oauth_user_id');
+        if (strstr($api, 'backAdmin')) {
+            return;
+        }
         if (strtolower($method) == 'get') {
-            if ($this->isForbidden($userId, $request, $method, $this->apiFreq['get']['freq'])) {
-                throw new \Exception('请求太频繁，请稍后重试');
+            if ($this->isForbidden($api, $userId, $request, $method, $this->apiFreq['get']['freq'])) {
+                throw new \Exception('操作太频繁，请稍后重试');
             }
         } else {
-            if ($this->isForbidden($userId, $request, $method, $this->apiFreq['post']['freq'])) {
-                throw new \Exception('请求太频繁，请稍后重试');
+            if ($this->isForbidden($api, $userId, $request, $method, $this->apiFreq['post']['freq'])) {
+                throw new \Exception('操作太频繁，请稍后重试');
             }
         }
     }
 
-    private function isForbidden($userId, ServerRequestInterface $request, $method, $max = 10, $interval = 60)
+    private function isForbidden($api, $userId, ServerRequestInterface $request, $method, $max = 10, $interval = 60)
     {
+
         $ip = ip($request->getServerParams());
-        $api = $request->getUri()->getPath();
         if (empty($api)) {
             return true;
         }
@@ -174,45 +192,42 @@ class AuthenticateWithHeader implements MiddlewareInterface
         } else {
             $key = 'api_limit_by_uid_' . md5($userId . '_' . $api . $method);
         }
-        if ($this->isHome($api, $method)) {
-            return $this->setLimit($key, $method, $this->apiFreq['get']['freq'] * 2, $this->apiFreq['get']['forbidden']);
-        }
         if ($this->isRegister($api, $method)) {
             return $this->setLimit($key, $method, 10, 10 * 60);
         }
         if ($this->isAttachments($api, $method)) {
             return $this->setLimit($key, $method, 20, 5 * 60);
         }
-        if ($this->isMessage($api, $method)) {
-            return $this->setLimit($key, $method, 300, 60);
+        if ($this->isPoll($api)) {
+            return $this->setLimit($key, $method, 200, 60);
         }
         return $this->setLimit($key, $method, $max);
     }
 
     private function isRegister($api, $method)
     {
-        return $api == '/api/register' && $method == 'post';
+        return $api == 'users/username.register' && $method == 'post';
     }
 
     private function isAttachments($api, $method)
     {
-        return $api == '/api/attachments' && $method == 'post';
+        return $api == 'attachments' && $method == 'post';
     }
 
-    private function isHome($api, $method)
+
+    private function isPoll($api)
     {
-        $homeApi = [
-            '/api/threads',
-            '/api/categories',
-            '/api/forum',
-            '/api/users/recommended'
+        $pollapi = [
+            'users/pc/wechat/h5.login',
+            'users/pc/wechat/h5.bind',
+            'users/pc/wechat/miniprogram.bind',
+            'users/pc/wechat/miniprogram.login',
+            'users/pc/wechat.rebind.poll',
+            'dialog/message',
+            'unreadnotification',
+            'dialog.update'
         ];
-        return in_array($api, $homeApi) && $method == 'get';
-    }
-
-    private function isMessage($api, $method)
-    {
-        return $api == '/api/dialog/message' && $method == 'get';
+        return in_array($api, $pollapi);
     }
 
     /*

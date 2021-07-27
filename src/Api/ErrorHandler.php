@@ -20,6 +20,7 @@ namespace Discuz\Api;
 
 use App\Common\ResponseCode;
 use Discuz\Base\DzqBase;
+use Discuz\Base\DzqLog;
 use Discuz\Http\DiscuzResponseFactory;
 use Exception;
 use Illuminate\Http\Request;
@@ -55,7 +56,6 @@ class ErrorHandler extends DzqBase
         $info = sprintf('%s: %s in %s:%s', get_class($e), $e->getMessage() . '\n' . $e->getTraceAsString(), $e->getFile(), $e->getLine());
         $this->logger->info('errorhandler：'.$info);
         $response = $this->errorHandler->handle($e);
-
         $errors = $response->getErrors();
         $path = Request::capture()->getPathInfo();
         if (strstr($path, 'v2')||strstr($path, 'v3')) {
@@ -66,6 +66,9 @@ class ErrorHandler extends DzqBase
                         $this->outPut(ResponseCode::INTERNAL_ERROR,$e->getMessage());
                         break;
                     case 401:
+                        DzqLog::info('error_handle_401_no_permission', [
+                            'errorMessage' => $e->getMessage()
+                        ]);
                         $this->outPut(ResponseCode::UNAUTHORIZED,$e->getMessage());
                         break;
                     default:
