@@ -22,6 +22,7 @@ use App\Common\ResponseCode;
 use App\Models\Group;
 use App\Models\Invite;
 use App\Models\Order;
+use App\Repositories\UserRepository;
 use Discuz\Auth\AssertPermissionTrait;
 use Discuz\Auth\Exception\PermissionDeniedException;
 use Discuz\Base\DzqLog;
@@ -112,17 +113,12 @@ class CheckoutSite implements MiddlewareInterface
 
     private function checkPayMode($request, $actor)
     {
-        $siteMode = $this->settings->get('site_mode');
-        if ($siteMode == "public") {
-            return;
-        }
-        if ($actor->isAdmin()) {
-            return;
-        }
-        //普通会员已付费未到期
-        if (strtotime($actor->expired_at) > time()) {
-            return;
-        }
+        $userRepo = app(UserRepository::class);
+//        dd($userRepo->isPaid($actor));
+         if ($userRepo->isPaid($actor) === true) {
+             return;
+         }
+
         $apiPath = $request->getUri()->getPath();
         $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
         if (!in_array($api, $this->noCheckPayMode) && !(strpos($api, 'users') === 0) && !(strpos($api, 'backAdmin') === 0)) {
