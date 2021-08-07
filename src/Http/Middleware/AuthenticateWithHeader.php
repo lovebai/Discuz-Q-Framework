@@ -201,6 +201,11 @@ class AuthenticateWithHeader implements MiddlewareInterface
         if ($this->isPoll($api)) {
             return $this->setLimit($key, $method, 200, 60);
         }
+
+        if ($this->isCoskey($api, $method)) {
+            return $this->setLimit($key, $method, 20, 30);
+        }
+
         return $this->setLimit($key, $method, $max);
     }
 
@@ -213,7 +218,6 @@ class AuthenticateWithHeader implements MiddlewareInterface
     {
         return $api == 'attachments' && $method == 'post';
     }
-
 
     private function isPoll($api)
     {
@@ -230,6 +234,11 @@ class AuthenticateWithHeader implements MiddlewareInterface
         return in_array($api, $pollapi);
     }
 
+    private  function isCoskey($api, $method)
+    {
+        return $api == 'coskey' && $method == 'post';
+    }
+
     /*
      * $max interage 每分钟最大调用次数
      * $defaultDelay Boolen 超过调用次数禁止秒数
@@ -238,6 +247,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
     {
         $cache = app('cache');
         $count = $cache->get($key);
+
         if (empty($count)) {
             $cache->add($key, 1, 60);
             return false;
