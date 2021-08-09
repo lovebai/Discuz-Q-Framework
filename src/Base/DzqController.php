@@ -157,8 +157,11 @@ abstract class DzqController implements RequestHandlerInterface
             $validate = app('validator');
             $validate->validate($inputArray, $rules);
         } catch (\Exception $e) {
-            $validate_error = $e->validator->errors()->first();
-            $error_message = !empty($validate_error) ? $validate_error : $e->getMessage();
+            if (empty($e->validator) || empty($e->validator->errors())) {
+                $error_message = $e->getMessage();
+            } else {
+                $error_message = $e->validator->errors()->first();
+            }
             $this->outPut(ResponseCode::INVALID_PARAMETER, $error_message);
         }
     }
