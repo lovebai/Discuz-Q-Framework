@@ -2,6 +2,8 @@
 
 namespace Discuz\Base;
 
+use Illuminate\Support\Collection;
+
 class DzqLog
 {
     const APP_DZQLOG = 'APP_DZQLOG';//容器全局变量
@@ -44,6 +46,27 @@ class DzqLog
         $requestId = $appLog['requestId'] ?? '';
         $userId = $appLog['userId'] ?? 0;
         $payload = $request->getParsedBody();
+        $recordPayload = $payload;
+        if ($payload instanceof Collection) {
+            $recordPayload = $payload->toArray();
+            $replaceWord = '******';
+            isset($recordPayload['password'])                   && $recordPayload['password'] = $replaceWord;
+            isset($recordPayload['newPassword'])                && $recordPayload['newPassword'] = $replaceWord;
+            isset($recordPayload['passwordConfirmation'])       && $recordPayload['passwordConfirmation'] = $replaceWord;
+            isset($recordPayload['payPassword'])                && $recordPayload['payPassword'] = $replaceWord;
+            isset($recordPayload['payPasswordConfirmation'])    && $recordPayload['payPasswordConfirmation'] = $replaceWord;
+            isset($recordPayload['payPasswordToken'])           && $recordPayload['payPasswordToken'] = $replaceWord;
+            if ($uri->getPath() == '/api/backAdmin/settings.create') {
+                foreach ($recordPayload['data'] as &$item) {
+                    if (in_array($item['key'], [
+                        'qcloud_secret_key','qcloud_sms_app_key','qcloud_captcha_secret_key','qcloud_vod_url_key',
+                        'offiaccount_app_secret','miniprogram_app_secret','api_key'
+                    ])) {
+                        $item['value'] = $replaceWord;
+                    }
+                }
+            }
+        }
         $port = empty($uri->getPort())?'':':'.$uri->getPort();
         $url = $uri->getScheme().'://'.$uri->getHost().$port.$uri->getPath().'?'.$uri->getQuery();
         return [
@@ -53,7 +76,7 @@ class DzqLog
             'ip' => $ip,
             'requestId' => $requestId,
             'userId' => $userId,
-            'payload' => $payload,
+            'payload' => $recordPayload,
         ];
     }
 
