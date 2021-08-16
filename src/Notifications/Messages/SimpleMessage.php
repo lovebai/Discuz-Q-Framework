@@ -3,7 +3,7 @@
 namespace Discuz\Notifications\Messages;
 
 use App\Models\NotificationTpl;
-use App\Models\Thread;
+use App\Models\Post;
 use Discuz\Notifications\Traits\VariableTemplateTrait;
 use Discuz\Wechat\EasyWechatTrait;
 use Illuminate\Support\Str;
@@ -22,12 +22,11 @@ abstract class SimpleMessage
 
     protected function getContent($data)
     {
+        if (isset($data['post'])) {
+            $data['post'] = Post::changeNotifitionPostContent($data['post']);
+        }
+
         $replaceVars = array_map(function ($var) {
-            if (is_string($var)){
-                if (mb_strlen($var) > Thread::NOTICE_CONTENT_LENGTH) {
-                    $var = Str::substr(strip_tags($var), 0, Thread::NOTICE_CONTENT_LENGTH) . '...';
-                }
-            }
             return $var;
         }, $this->contentReplaceVars($data));
 
