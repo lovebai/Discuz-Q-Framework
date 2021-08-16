@@ -82,6 +82,11 @@ trait QcloudTrait
         return $this->getQcloud()->service('discuzcloud')->uinStatistics($params);
     }
 
+    public function qcloudDaily($params = [])
+    {
+        return $this->getQcloud()->service('discuzcloud')->qcloudDaily($params);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | 云点播
