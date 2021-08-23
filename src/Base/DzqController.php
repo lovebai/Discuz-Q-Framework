@@ -22,6 +22,7 @@ use App\Repositories\UserRepository;
 use DateTime;
 use Discuz\Auth\Exception\PermissionDeniedException;
 use Discuz\Common\Utils;
+use Discuz\Contracts\Setting\SettingsRepository;
 use Illuminate\Support\Str;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -364,7 +365,7 @@ abstract class DzqController implements RequestHandlerInterface
 
     private function dzqLogInit(){
         $userId = !empty($this->user->id) ? $this->user->id : 0;
-        $settings = app(\App\Settings\SettingsRepository::class);
+        $settings = app()->make(SettingsRepository::class);
         $openApiLog = $settings->get('open_api_log'); // 从缓存中获取配置
         app()->instance(DzqLog::APP_DZQLOG, [
             'request'       =>  $this->request,
