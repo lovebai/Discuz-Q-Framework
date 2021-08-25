@@ -83,4 +83,11 @@ class DiscuzCloudService
         ]);
     }
 
+    public function qcloudDaily($body = '')
+    {
+        return $this->getHttpClient()->requestAsync('POST', 'cloud/qcloudDaily', [
+            'json' => $body
+        ]);
+    }
+
 }
