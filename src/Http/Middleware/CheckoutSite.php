@@ -25,7 +25,6 @@ use App\Models\Order;
 use App\Repositories\UserRepository;
 use Discuz\Auth\AssertPermissionTrait;
 use Discuz\Auth\Exception\PermissionDeniedException;
-use Discuz\Base\DzqLog;
 use Discuz\Contracts\Setting\SettingsRepository;
 use Discuz\Foundation\Application;
 use Illuminate\Support\Carbon;
@@ -47,7 +46,6 @@ class CheckoutSite implements MiddlewareInterface
         'user',
         'forum',
         'follow',
-        'thread.list',
         'users.list',
         'order.create',
         'trade/pay/order',
@@ -72,7 +70,6 @@ class CheckoutSite implements MiddlewareInterface
         'emoji',
         'view.count'
     ];
-
     public function __construct(Application $app, SettingsRepository $settings)
     {
         $this->app = $app;
@@ -114,19 +111,30 @@ class CheckoutSite implements MiddlewareInterface
     private function checkPayMode($request, $actor)
     {
         $userRepo = app(UserRepository::class);
-//        dd($userRepo->isPaid($actor));
-         if ($userRepo->isPaid($actor) === true) {
-             return;
-         }
-
+        if ($userRepo->isPaid($actor) === true) {
+            return;
+        }
         $apiPath = $request->getUri()->getPath();
+        $queryString = $request->getUri()->getQuery();
         $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
-        if (!in_array($api, $this->noCheckPayMode) && !(strpos($api, 'users') === 0) && !(strpos($api, 'backAdmin') === 0)) {
-            DzqLog::info('checkout_site_no_permission', [
-                'user' => $actor
-            ]);
+        $this->inWhiteApiList($api, $queryString);
+        if (!(in_array($api, $this->noCheckPayMode) || $this->inWhiteApiList($api, $queryString)) && !(strpos($api, 'users') === 0) && !(strpos($api, 'backAdmin') === 0)) {
             Utils::outPut(ResponseCode::JUMP_TO_PAY_SITE);
         }
+    }
+
+    private function inWhiteApiList($api, $queryString)
+    {
+        parse_str($queryString, $query);
+        $isPass = false;
+        switch ($api) {
+            case 'thread.list':
+                if (isset($query['scope']) && $query['scope'] == 3) {
+                    $isPass = true;
+                }
+                break;
+        }
+        return $isPass;
     }
 
     private function getOrder($actor)
