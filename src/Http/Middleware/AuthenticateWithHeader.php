@@ -205,7 +205,9 @@ class AuthenticateWithHeader implements MiddlewareInterface
         if ($this->isCoskey($api, $method)) {
             return $this->setLimit($key, $method, 20, 30);
         }
-
+        if ($this->isPayOrder($api, $method)) {
+            return $this->setLimit($key, $method, 3, 10);
+        }
         return $this->setLimit($key, $method, $max);
     }
 
@@ -237,6 +239,10 @@ class AuthenticateWithHeader implements MiddlewareInterface
     private  function isCoskey($api, $method)
     {
         return $api == 'coskey' && $method == 'post';
+    }
+
+    private function isPayOrder($api, $method){
+        return $api == 'trade/pay/order' && $method == 'post';
     }
 
     /*
