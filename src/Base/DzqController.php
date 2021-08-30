@@ -135,6 +135,11 @@ abstract class DzqController implements RequestHandlerInterface
         if (isset($this->parseBody[$name])) {
             $p = $this->parseBody[$name];
         }
+        if (strtoupper($this->request->getMethod()) == 'POST') {
+            $p = json_encode($p);
+            $p = str_replace(['<', '>','&'], ['&lt;', '&gt;','&amp;'], $p);
+            $p = json_decode($p, true);
+        }
         return $p;
     }
 
