@@ -56,7 +56,13 @@ abstract class DzqController implements RequestHandlerInterface
     {
         $this->request = $request;
         $this->queryParams = $request->getQueryParams();
-        $this->parseBody = $request->getParsedBody();
+        $this->specialParamsChars($this->queryParams);
+        $postBody = $request->getParsedBody();
+        if (!empty($postBody)) {
+            $this->parseBody = $postBody->toArray();
+            $this->specialParamsChars($this->parseBody);
+        }
+
         $this->requestId = Str::uuid();
         $this->requestTime = date('Y-m-d H:i:s');
         $this->app = app();
@@ -135,12 +141,23 @@ abstract class DzqController implements RequestHandlerInterface
         if (isset($this->parseBody[$name])) {
             $p = $this->parseBody[$name];
         }
-        if (strtoupper($this->request->getMethod()) == 'POST') {
-            $p = json_encode($p);
-            $p = str_replace(['<', '>','&'], ['&lt;', '&gt;','&amp;'], $p);
-            $p = json_decode($p, true);
-        }
         return $p;
+    }
+
+    private function specialParamsChars(&$params)
+    {
+        if (is_array($params)) {
+            foreach ($params as &$item) {
+                if (is_array($item)) {
+                    $this->specialParamsChars($item);
+                } else if (is_string($item)) {
+                    $item = htmlspecialchars($item);
+                }
+            }
+        } else if (is_string($params)) {
+            $params = htmlspecialchars($params);
+        }
+        return $params;
     }
 
     /*
@@ -259,8 +276,8 @@ abstract class DzqController implements RequestHandlerInterface
         $perPageMax = 50;
         $perPage = $perPage >= 1 ? intval($perPage) : 20;
         $perPage > $perPageMax && $perPage = $perPageMax;
-        $count = is_object($builder) ? $builder->count() : count($builder) ;
-        $builder = is_object($builder) ? $builder->skip(($page - 1) * $perPage)->take($perPage) : array_slice($builder,($page - 1) * $perPage, $perPage);
+        $count = is_object($builder) ? $builder->count() : count($builder);
+        $builder = is_object($builder) ? $builder->skip(($page - 1) * $perPage)->take($perPage) : array_slice($builder, ($page - 1) * $perPage, $perPage);
         $builder = is_object($builder) ? $toArray ? $builder->toArray() : $builder : $builder;
         $url = $this->request->getUri();
         $port = $url->getPort();
@@ -368,15 +385,16 @@ abstract class DzqController implements RequestHandlerInterface
         return [$ip, $port];
     }
 
-    private function dzqLogInit(){
+    private function dzqLogInit()
+    {
         $userId = !empty($this->user->id) ? $this->user->id : 0;
         $settings = app()->make(SettingsRepository::class);
         $openApiLog = $settings->get('open_api_log'); // 从缓存中获取配置
         app()->instance(DzqLog::APP_DZQLOG, [
-            'request'       =>  $this->request,
-            'requestId'     =>  $this->requestId,
-            'userId'        =>  $userId,
-            'openApiLog'    =>  !empty($openApiLog)
+            'request' => $this->request,
+            'requestId' => $this->requestId,
+            'userId' => $userId,
+            'openApiLog' => !empty($openApiLog)
         ]);
     }
 }
