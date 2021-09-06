@@ -99,7 +99,7 @@ class CheckUserStatus implements MiddlewareInterface
         }
 
         $actor = $request->getAttribute('actor');
-        if ($actor->isGuest()) {
+        if ($actor->isGuest() || $actor->isAdmin()) {
             return $handler->handle($request);
         }
         // 被禁用的用户
