@@ -118,14 +118,13 @@ class CheckUserStatus implements MiddlewareInterface
                           ResponseCode::$codeMap[ResponseCode::VALIDATE_REJECT],
                           User::getUserReject($actor->id)
             );
-//            $this->exceptionResponse($actor->id,'validate_reject');
         }
         // 审核忽略
         if ($actor->status == User::STATUS_IGNORE) {
             Utils::outPut(ResponseCode::VALIDATE_IGNORE);
         }
         // 待填写扩展审核字段的用户
-        if ($actor->status == User::STATUS_NEED_FIELDS || $this->isJumpSiginFields($actor)) {
+        if ($actor->status == User::STATUS_NEED_FIELDS || $this->isJumpSignFields($actor)) {
             if (!in_array($api, $this->noAuditAction) && !(strpos($api, 'users') === 0)) {
                 Utils::outPut(ResponseCode::JUMP_TO_SIGIN_FIELDS);
             }
@@ -133,26 +132,7 @@ class CheckUserStatus implements MiddlewareInterface
         return $handler->handle($request);
     }
 
-    private function exceptionResponse($userId, $msg)
-    {
-        $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
-        foreach ($crossHeaders as $k=>$v) {
-            header($k . ':' . $v);
-        }
-        $response = [
-            'errors' => [
-                [
-                    'status' => '401',
-                    'code' => $msg,
-                    'data' => User::getUserReject($userId)
-                ]
-            ]
-        ];
-        header('Content-Type:application/json; charset=utf-8', true, 401);
-        exit(json_encode($response, 256));
-    }
-
-    private function isJumpSiginFields($actor){
+    private function isJumpSignFields($actor){
         $userId = !empty($actor->id) ? (int)$actor->id : 0;
         $settings = app(SettingsRepository::class);
         $openExtFields = $settings->get('open_ext_fields');
