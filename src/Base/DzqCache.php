@@ -323,6 +323,7 @@ class DzqCache
             $cacheKey = $key . $fileId;
             $data = self::get($cacheKey);
             if (!$data) {
+                $ret = false;
                 break;
             }
             $dataError = false;
