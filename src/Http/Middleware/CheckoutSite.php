@@ -100,7 +100,7 @@ class CheckoutSite implements MiddlewareInterface
         // $siteClose && $this->assertAdmin($actor);
         $this->checkPayMode($request, $actor);
         // 处理 付费模式 逻辑， 过期之后 加入待付费组
-        if (!$actor->isAdmin() && $siteMode === 'pay' && Carbon::now()->gt($actor->expired_at)) {
+        if (!$actor->isAdmin() && $siteMode === 'pay' && ( Carbon::now()->gt($actor->expired_at) || $actor->isGuest() )) {
             if (!$this->getOrder($actor) && !$this->getInvite($actor)) {
                 $actor->setRelation('groups', Group::query()->where('id', Group::UNPAID)->get());
             }

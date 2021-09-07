@@ -90,4 +90,11 @@ class DiscuzCloudService
         ]);
     }
 
+    public function siteInfoDaily($body = '')
+    {
+        return $this->getHttpClient()->requestAsync('POST', 'cloud/siteInfoDaily', [
+            'json' => $body
+        ]);
+    }
+
 }
