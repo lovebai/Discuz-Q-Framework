@@ -24,7 +24,6 @@ use App\Models\UserSignInFields;
 use Discuz\Auth\Exception\PermissionDeniedException;
 use Discuz\Common\Utils;
 use Discuz\Contracts\Setting\SettingsRepository;
-use Discuz\Http\DiscuzResponseFactory;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -78,7 +77,6 @@ class CheckUserStatus implements MiddlewareInterface
         'user/signinfields', // 查询、提交扩展字段
         'attachments', //上传图片、附件
         'unreadnotification', // 消息
-        'thread.detail', // 帖子详情
         'posts', // 帖子
         'backAdmin/login',
         'emoji',
