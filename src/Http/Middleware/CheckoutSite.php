@@ -68,7 +68,8 @@ class CheckoutSite implements MiddlewareInterface
         'posts', // 帖子
         'backAdmin/login',
         'emoji',
-        'view.count'
+        'view.count',
+        'swagger'
     ];
     public function __construct(Application $app, SettingsRepository $settings)
     {
