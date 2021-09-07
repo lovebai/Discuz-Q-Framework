@@ -64,11 +64,11 @@ class CheckoutSite implements MiddlewareInterface
         'user/signinfields', // 查询、提交扩展字段
         'attachments', //上传图片、附件
         'unreadnotification',
-        'thread.detail', // 帖子详情
         'posts', // 帖子
         'backAdmin/login',
         'emoji',
-        'view.count'
+        'view.count',
+        'swagger'
     ];
     public function __construct(Application $app, SettingsRepository $settings)
     {
