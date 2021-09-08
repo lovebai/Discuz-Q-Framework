@@ -38,7 +38,6 @@ abstract class DzqCommand extends Command
      * -------------------------------------
      * @desc    定时脚本入口方法
      * @author  coralchu 2020/9/27
-     * @tip     支付宝搜索 510992378 查看详细说明
      */
     abstract protected function main();
 
