@@ -104,10 +104,10 @@ class ApiServiceProvider extends ServiceProvider
 
     protected function populateRoutes(RouteCollection $route)
     {
-        $reqUri = '';
+        $reqUri = '';$uri='';
         if (isset($_SERVER['REQUEST_URI'])) {
             $reqUri = $_SERVER['REQUEST_URI'];
-            $uri = str_replace('/', '', $reqUri);
+            $uri = str_replace(['/',' '], ['',''], $reqUri);
         }
         $route->group('/api', function (RouteCollection $route) {
             require $this->app->basePath('routes/api.php');
