@@ -10,6 +10,8 @@
 namespace Discuz\Base;
 
 
+use App\Repositories\UserRepository;
+
 abstract class DzqAdminController extends DzqController
 {
 
