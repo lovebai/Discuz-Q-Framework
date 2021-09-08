@@ -36,9 +36,7 @@ class Utils
         $request = app('request');
         $headers = $request->getHeaders();
         $server = $request->getServerParams();
-        $headersStr = strtolower(json_encode($headers, 256));
-        $serverStr = strtolower(json_encode($server, 256));
-        if (strstr($serverStr, 'micromessenger') || strstr($headersStr, 'micromessenger')) {
+        if(!empty($headers['referer']) && stristr(json_encode($headers['referer']),'servicewechat.com')){
             return PubEnum::MinProgram;
         }
 //        app('log')->info('get_request_from_for_test_' . json_encode(['headers' => $headers, 'server' => $server], 256));
