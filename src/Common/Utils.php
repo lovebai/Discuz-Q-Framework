@@ -129,12 +129,14 @@ class Utils
             }
         }
 
-        if ($msg != '' && stristr($msg, 'SQLSTATE')) {
-            app('log')->info('database-error:' . $msg . ' api:' . $request->getUri()->getPath());
-            if (app()->config('debug')) {
-                $msg = '数据库异常' . $msg;
-            } else {
-                $msg = '数据库异常';
+        $isDebug = app()->config('debug');
+        if ($msg != '') {
+            if (stristr($msg, 'SQLSTATE')) {
+                app('log')->info('database-error:' . $msg . ' api:' . $request->getUri()->getPath());
+                !$isDebug && $msg = '数据库异常';
+            } else if (stristr($msg, 'called') && stristr($msg, 'line')) {
+                app('log')->info('internal-error:' . $msg . ' api:' . $request->getUri()->getPath());
+                !$isDebug && $msg = '内部错误';
             }
         }
 
