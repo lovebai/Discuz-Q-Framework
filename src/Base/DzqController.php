@@ -66,7 +66,8 @@ abstract class DzqController implements RequestHandlerInterface
         $this->dzqLogInit();
 
         //临时处理管理端接口权限
-        if(stristr($this->request->getUri()->getPath(),'backAdmin')){
+        $path = $this->request->getUri()->getPath();
+        if(stristr($path,'backAdmin') && !stristr($path,'backAdmin/login')){
             if(!$this->user->isAdmin()){
                 throw new PermissionDeniedException('没有权限');
             }
