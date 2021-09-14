@@ -74,10 +74,11 @@ class CheckUserStatus implements MiddlewareInterface
         'threads/notify/video',
         'offiaccount/jssdk',
 //        'attachment.download',
-        'user/signinfields', // 查询、提交扩展字段
+        'user/signinfields.list', // 查询扩展字段
+        'user/signinfields.create', // 提交扩展字段
         'attachments', //上传图片、附件
         'unreadnotification', // 消息
-        'posts', // 帖子
+        'posts.list', // 帖子
         'backAdmin/login',
         'emoji',
         'view.count'
