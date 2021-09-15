@@ -110,6 +110,9 @@ class ApiServiceProvider extends ServiceProvider
         $route->group('/apiv3', function (RouteCollection $route) {
             require $this->app->basePath('routes/apiv3.php');
         });
+        $route->group('/api/v3', function (RouteCollection $route) {
+            require $this->app->basePath('routes/apiv3.php');
+        });
 
         $route->group('/api/backAdmin', function (RouteCollection $route) {
             require $this->app->basePath('routes/apiadmin.php');

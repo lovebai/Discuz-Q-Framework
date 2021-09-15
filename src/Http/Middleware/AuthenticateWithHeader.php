@@ -65,7 +65,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $api = str_replace(['/apiv3/', '/api/'], '', $request->getUri()->getPath());
+        $api = Utils::getApiName();
         $this->getApiFreq($api);
 
         $headerLine = $request->getHeaderLine('authorization');

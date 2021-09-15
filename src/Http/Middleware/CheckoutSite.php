@@ -115,9 +115,8 @@ class CheckoutSite implements MiddlewareInterface
         if ($userRepo->isPaid($actor) === true) {
             return;
         }
-        $apiPath = $request->getUri()->getPath();
         $queryString = $request->getUri()->getQuery();
-        $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
+        $api = Utils::getApiName();
         $this->inWhiteApiList($api, $queryString);
         if (!(in_array($api, $this->noCheckPayMode) || $this->inWhiteApiList($api, $queryString)) && !(strpos($api, 'users') === 0) && !(strpos($api, 'backAdmin') === 0)) {
             Utils::outPut(ResponseCode::JUMP_TO_PAY_SITE);
