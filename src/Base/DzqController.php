@@ -145,22 +145,6 @@ abstract class DzqController implements RequestHandlerInterface
         return $p;
     }
 
-    private function specialParamsChars(&$params)
-    {
-        return true;
-        if (is_array($params)) {
-            foreach ($params as &$item) {
-                if (is_array($item)) {
-                    $this->specialParamsChars($item);
-                } else if (is_string($item)) {
-                    $item = htmlspecialchars($item);
-                }
-            }
-        } else if (is_string($params)) {
-            $params = htmlspecialchars($params);
-        }
-        return $params;
-    }
 
     /*
      * 接口出参

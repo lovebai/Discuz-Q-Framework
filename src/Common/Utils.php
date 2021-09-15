@@ -144,7 +144,7 @@ class Utils
             app('log')->info('result error:' . $code.' api:'.$request->getUri()->getPath().' msg:'.$msg);
         }
 
-        $data = [
+        $ret = [
             'Code' => $code,
             'Message' => $msg,
             'Data' => $data,
@@ -154,10 +154,10 @@ class Utils
 
         if (strpos($api, 'backAdmin') === 0) {
             DzqLog::inPut(DzqLog::LOG_ADMIN);
-            DzqLog::outPut($data, DzqLog::LOG_ADMIN);
+            DzqLog::outPut($ret, DzqLog::LOG_ADMIN);
         } elseif (! empty($dzqLog['openApiLog'])) {
             DzqLog::inPut(DzqLog::LOG_API);
-            DzqLog::outPut($data, DzqLog::LOG_API);
+            DzqLog::outPut($ret, DzqLog::LOG_API);
         }
 
         $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
@@ -165,11 +165,7 @@ class Utils
             header($k . ':' . $v);
         }
         header('Content-Type:application/json; charset=utf-8', true, 200);
-        $t1 = DISCUZ_START;
-        $t2 = microtime(true);
-        header('Dzq-CostTime:'.(($t2 - $t1)*1000).'ms');
-//        header('Dzq-DB-CostTime:'.$GLOBALS["mysql_time"].'ms');
-
-        exit(json_encode($data, 256));
+        header('Dzq-CostTime:'.((microtime(true) - DISCUZ_START)*1000).'ms');
+        exit(json_encode($ret, 256));
     }
 }
