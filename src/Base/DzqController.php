@@ -64,7 +64,6 @@ abstract class DzqController implements RequestHandlerInterface
         $this->user = $request->getAttribute('actor');
         $this->c9IbQHXVFFWu($this->user);//添加辅助函数
         $this->dzqLogInit();
-
         //临时处理管理端接口权限
         $path = $this->request->getUri()->getPath();
         if(stristr($path,'backAdmin') && !stristr($path,'backAdmin/login')){
@@ -133,8 +132,15 @@ abstract class DzqController implements RequestHandlerInterface
     /*
      * 接口入参
      */
-    public function inPut($name, $checkValid = true)
+    public function inPut($name='', $checkValid = true)
     {
+        if(empty($name)){
+            if($this->parseBody instanceof \Illuminate\Support\Collection){
+                return $this->parseBody->merge($this->queryParams)->all();
+            }else{
+                return $this->queryParams;
+            }
+        }
         $p = '';
         if (isset($this->queryParams[$name])) {
             $p = $this->queryParams[$name];
