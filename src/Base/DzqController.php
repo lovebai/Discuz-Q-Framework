@@ -47,8 +47,8 @@ abstract class DzqController implements RequestHandlerInterface
     protected $isDebug = true;
 
 
-    private $queryParams = [];
-    private $parseBody = [];
+    public $queryParams = [];
+    public $parseBody = [];
 
     public $providers = [];
 
