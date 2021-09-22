@@ -18,6 +18,7 @@
 
 namespace Discuz\Api;
 
+use App\Common\Utils;
 use Discuz\Api\Controller\AbstractSerializeController;
 use Discuz\Api\Events\ApiExceptionRegisterHandler;
 use Discuz\Api\Events\ConfigMiddleware;
@@ -103,16 +104,43 @@ class ApiServiceProvider extends ServiceProvider
 
     protected function populateRoutes(RouteCollection $route)
     {
+        $reqUri = '';$uri='';
+        if (isset($_SERVER['REQUEST_URI'])) {
+            $reqUri = $_SERVER['REQUEST_URI'];
+            $uri = str_replace(['/',' '], ['',''], $reqUri);
+        }
         $route->group('/api', function (RouteCollection $route) {
             require $this->app->basePath('routes/api.php');
         });
+        if (strpos($uri, 'apiv3') === 0) {
+            $route->group('/apiv3', function (RouteCollection $route) {
+                require $this->app->basePath('routes/apiv3.php');
+            });
+        } else if (strpos($uri, 'api') === 0) {
+            $route->group('/api/backAdmin', function (RouteCollection $route) {
+                require $this->app->basePath('routes/apiadmin.php');
+            });
+        } else if (strpos($uri, 'plugin') === 0 && strpos($uri, 'api')) {
+            $this->setPluginRoutes($route, $reqUri);
+        }
+    }
 
-        $route->group('/apiv3', function (RouteCollection $route) {
-            require $this->app->basePath('routes/apiv3.php');
-        });
-
-        $route->group('/api/backAdmin', function (RouteCollection $route) {
-            require $this->app->basePath('routes/apiadmin.php');
-        });
+    private function setPluginRoutes($route, $reqUri)
+    {
+        $plugins = \Discuz\Common\Utils::getPluginList();
+        preg_match("/(?<=plugin\/).*?(?=\/api)/", $reqUri, $m);
+        $pluginName = $m[0];
+        foreach ($plugins as $plugin) {
+            if (strtolower($pluginName) == strtolower($plugin['name_en'])) {
+                $route->group('/plugin/' . $plugin['name_en'] . '/api/', function (RouteCollection $route) use ($plugin) {
+                    $routes = $plugin['routes'];
+                    foreach ($routes as $name => $info) {
+                        $method = strtolower($info['method']);
+                        $route->$method($name, $plugin['name_en'] . '.' . str_replace('/', '.', $name), $info['controller']);
+                    }
+                });
+                break;
+            }
+        }
     }
 }

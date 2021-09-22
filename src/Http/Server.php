@@ -47,6 +47,7 @@ class Server extends SiteApp
         $pipe = new MiddlewarePipe();
 
         $pipe->pipe(new RequestHandler([
+            '/plugin'=>'discuz.api.middleware',
             '/api' => 'discuz.api.middleware',
             '/' => 'discuz.web.middleware'
         ], $this->app));

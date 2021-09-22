@@ -2,7 +2,10 @@
 
 namespace Discuz\Common;
 
+use App\Common\CacheKey;
+use App\Common\DzqConst;
 use App\Common\ResponseCode;
+use Discuz\Base\DzqCache;
 use Discuz\Base\DzqLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -36,7 +39,7 @@ class Utils
         $request = app('request');
         $headers = $request->getHeaders();
         $server = $request->getServerParams();
-        if(!empty($headers['referer']) && stristr(json_encode($headers['referer']),'servicewechat.com')){
+        if (!empty($headers['referer']) && stristr(json_encode($headers['referer']), 'servicewechat.com')) {
             return PubEnum::MinProgram;
         }
 //        app('log')->info('get_request_from_for_test_' . json_encode(['headers' => $headers, 'server' => $server], 256));
@@ -141,10 +144,10 @@ class Utils
         }
 
         if ($code != 0) {
-            app('log')->info('result error:' . $code.' api:'.$request->getUri()->getPath().' msg:'.$msg);
+            app('log')->info('result error:' . $code . ' api:' . $request->getUri()->getPath() . ' msg:' . $msg);
         }
 
-        $data = [
+        $ret = [
             'Code' => $code,
             'Message' => $msg,
             'Data' => $data,
@@ -154,10 +157,10 @@ class Utils
 
         if (strpos($api, 'backAdmin') === 0) {
             DzqLog::inPut(DzqLog::LOG_ADMIN);
-            DzqLog::outPut($data, DzqLog::LOG_ADMIN);
-        } elseif (! empty($dzqLog['openApiLog'])) {
+            DzqLog::outPut($ret, DzqLog::LOG_ADMIN);
+        } elseif (!empty($dzqLog['openApiLog'])) {
             DzqLog::inPut(DzqLog::LOG_API);
-            DzqLog::outPut($data, DzqLog::LOG_API);
+            DzqLog::outPut($ret, DzqLog::LOG_API);
         }
 
         $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
@@ -165,11 +168,63 @@ class Utils
             header($k . ':' . $v);
         }
         header('Content-Type:application/json; charset=utf-8', true, 200);
-        $t1 = DISCUZ_START;
-        $t2 = microtime(true);
-        header('Dzq-CostTime:'.(($t2 - $t1)*1000).'ms');
-//        header('Dzq-DB-CostTime:'.$GLOBALS["mysql_time"].'ms');
-
-        exit(json_encode($data, 256));
+        header('Dzq-CostTime:' . ((microtime(true) - DISCUZ_START) * 1000) . 'ms');
+        exit(json_encode($ret, 256));
     }
+
+    public static function getPluginList()
+    {
+        $cacheConfig = DzqCache::get(CacheKey::PLUGIN_LOCAL_CONFIG);
+        if ($cacheConfig) return $cacheConfig;
+        $pluginDir = base_path('plugin');
+        $directories = scandir($pluginDir);
+        $plugins = [];
+        foreach ($directories as $dirName) {
+            if ($dirName == '.' || $dirName == '..') continue;
+            $subPlugins = scandir($pluginDir . '/' . $dirName);
+            $configName = '';
+            $viewName = '';
+            $databaseName = '';
+            $consoleName = '';
+            foreach ($subPlugins as $item) {
+                if ($dirName == '.' || $dirName == '..') continue;
+                switch (strtolower($item)) {
+                    case 'config.php':
+                        $configName = $item;
+                        break;
+                    case 'view':
+                        $viewName = $item;
+                        break;
+                    case 'database':
+                        $databaseName = $item;
+                        break;
+                    case 'console':
+                        $consoleName = $item;
+                        break;
+                }
+            }
+            if ($configName == '') {
+                continue;
+            }
+            $appBase = $pluginDir . '/' . $dirName . '/';
+            $configPath = $appBase . $configName;
+            $viewPath = $viewName == '' ? null : $appBase . $viewName . '/';
+            $databasePath = $databaseName == '' ? null : $appBase . $databaseName . '/';
+            $consolePath = $consoleName == '' ? null : $appBase . $consoleName . '/';
+            $config = require($configPath);
+            if ($config['status'] == DzqConst::BOOL_YES) {
+                $config['plugin_' . $config['app_id']] = [
+                    'directory' => $appBase,
+                    'view' => $viewPath,
+                    'database' => $databasePath,
+                    'console' => $consolePath,
+                    'config' => $configPath
+                ];
+            }
+            isset($config['app_id']) && $plugins[$config['app_id']] = $config;
+        }
+        DzqCache::set(CacheKey::PLUGIN_LOCAL_CONFIG, $plugins, 5 * 60);
+        return $plugins;
+    }
+
 }
