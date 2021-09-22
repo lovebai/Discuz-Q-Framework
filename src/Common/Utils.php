@@ -174,8 +174,8 @@ class Utils
 
     public static function getPluginList()
     {
-//        $cacheConfig = DzqCache::get(CacheKey::PLUGIN_LOCAL_CONFIG);
-//        if ($cacheConfig) return $cacheConfig;
+        $cacheConfig = DzqCache::get(CacheKey::PLUGIN_LOCAL_CONFIG);
+        if ($cacheConfig) return $cacheConfig;
         $pluginDir = base_path('plugin');
         $directories = scandir($pluginDir);
         $plugins = [];
