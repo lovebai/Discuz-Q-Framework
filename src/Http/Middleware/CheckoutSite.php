@@ -20,6 +20,8 @@ namespace Discuz\Http\Middleware;
 
 use App\Common\ResponseCode;
 use App\Models\Group;
+use App\Models\GroupUser;
+use App\Models\GroupUserMq;
 use App\Models\Invite;
 use App\Models\Order;
 use App\Repositories\UserRepository;
@@ -37,6 +39,9 @@ use Discuz\Common\Utils;
 class CheckoutSite implements MiddlewareInterface
 {
     use AssertPermissionTrait;
+
+    const CACHE_GROUP_USER_TIME = 300;
+    const CACHE_GROUP_USER_MQS_TIME = 300;
 
     protected $app;
 
@@ -99,6 +104,7 @@ class CheckoutSite implements MiddlewareInterface
 //        }
         // $siteClose && $this->assertAdmin($actor);
         $this->checkPayMode($request, $actor);
+        $this->judgeGroupUser($actor);
         // 处理 付费模式 逻辑， 过期之后 加入待付费组
         if (!$actor->isAdmin() && $siteMode === 'pay' && ( Carbon::now()->gt($actor->expired_at) || $actor->isGuest() )) {
             if (!$this->getOrder($actor) && !$this->getInvite($actor)) {
@@ -163,5 +169,65 @@ class CheckoutSite implements MiddlewareInterface
             ->where('to_user_id', $actor->id)
             ->where('status', Invite::STATUS_USED)
             ->first();
+    }
+
+    private function judgeGroupUser($actor)
+    {
+        if($actor->isGuest() || $actor->isAdmin()){
+            return;
+        }
+        $group_user = app('cache')->get('judge_group_user_'.$actor->id);
+        if(empty($group_user)){
+            // 目前的业务中，保持着 user 与 group_user 一对一的关系，所以这里可以只取一个
+            $group_user = GroupUser::query()->where('user_id', $actor->id)->first();
+            app('cache')->put('judge_group_user_'.$actor->id, $group_user, self::CACHE_GROUP_USER_TIME);
+        }
+        if($group_user->expiration_time < Carbon::now()){
+            $empty_group_user_mqs = app('cache')->get('empty_group_user_mqs_'.$actor->id);
+            if(!empty($empty_group_user_mqs)){
+                return;
+            }
+            //用户当前用户组到期，需要切换用户组
+            $group_user_mqs = GroupUserMq::query()
+                            ->select('groups.id','group_user_mqs.remain_days')
+                            ->join('groups', 'group_user_mqs.group_id','=','groups.id')
+                            ->where('group_user_mqs.user_id', $actor->id)
+                            ->orderBy('groups.level')
+                            ->first();
+            if(empty($group_user_mqs)){
+                app('cache')->put('empty_group_user_mqs_'.$actor->id, 1, self::CACHE_GROUP_USER_MQS_TIME);
+                return;
+            }
+            //更换用户组
+            $db = $this->app->make('db');
+            $log = $this->app->make('log');
+            $db->beginTransaction();
+            //先删掉之前的 group_user
+            $res = GroupUser::query()->where('user_id', $actor->id)->delete();
+            if($res === false){
+                $db->rollBack();
+                $log->error('删除 group_user 出错', [$actor]);
+                return;
+            }
+            //再新增新的 group_user
+            $res = $db->insert([
+                'group_id'  =>  $group_user_mqs->id,
+                'user_id'   =>  $actor->id,
+                'expiration_time'   =>  Carbon::now()->addDays($group_user_mqs->remain_days)
+            ]);
+            if($res === false){
+                $db->rollBack();
+                $log->error('新增 group_user 出错', [$actor]);
+                return;
+            }
+            //最后删除 group_user_mqs
+            $res = GroupUserMq::query()->where(['user_id' => $actor->id, 'group_id' => $group_user_mqs->id])->delete();
+            if($res === false){
+                $db->rollBack();
+                $log->error('删除 group_user_mqs 出错', [$actor]);
+                return;
+            }
+            $db->commit();
+        }
     }
 }
