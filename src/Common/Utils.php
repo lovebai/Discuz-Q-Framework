@@ -206,15 +206,15 @@ class Utils
             if ($configName == '') {
                 continue;
             }
-            $appBase = $pluginDir . '/' . $dirName . '/';
-            $configPath = $appBase . $configName;
-            $viewPath = $viewName == '' ? null : $appBase . $viewName . '/';
-            $databasePath = $databaseName == '' ? null : $appBase . $databaseName . '/';
-            $consolePath = $consoleName == '' ? null : $appBase . $consoleName . '/';
+            $basePath = $pluginDir . '/' . $dirName . '/';
+            $configPath = $basePath . $configName;
+            $viewPath = $viewName == '' ? null : $basePath . $viewName . '/';
+            $databasePath = $databaseName == '' ? null : $basePath . $databaseName . '/';
+            $consolePath = $consoleName == '' ? null : $basePath . $consoleName . '/';
             $config = require($configPath);
             if ($config['status'] == DzqConst::BOOL_YES) {
                 $config['plugin_' . $config['app_id']] = [
-                    'directory' => $appBase,
+                    'base' => $basePath,
                     'view' => $viewPath,
                     'database' => $databasePath,
                     'console' => $consolePath,
