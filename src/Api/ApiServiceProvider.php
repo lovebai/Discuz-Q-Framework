@@ -127,7 +127,7 @@ class ApiServiceProvider extends ServiceProvider
 
     private function setPluginRoutes($route, $reqUri)
     {
-        $plugins = Utils::getPluginList();
+        $plugins = \Discuz\Common\Utils::getPluginList();
         preg_match("/(?<=plugin\/).*?(?=\/api)/", $reqUri, $m);
         $pluginName = $m[0];
         foreach ($plugins as $plugin) {
