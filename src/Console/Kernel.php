@@ -198,7 +198,7 @@ EOF;
         }
         $commands = Finder::create()->in($paths)->files();
         foreach ($commands as $command) {
-            $command = '\App' . str_replace(['/', '.php'], ['\\', ''], Str::after($command->getPathname(), realpath(app_path()) . DIRECTORY_SEPARATOR));
+            $command = $this->app->getNamespace() . str_replace(['/', '.php'], ['\\', ''], Str::after($command->getPathname(), realpath(app_path()) . DIRECTORY_SEPARATOR));
             $this->doCommand($console, $command);
         }
         $pluginList = Utils::getPluginList();
@@ -207,7 +207,7 @@ EOF;
             if (empty($consolePath)) continue;
             $commands = Finder::create()->in($consolePath)->files();
             foreach ($commands as $command) {
-                $command = '\Plugin' . str_replace(['/', '.php'], ['\\', ''], Str::after($command->getPathname(), base_path('plugin')));
+                $command = 'Plugin\\' . str_replace(['/', '.php'], ['\\', ''], Str::after($command->getPathname(), base_path('plugin')));
                 $this->doCommand($console, $command);
             }
         }
