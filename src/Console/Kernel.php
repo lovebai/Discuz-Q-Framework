@@ -206,7 +206,7 @@ EOF;
             if (empty($consolePath)) continue;
             $commands = Finder::create()->in($consolePath)->files();
             foreach ($commands as $command) {
-                $command = 'Plugin\\' . str_replace(['/', '.php'], ['\\', ''], Str::after($command->getPathname(), base_path('plugin')));
+                $command = "Plugin" . str_replace(['/', '.php'], ['\\', ''], Str::after($command->getPathname(), base_path('plugin')));
                 $this->doCommand($console, $command);
             }
         }
