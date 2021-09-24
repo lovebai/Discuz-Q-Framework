@@ -69,7 +69,8 @@ class CheckoutSite implements MiddlewareInterface
         'backAdmin/login',
         'emoji',
         'view.count',
-        'swagger'
+        'swagger',
+        'plugin/list'
     ];
     public function __construct(Application $app, SettingsRepository $settings)
     {
