@@ -18,6 +18,7 @@
 
 namespace Discuz\Console;
 
+use Discuz\Common\Utils;
 use Discuz\Console\Event\Configuring;
 use Discuz\Foundation\SiteApp;
 use Illuminate\Console\Scheduling\Schedule;
@@ -194,17 +195,28 @@ EOF;
         if (empty($paths)) {
             return;
         }
-        $namespace = $this->app->getNamespace();
-        foreach ((new Finder)->in($paths)->files() as $command) {
-            $command = $namespace.str_replace(
-                ['/', '.php'],
-                ['\\', ''],
-                Str::after($command->getPathname(), realpath(app_path()).DIRECTORY_SEPARATOR)
-            );
-            if (is_subclass_of($command, Command::class) &&
-                ! (new ReflectionClass($command))->isAbstract()) {
-                $console->add($this->app->make($command));
+        $commands = Finder::create()->in($paths)->files();
+        foreach ($commands as $command) {
+            $command = $this->app->getNamespace() . str_replace(['/', '.php'], ['\\', ''], Str::after($command->getPathname(), realpath(app_path()) . DIRECTORY_SEPARATOR));
+            $this->doCommand($console, $command);
+        }
+        $pluginList = Utils::getPluginList();
+        foreach ($pluginList as $item) {
+            $consolePath = $item['plugin_' . $item['app_id']]['console'];
+            if (empty($consolePath)) continue;
+            $commands = Finder::create()->in($consolePath)->files();
+            foreach ($commands as $command) {
+                $command = 'Plugin\\' . str_replace(['/', '.php'], ['\\', ''], Str::after($command->getPathname(), base_path('plugin')));
+                $this->doCommand($console, $command);
             }
+        }
+    }
+
+    private function doCommand(&$console, $command)
+    {
+        if (is_subclass_of($command, Command::class) &&
+            !(new ReflectionClass($command))->isAbstract()) {
+            $console->add($this->app->make($command));
         }
     }
 
@@ -225,14 +237,14 @@ EOF;
      */
     protected function scheduleCache()
     {
-        return ;
+        return;
     }
 
     /**
      * Parse the incoming Artisan command and its input.
      *
-     * @param  string  $command
-     * @param  array  $parameters
+     * @param string $command
+     * @param array $parameters
      * @return array
      */
     protected function parseCommand($command, $parameters)
@@ -243,7 +255,7 @@ EOF;
             $command = $this->app->make($command)->getName();
         }
 
-        if (! isset($callingClass) && empty($parameters)) {
+        if (!isset($callingClass) && empty($parameters)) {
             $input = new StringInput($command);
         } else {
             array_unshift($parameters, $command);

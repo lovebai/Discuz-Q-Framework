@@ -44,7 +44,8 @@ class MigrationServiceProvider extends IlluminateMigrationServiceProvider
         RefreshCommand::class,
         ResetCommand::class,
         RollbackCommand::class,
-        StatusCommand::class
+        StatusCommand::class,
+        PluginCommand::class
     ];
 
     public function register()
@@ -60,7 +61,7 @@ class MigrationServiceProvider extends IlluminateMigrationServiceProvider
     /**
      * Register the given commands.
      *
-     * @param  array  $commands
+     * @param array $commands
      * @return void
      */
     protected function registerCommands(array $commands)
@@ -69,18 +70,6 @@ class MigrationServiceProvider extends IlluminateMigrationServiceProvider
             foreach ($this->commands as $command) {
                 $event->addCommand($command);
             }
-        });
-    }
-
-    /**
-     * Register the command.
-     *
-     * @return void
-     */
-    protected function registerMigrateCommand()
-    {
-        $this->app->singleton('command.migrate', function ($app) {
-            return new MigrateCommand($app['migrator']);
         });
     }
 
