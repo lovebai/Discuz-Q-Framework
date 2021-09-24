@@ -26,7 +26,6 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Discuz\Foundation\Application;
 use Illuminate\Contracts\Console\Kernel as KernelContract;
-use Plugin\Activity\Console\Test1Command;
 use ReflectionClass;
 use Symfony\Component\Console\Application as ConsoleApplication;
 use Symfony\Component\Console\Command\Command;
