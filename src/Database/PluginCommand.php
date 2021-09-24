@@ -39,7 +39,7 @@ class PluginCommand extends Command
                 $databasePath = $item[$paths]['database'] . 'migrations';
                 $databasePath = str_replace($basePath,'',$databasePath);
                 if (!file_exists($databasePath)) throw new \Exception($databasePath . ' directory in ' . $item['name_en'] . '  not exist.');
-                $this->call('migrate', array_filter(['--path' => $databasePath]));
+                $this->call('migrate', array_filter(['--path' => $databasePath, '--force' => true]));
                 break;
             }
         }
