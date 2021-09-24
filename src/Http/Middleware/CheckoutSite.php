@@ -192,7 +192,7 @@ class CheckoutSite implements MiddlewareInterface
                             ->select('groups.id','group_user_mqs.remain_days')
                             ->join('groups', 'group_user_mqs.group_id','=','groups.id')
                             ->where('group_user_mqs.user_id', $actor->id)
-                            ->orderBy('groups.level')
+                            ->orderBy('groups.level', 'desc')
                             ->first();
             if(empty($group_user_mqs)){
                 app('cache')->put('empty_group_user_mqs_'.$actor->id, 1, self::CACHE_GROUP_USER_MQS_TIME);
