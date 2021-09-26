@@ -18,6 +18,7 @@
 
 namespace Discuz\Console;
 
+use Discuz\Base\DzqKernel;
 use Discuz\Common\Utils;
 use Discuz\Console\Event\Configuring;
 use Discuz\Foundation\SiteApp;
@@ -62,10 +63,31 @@ class Kernel extends SiteApp implements KernelContract
     protected function defineConsoleSchedule()
     {
         $this->app->singleton(Schedule::class, function ($app) {
-            return tap(new Schedule($this->scheduleTimezone()), function (Schedule $schedule) {
-                $this->schedule($schedule->useCache($this->scheduleCache()));
+            return tap(new Schedule($this->scheduleTimezone()), function (Schedule &$schedule) use ($app) {
+                $this->schedule($schedule);
+                $pluginList = Utils::getPluginList();
+                foreach ($pluginList as $item) {
+                    $consolePath = $item['plugin_' . $item['app_id']]['console'];
+                    if (empty($consolePath) || !file_exists($consolePath)) continue;
+                    $commands = Finder::create()->in($consolePath)->files();
+                    foreach ($commands as $command) {
+                        $command = $this->getPluginFileClass($command);
+                        if (is_subclass_of($command, DzqKernel::class)) {
+                            $kernel = new $command($app);
+                            if (method_exists($kernel, 'schedule')) {
+                                $kernel->schedule($schedule);
+                            }
+                            break;
+                        }
+                    }
+                }
             });
         });
+    }
+
+    private function getPluginFileClass($pluginFinderCommand)
+    {
+        return 'Plugin' . str_replace(['/', '.php'], ['\\', ''], Str::after($pluginFinderCommand->getPathname(), base_path('plugin')));
     }
 
     /**
@@ -203,10 +225,10 @@ EOF;
         $pluginList = Utils::getPluginList();
         foreach ($pluginList as $item) {
             $consolePath = $item['plugin_' . $item['app_id']]['console'];
-            if (empty($consolePath)) continue;
+            if (empty($consolePath) || !file_exists($consolePath)) continue;
             $commands = Finder::create()->in($consolePath)->files();
             foreach ($commands as $command) {
-                $command = "Plugin" . str_replace(['/', '.php'], ['\\', ''], Str::after($command->getPathname(), base_path('plugin')));
+                $command = $this->getPluginFileClass($command);
                 $this->doCommand($console, $command);
             }
         }
