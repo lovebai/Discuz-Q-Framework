@@ -7,7 +7,6 @@ use App\Common\DzqConst;
 use App\Common\ResponseCode;
 use Discuz\Base\DzqCache;
 use Discuz\Base\DzqLog;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Discuz\Http\DiscuzResponseFactory;
 
@@ -177,17 +176,15 @@ class Utils
         $cacheConfig = DzqCache::get(CacheKey::PLUGIN_LOCAL_CONFIG);
         if ($cacheConfig) return $cacheConfig;
         $pluginDir = base_path('plugin');
-        $directories = scandir($pluginDir);
+        $directories = array_diff(scandir($pluginDir), ['.', '..']);
         $plugins = [];
         foreach ($directories as $dirName) {
-            if ($dirName == '.' || $dirName == '..') continue;
-            $subPlugins = scandir($pluginDir . '/' . $dirName);
+            $subPlugins = array_diff(scandir($pluginDir . '/' . $dirName), ['.', '..']);
             $configName = '';
             $viewName = '';
             $databaseName = '';
             $consoleName = '';
             foreach ($subPlugins as $item) {
-                if ($dirName == '.' || $dirName == '..') continue;
                 switch (strtolower($item)) {
                     case 'config.php':
                         $configName = $item;
