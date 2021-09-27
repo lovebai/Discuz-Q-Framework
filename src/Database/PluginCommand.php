@@ -36,10 +36,12 @@ class PluginCommand extends Command
         foreach ($pluginList as $item) {
             if (strtolower($item['name_en']) == strtolower($name)) {
                 $paths = 'plugin_' . $item['app_id'];
-                $databasePath = $item[$paths]['database'] . 'migrations';
-                $databasePath = str_replace($basePath,'',$databasePath);
-                if (!file_exists($databasePath)) throw new \Exception($databasePath . ' directory in ' . $item['name_en'] . '  not exist.');
-                $this->call('migrate', array_filter(['--path' => $databasePath, '--force' => true]));
+                $absolutePath = $item[$paths]['database'] . 'migrations';
+                $localPath = str_replace($basePath,'',$absolutePath);
+                if (!file_exists($absolutePath)) throw new \Exception($absolutePath . ' directory in ' . $item['name_en'] . '  not exist.');
+//                $this->call('migrate', array_filter(['--path' => $databasePath, '--force' => true]));
+                $log = Utils::runConsoleCmd('migrate',['--path' => $localPath, '--force' => true]);
+                $this->info($log);
                 break;
             }
         }

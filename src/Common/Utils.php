@@ -224,4 +224,17 @@ class Utils
         return $plugins;
     }
 
+    public static function runConsoleCmd($cmd, $params)
+    {
+        $reader = function & ($object, $property) {
+            return \Closure::bind(function & () use ($property) {
+                return $this->$property;
+            }, $object, $object)->__invoke();
+        };
+        $console = app()->make(\Discuz\Console\Kernel::class);
+        $console->call($cmd, $params);
+        $lastOutput = $reader($console, 'lastOutput');
+        return $lastOutput->fetch();
+    }
+
 }
