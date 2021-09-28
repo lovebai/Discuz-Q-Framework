@@ -218,7 +218,10 @@ class Utils
                     'config' => $configPath
                 ];
             }
-            isset($config['app_id']) && $plugins[$config['app_id']] = $config;
+
+            if(isset($config['app_id']) && $config['app_id'] != '6130acd182770'){
+                $plugins[$config['app_id']] = $config;
+            }
         }
         DzqCache::set(CacheKey::PLUGIN_LOCAL_CONFIG, $plugins, 5 * 60);
         return $plugins;
