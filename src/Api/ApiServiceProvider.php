@@ -104,6 +104,7 @@ class ApiServiceProvider extends ServiceProvider
     protected function populateRoutes(RouteCollection $route)
     {
         $reqUri = $_SERVER['REQUEST_URI'] ?? '';
+        if(empty($reqUri)) return;
         preg_match("/(?<=plugin\/).*?(?=\/api)/", $reqUri, $m);
         $pluginName = $m[0];
         $adminApiPrefix = '/api/backAdmin';
