@@ -32,7 +32,7 @@ class PluginCommand extends Command
         if (empty($name)) throw new \Exception('expected one plugin name,used like [ php disco migrate:plugin --name=test ]');
         $pluginList = Utils::getPluginList();
 
-        $basePath = base_path().'/';
+        $basePath = base_path().DIRECTORY_SEPARATOR;
         foreach ($pluginList as $item) {
             if (strtolower($item['name_en']) == strtolower($name)) {
                 $paths = 'plugin_' . $item['app_id'];
