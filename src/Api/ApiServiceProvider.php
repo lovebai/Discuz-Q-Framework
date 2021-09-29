@@ -18,7 +18,6 @@
 
 namespace Discuz\Api;
 
-use App\Common\Utils;
 use Discuz\Api\Controller\AbstractSerializeController;
 use Discuz\Api\Events\ApiExceptionRegisterHandler;
 use Discuz\Api\Events\ConfigMiddleware;
@@ -104,43 +103,56 @@ class ApiServiceProvider extends ServiceProvider
 
     protected function populateRoutes(RouteCollection $route)
     {
-        $reqUri = '';$uri='';
-        if (isset($_SERVER['REQUEST_URI'])) {
-            $reqUri = $_SERVER['REQUEST_URI'];
-            $uri = str_replace(['/',' '], ['',''], $reqUri);
-        }
-        $route->group('/api', function (RouteCollection $route) {
-            require $this->app->basePath('routes/api.php');
-        });
-        if (strpos($uri, 'apiv3') === 0) {
-            $route->group('/apiv3', function (RouteCollection $route) {
-                require $this->app->basePath('routes/apiv3.php');
-            });
-        } else if (strpos($uri, 'api') === 0) {
+        $reqUri = $_SERVER['REQUEST_URI'] ?? '';
+        preg_match("/(?<=plugin\/).*?(?=\/api)/", $reqUri, $m);
+        $pluginName = $m[0];
+        $adminApiPrefix = '/api/backAdmin';
+        $userApiPrefix = '/api';
+        $userApiV3Prefix = '/apiv3';
+        $pluginApiPrefix = '/plugin/' . $pluginName . '/api';
+        if ($this->matchPrefix($reqUri, $adminApiPrefix)) {
             $route->group('/api/backAdmin', function (RouteCollection $route) {
                 require $this->app->basePath('routes/apiadmin.php');
             });
-        } else if (strpos($uri, 'plugin') === 0 && strpos($uri, 'api')) {
-            $this->setPluginRoutes($route, $reqUri);
+        } else if ($this->matchPrefix($reqUri, $userApiV3Prefix)) {
+            $route->group('/apiv3', function (RouteCollection $route) {
+                require $this->app->basePath('routes/apiv3.php');
+            });
+        } else if ($this->matchPrefix($reqUri, $userApiPrefix)) {
+            $route->group('/api', function (RouteCollection $route) {
+                require $this->app->basePath('routes/api.php');
+            });
+        } else if ($this->matchPrefix($reqUri, $pluginApiPrefix)) {
+            $this->setPluginRoutes($route, $pluginName);
+        } else {
+            $route->group('/api', function (RouteCollection $route) {
+                require $this->app->basePath('routes/api.php');
+            });
         }
     }
 
-    private function setPluginRoutes($route, $reqUri)
+
+    private function setPluginRoutes(RouteCollection $route, $pluginName)
     {
         $plugins = \Discuz\Common\Utils::getPluginList();
-        preg_match("/(?<=plugin\/).*?(?=\/api)/", $reqUri, $m);
-        $pluginName = $m[0];
-        foreach ($plugins as $plugin) {
-            if (strtolower($pluginName) == strtolower($plugin['name_en'])) {
-                $route->group('/plugin/' . $plugin['name_en'] . '/api/', function (RouteCollection $route) use ($plugin) {
-                    $routes = $plugin['routes'];
-                    foreach ($routes as $name => $info) {
-                        $method = strtolower($info['method']);
-                        $route->$method($name, $plugin['name_en'] . '.' . str_replace('/', '.', $name), $info['controller']);
-                    }
-                });
-                break;
+        $plugin = array_filter($plugins, function ($item) use ($pluginName) {
+            return strtolower($item['name_en']) == strtolower($pluginName);
+        });
+        $plugin = current($plugin);
+        if (empty($plugin)) exit('plugin ' . $pluginName . ' not exist.');
+        $prefix = '/plugin/' . $plugin['name_en'] . '/api/';
+        $route->group($prefix, function (RouteCollection $route) use ($plugin) {
+            $pluginFiles = $plugin['plugin_' . $plugin['app_id']];
+            if (isset($pluginFiles['routes'])) {
+                foreach ($pluginFiles['routes'] as $routeFile) {
+                    require_once $routeFile;
+                }
             }
-        }
+        });
+    }
+
+    private function matchPrefix($uri, $prefix)
+    {
+        return ($uri & $prefix) == $prefix;
     }
 }
