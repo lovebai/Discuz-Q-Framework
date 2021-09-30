@@ -210,7 +210,7 @@ class CheckoutSite implements MiddlewareInterface
                 return;
             }
             //再新增新的 group_user
-            $res = $db->insert([
+            $res = $db->table('group_user')->insert([
                 'group_id'  =>  $group_user_mqs->id,
                 'user_id'   =>  $actor->id,
                 'expiration_time'   =>  Carbon::now()->addDays($group_user_mqs->remain_days)
