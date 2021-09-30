@@ -20,6 +20,7 @@ namespace Discuz\Http\Middleware;
 
 use App\Common\ResponseCode;
 use App\Models\Group;
+use App\Models\GroupPaidUser;
 use App\Models\GroupUser;
 use App\Models\GroupUserMq;
 use App\Models\Invite;
@@ -176,6 +177,8 @@ class CheckoutSite implements MiddlewareInterface
         if($actor->isGuest() || $actor->isAdmin()){
             return;
         }
+        $db = $this->app->make('db');
+        $log = $this->app->make('log');
         $group_user = app('cache')->get('judge_group_user_'.$actor->id);
         if(empty($group_user)){
             // 目前的业务中，保持着 user 与 group_user 一对一的关系，所以这里可以只取一个
@@ -183,8 +186,9 @@ class CheckoutSite implements MiddlewareInterface
             app('cache')->put('judge_group_user_'.$actor->id, $group_user, self::CACHE_GROUP_USER_TIME);
         }
         if($group_user->expiration_time < Carbon::now()){
-            $empty_group_user_mqs = app('cache')->get('empty_group_user_mqs_'.$actor->id);
-            if(!empty($empty_group_user_mqs)){
+            //判断用户当前是否为付费用户组，如果是付费用户组，还需要切换成普通用户组
+            $paid_group = $group_user->groups()->where('is_paid', Group::IS_PAID)->first();
+            if(empty($paid_group)){         //如果是普通用户组了，就不再进行切换身份操作了
                 return;
             }
             //用户当前用户组到期，需要切换用户组
@@ -194,13 +198,7 @@ class CheckoutSite implements MiddlewareInterface
                             ->where('group_user_mqs.user_id', $actor->id)
                             ->orderBy('groups.level', 'desc')
                             ->first();
-            if(empty($group_user_mqs)){
-                app('cache')->put('empty_group_user_mqs_'.$actor->id, 1, self::CACHE_GROUP_USER_MQS_TIME);
-                return;
-            }
-            //更换用户组
-            $db = $this->app->make('db');
-            $log = $this->app->make('log');
+
             $db->beginTransaction();
             //先删掉之前的 group_user
             $res = GroupUser::query()->where('user_id', $actor->id)->delete();
@@ -209,22 +207,39 @@ class CheckoutSite implements MiddlewareInterface
                 $log->error('删除 group_user 出错', [$actor]);
                 return;
             }
-            //再新增新的 group_user
-            $res = $db->table('group_user')->insert([
-                'group_id'  =>  $group_user_mqs->id,
-                'user_id'   =>  $actor->id,
-                'expiration_time'   =>  Carbon::now()->addDays($group_user_mqs->remain_days)
-            ]);
+            //修改对应的 group_paid_user 的 delete_type 为 1
+            $res = GroupPaidUser::query()
+                ->where('group_id', $group_user->group_id)
+                ->where('user_id', $group_user->user_id)
+                ->where('delete_type', 0)
+                ->update(['deleted_at' => Carbon::now(), 'delete_type' => GroupPaidUser::DELETE_TYPE_EXPIRE]);
             if($res === false){
                 $db->rollBack();
-                $log->error('新增 group_user 出错', [$actor]);
+                $log->error('删除  group_paid_user 出错', [$actor]);
                 return;
             }
-            //最后删除 group_user_mqs
-            $res = GroupUserMq::query()->where(['user_id' => $actor->id, 'group_id' => $group_user_mqs->id])->delete();
+            //再新增新的 group_user ，默认普通用户组
+            $change_group_id = Group::query()->where('default', true)->value('id') ?? Group::MEMBER_ID;
+            $change_expired_at = $actor->expired_at;
+            if(!empty($group_user_mqs)){
+                $change_group_id = $group_user_mqs->id;
+                $change_expired_at = Carbon::now()->addDays($group_user_mqs->remain_days);
+                //删除对应的 group_user_mqs
+                $res = GroupUserMq::query()->where(['user_id' => $actor->id, 'group_id' => $group_user_mqs->id])->delete();
+                if($res === false){
+                    $db->rollBack();
+                    $log->error('删除 group_user_mqs 出错', [$actor]);
+                    return;
+                }
+            }
+            $res = $db->table('group_user')->insert([
+                        'group_id'  =>  $change_group_id,
+                        'user_id'   =>  $actor->id,
+                        'expiration_time'   =>  $change_expired_at
+                    ]);
             if($res === false){
                 $db->rollBack();
-                $log->error('删除 group_user_mqs 出错', [$actor]);
+                $log->error('切换 group_user 成默认用户组出错', [$actor]);
                 return;
             }
             $db->commit();
