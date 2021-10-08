@@ -201,7 +201,7 @@ class CheckoutSite implements MiddlewareInterface
 
             $db->beginTransaction();
             //先删掉之前的 group_user
-            $res = GroupUser::query()->where('user_id', $actor->id)->delete();
+            $res = GroupUser::query()->where(['user_id' => $actor->id, 'group_id' => $group_user->group_id])->delete();
             if($res === false){
                 $db->rollBack();
                 $log->error('删除 group_user 出错', [$actor]);
@@ -232,6 +232,7 @@ class CheckoutSite implements MiddlewareInterface
                     return;
                 }
             }
+
             $res = $db->table('group_user')->insert([
                         'group_id'  =>  $change_group_id,
                         'user_id'   =>  $actor->id,
@@ -242,6 +243,9 @@ class CheckoutSite implements MiddlewareInterface
                 $log->error('切换 group_user 成默认用户组出错', [$actor]);
                 return;
             }
+            // 更新 group_user 之后需要刷新缓存
+            $group_user = GroupUser::query()->where('user_id', $actor->id)->first();
+            app('cache')->put('judge_group_user_'.$actor->id, $group_user, self::CACHE_GROUP_USER_TIME);
             $db->commit();
         }
     }
