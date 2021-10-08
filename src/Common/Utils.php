@@ -7,6 +7,7 @@ use App\Common\DzqConst;
 use App\Common\ResponseCode;
 use Discuz\Base\DzqCache;
 use Discuz\Base\DzqLog;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Discuz\Http\DiscuzResponseFactory;
 
@@ -219,7 +220,7 @@ class Utils
                 ];
             }
 
-            if(isset($config['app_id']) && $config['app_id'] != '6130acd182770'){
+            if (isset($config['app_id']) && $config['app_id'] != '6130acd182770') {
                 $plugins[$config['app_id']] = $config;
             }
         }
@@ -240,4 +241,55 @@ class Utils
         return $lastOutput->fetch();
     }
 
+    public static function endWith($haystack, $needle)
+    {
+        $length = strlen($needle);
+        if ($length == 0) {
+            return true;
+        }
+        return (substr($haystack, -$length) === $needle);
+    }
+
+    public static function startWith($haystack, $needle)
+    {
+        $length = strlen($needle);
+        if ($length == 0) {
+            return true;
+        }
+        return (substr($haystack, $length) === $needle);
+    }
+
+    public static function downLoadFile($url, $path = '')
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+        ob_start();
+        curl_exec($ch);
+        $content = ob_get_contents();
+        ob_end_clean();
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if ($code == 200) {
+            if (empty($path)) {
+                return $content;
+            } else {
+                return @file_put_contents($path, $content);
+            }
+        }
+        return false;
+    }
+
+    public static function isCosUrl($url)
+    {
+        $parseUrl = parse_url($url);
+        $host = $parseUrl['host'];
+        $path = $parseUrl['path'];
+        $domain = Request::capture()->getHost();
+        if (!(strstr($host, 'myqcloud.com') || strstr($host, $domain)) || !strstr($path, 'public/attachments')) {
+            return false;
+        }
+        return true;
+    }
 }
