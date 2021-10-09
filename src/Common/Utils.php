@@ -261,6 +261,8 @@ class Utils
 
     public static function downLoadFile($url, $path = '')
     {
+        $url = self::ssrfDefBlack($url);
+        if (!$url) return false;
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -279,6 +281,29 @@ class Utils
             }
         }
         return false;
+    }
+
+    public static function ssrfDefBlack($url)
+    {
+        $url = parse_url($url);
+        if (isset($url['port'])) {
+            $url['path'] = ':' . $url['port'] . $url['path'];
+        }
+        if (isset($url['scheme'])) {
+            if (!($url['scheme'] === 'http' || $url['scheme'] === 'https')) {
+                return false;
+            }
+        }
+        $host = $url['host'];
+        if (filter_var($host, FILTER_VALIDATE_IP)) {  //t2
+            return false;
+        } else {
+            $ip = gethostbyname($host);
+            if ($ip === $host) {
+                return false;
+            }
+            return $url['scheme'] . '://' . $url['host'] . $url['path'] . $url['query'];
+        }
     }
 
     public static function isCosUrl($url)
