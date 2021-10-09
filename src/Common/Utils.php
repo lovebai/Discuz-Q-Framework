@@ -335,7 +335,7 @@ class Utils
         $host = $parseUrl['host'];
         $path = $parseUrl['path'];
         $domain = Request::capture()->getHost();
-        if (!(strstr($host, 'myqcloud.com') || strstr($host, $domain)) || !strstr($path, 'public/attachments')) {
+        if (!(self::endWith($host, 'myqcloud.com') || strstr($host, $domain)) || !strstr($path, 'public/attachments')) {
             return false;
         }
         return true;
