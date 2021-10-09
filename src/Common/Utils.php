@@ -261,10 +261,11 @@ class Utils
 
     public static function downLoadFile($url, $path = '')
     {
-        $url = self::ssrfDefBlack($url);
+        $url = self::ssrfDefBlack($url,$host);
         if (!$url) return false;
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+        curl_setopt($ch,CURLOPT_HTTPHEADER,['HOST: '.$host]);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
@@ -283,7 +284,7 @@ class Utils
         return false;
     }
 
-    public static function ssrfDefBlack($url)
+    public static function ssrfDefBlack($url,&$originHost='')
     {
         $url = parse_url($url);
         if (isset($url['port'])) {
@@ -299,11 +300,33 @@ class Utils
             return false;
         } else {
             $ip = gethostbyname($host);
-            if ($ip === $host) {
+            if ($ip === $host || self::isInnerIp($ip)) {
                 return false;
             }
-            return $url['scheme'] . '://' . $url['host'] . $url['path'] . '?' . $url['query'];
+            $query = $url['query'] ?? '';
+            $originHost = $host;
+            return $url['scheme'] . '://' . $url['host'] . $url['path'] . '?' . $query;
         }
+    }
+
+    public static function isInnerIp($ip)
+    {
+        $ips = app(\App\Settings\SettingsRepository::class)->get('inner_net_ip');
+        $ips = json_decode($ips, true);
+        if ($ips === null) return null;
+        $ipLong = ip2long($ip);
+        $ret = true;
+        foreach ($ips as $ipNet) {
+            $ipArr = explode($ipNet, '/');
+            $p1 = $ipArr[0];
+            $p2 = $ipArr[1] ?? 24;
+            $net = ip2long($p1) >> $p2;
+            if ($ipLong >> $p2 !== $net) {
+                $ret = false;
+                break;
+            }
+        }
+        return $ret;
     }
 
     public static function isCosUrl($url)
