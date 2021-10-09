@@ -302,7 +302,7 @@ class Utils
             if ($ip === $host) {
                 return false;
             }
-            return $url['scheme'] . '://' . $url['host'] . $url['path'] . $url['query'];
+            return $url['scheme'] . '://' . $url['host'] . $url['path'] . '?' . $url['query'];
         }
     }
 
