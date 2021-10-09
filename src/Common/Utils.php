@@ -315,14 +315,14 @@ class Utils
         $ips = json_decode($ips, true);
         if ($ips === null) return null;
         $ipLong = ip2long($ip);
-        $ret = true;
+        $ret = false;
         foreach ($ips as $ipNet) {
-            $ipArr = explode($ipNet, '/');
+            $ipArr = explode('/', $ipNet);
             $p1 = $ipArr[0];
             $p2 = $ipArr[1] ?? 24;
             $net = ip2long($p1) >> $p2;
-            if ($ipLong >> $p2 !== $net) {
-                $ret = false;
+            if ($ipLong >> $p2 === $net) {
+                $ret = true;
                 break;
             }
         }
