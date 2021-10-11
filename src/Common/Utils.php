@@ -10,6 +10,7 @@ use Discuz\Base\DzqLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Discuz\Http\DiscuzResponseFactory;
+use Symfony\Component\Finder\Finder;
 
 /**
  * Copyright (C) 2020 Tencent Cloud.
@@ -177,46 +178,40 @@ class Utils
         $cacheConfig = DzqCache::get(CacheKey::PLUGIN_LOCAL_CONFIG);
         if ($cacheConfig) return $cacheConfig;
         $pluginDir = base_path('plugin');
-        $directories = array_diff(scandir($pluginDir), ['.', '..']);
+        $directories = Finder::create()->in($pluginDir)->directories()->depth(0)->sortByName();
         $plugins = [];
-        foreach ($directories as $dirName) {
-            $subPlugins = array_diff(scandir($pluginDir . '/' . $dirName), ['.', '..']);
-            $configName = '';
-            $viewName = '';
-            $databaseName = '';
-            $consoleName = '';
+        foreach ($directories as $dir) {
+            $basePath = $dir->getPathname();
+            $subPlugins = Finder::create()->in($basePath)->depth(0);
+            $configPath = null;
+            $viewPath = null;
+            $databasePath = null;
+            $consolePath = null;
+            $routesPath = null;
             foreach ($subPlugins as $item) {
-                switch (strtolower($item)) {
-                    case 'config.php':
-                        $configName = $item;
-                        break;
-                    case 'view':
-                        $viewName = $item;
-                        break;
-                    case 'database':
-                        $databaseName = $item;
-                        break;
-                    case 'console':
-                        $consoleName = $item;
-                        break;
+                $filename = strtolower($item->getFilenameWithoutExtension());
+                $fileVar = $filename . 'Path';
+                if ($filename == 'routes') {
+                    $routesPath = $item->getPathname();
+                    $routeFiles = Finder::create()->in($routesPath)->path('/.*\.php/')->files();
+                    $routesPath = [];
+                    foreach ($routeFiles as $routeFile) {
+                        $routesPath[] = $routeFile->getPathname();
+                    }
+                } else {
+                    $$fileVar = $item->getPathname();
                 }
             }
-            if ($configName == '') {
-                continue;
-            }
-            $basePath = $pluginDir . '/' . $dirName . '/';
-            $configPath = $basePath . $configName;
-            $viewPath = $viewName == '' ? null : $basePath . $viewName . '/';
-            $databasePath = $databaseName == '' ? null : $basePath . $databaseName . '/';
-            $consolePath = $consoleName == '' ? null : $basePath . $consoleName . '/';
-            $config = require($configPath);
+            if (strtolower(substr($configPath, -4, 4)) != 'json') continue;
+            $config = json_decode(file_get_contents($configPath), 256);
             if ($config['status'] == DzqConst::BOOL_YES) {
                 $config['plugin_' . $config['app_id']] = [
                     'base' => $basePath,
                     'view' => $viewPath,
                     'database' => $databasePath,
                     'console' => $consolePath,
-                    'config' => $configPath
+                    'config' => $configPath,
+                    'routes' => $routesPath
                 ];
             }
 

@@ -32,11 +32,11 @@ class PluginCommand extends Command
         if (empty($name)) throw new \Exception('expected one plugin name,used like [ php disco migrate:plugin --name=test ]');
         $pluginList = Utils::getPluginList();
 
-        $basePath = base_path().'/';
+        $basePath = base_path().DIRECTORY_SEPARATOR;
         foreach ($pluginList as $item) {
             if (strtolower($item['name_en']) == strtolower($name)) {
                 $paths = 'plugin_' . $item['app_id'];
-                $absolutePath = $item[$paths]['database'] . 'migrations';
+                $absolutePath = $item[$paths]['database'] . '/migrations';
                 $localPath = str_replace($basePath,'',$absolutePath);
                 if (!file_exists($absolutePath)) throw new \Exception($absolutePath . ' directory in ' . $item['name_en'] . '  not exist.');
 //                $this->call('migrate', array_filter(['--path' => $databasePath, '--force' => true]));

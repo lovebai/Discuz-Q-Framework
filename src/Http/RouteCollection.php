@@ -84,6 +84,7 @@ class RouteCollection
     public function addRoute($method, $path, $name, $handler)
     {
         $path = $this->currentGroupPrefix . $path;
+        $path = str_replace('//','/',$path);
         $routeDatas = $this->routeParser->parse($path);
         foreach ($routeDatas as $routeData) {
             $this->dataGenerator->addRoute($method, $routeData, $handler);
