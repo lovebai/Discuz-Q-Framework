@@ -52,6 +52,9 @@ abstract class DzqController implements RequestHandlerInterface
 
     public $providers = [];
 
+    //输入参数别名，仅限根字段
+    protected $paramsAlias = [];
+
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $this->request = $request;
@@ -108,6 +111,7 @@ abstract class DzqController implements RequestHandlerInterface
 
     public function c9IbQHXVFFWu($name)
     {
+        $this->setParamsAlias();
         if (method_exists($this, 'beforeMain')) {
             $this->beforeMain($name);
         }
@@ -127,13 +131,24 @@ abstract class DzqController implements RequestHandlerInterface
             }
         }
     }
-
-
+    private function setParamsAlias()
+    {
+        $this->saveParamsAlias = [];
+        foreach ($this->paramsAlias as $k => $v) {
+            $p = $this->inPut($v);
+            if (!empty($p)) {
+                $this->saveParamsAlias[$k] = $p;
+            }
+        }
+    }
     /*
      * 接口入参
      */
     public function inPut($name='', $checkValid = true)
     {
+        if(!empty($this->saveParamsAlias[$name])){
+            return $this->saveParamsAlias[$name];
+        }
         if(empty($name)){
             if($this->parseBody instanceof \Illuminate\Support\Collection){
                 return $this->parseBody->merge($this->queryParams)->all();
