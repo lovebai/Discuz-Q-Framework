@@ -273,11 +273,14 @@ class Utils
 
     public static function downLoadFile($url, $path = '')
     {
-        $url = self::ssrfDefBlack($url,$host);
-        if (!$url) return false;
+        $host = null;
+        if (!self::isCosUrl($url)) {
+            $url = self::ssrfDefBlack($url, $host);
+            if (!$url) return false;
+        }
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-        curl_setopt($ch,CURLOPT_HTTPHEADER,['HOST: '.$host]);
+        !empty($host)&&curl_setopt($ch,CURLOPT_HTTPHEADER,['HOST: '.$host]);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
