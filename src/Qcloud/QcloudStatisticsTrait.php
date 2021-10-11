@@ -120,7 +120,6 @@ trait QcloudStatisticsTrait
 
         try {
             $this->uinStatistics($params)->then(function (ResponseInterface $response) {
-                echo 'report:' . $response->getBody()->getContents() . PHP_EOL;
             })->wait();
         } catch (\Exception $e) {
 

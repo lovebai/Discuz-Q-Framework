@@ -2,11 +2,15 @@
 
 namespace Discuz\Common;
 
+use App\Common\CacheKey;
+use App\Common\DzqConst;
 use App\Common\ResponseCode;
+use Discuz\Base\DzqCache;
 use Discuz\Base\DzqLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Discuz\Http\DiscuzResponseFactory;
+use Symfony\Component\Finder\Finder;
 
 /**
  * Copyright (C) 2020 Tencent Cloud.
@@ -36,7 +40,7 @@ class Utils
         $request = app('request');
         $headers = $request->getHeaders();
         $server = $request->getServerParams();
-        if(!empty($headers['referer']) && stristr(json_encode($headers['referer']),'servicewechat.com')){
+        if (!empty($headers['referer']) && stristr(json_encode($headers['referer']), 'servicewechat.com')) {
             return PubEnum::MinProgram;
         }
 //        app('log')->info('get_request_from_for_test_' . json_encode(['headers' => $headers, 'server' => $server], 256));
@@ -158,10 +162,10 @@ class Utils
         }
 
         if ($code != 0) {
-            app('log')->info('result error:' . $code.' api:'.$request->getUri()->getPath().' msg:'.$msg);
+            app('log')->info('result error:' . $code . ' api:' . $request->getUri()->getPath() . ' msg:' . $msg);
         }
 
-        $data = [
+        $ret = [
             'Code' => $code,
             'Message' => $msg,
             'Data' => $data,
@@ -171,10 +175,10 @@ class Utils
 
         if (strpos($api, 'backAdmin') === 0) {
             DzqLog::inPut(DzqLog::LOG_ADMIN);
-            DzqLog::outPut($data, DzqLog::LOG_ADMIN);
-        } elseif (! empty($dzqLog['openApiLog'])) {
+            DzqLog::outPut($ret, DzqLog::LOG_ADMIN);
+        } elseif (!empty($dzqLog['openApiLog'])) {
             DzqLog::inPut(DzqLog::LOG_API);
-            DzqLog::outPut($data, DzqLog::LOG_API);
+            DzqLog::outPut($ret, DzqLog::LOG_API);
         }
 
         $crossHeaders = DiscuzResponseFactory::getCrossHeaders();
@@ -182,11 +186,170 @@ class Utils
             header($k . ':' . $v);
         }
         header('Content-Type:application/json; charset=utf-8', true, 200);
-        $t1 = DISCUZ_START;
-        $t2 = microtime(true);
-        header('Dzq-CostTime:'.(($t2 - $t1)*1000).'ms');
-//        header('Dzq-DB-CostTime:'.$GLOBALS["mysql_time"].'ms');
+        header('Dzq-CostTime:' . ((microtime(true) - DISCUZ_START) * 1000) . 'ms');
+        exit(json_encode($ret, 256));
+    }
 
-        exit(json_encode($data, 256));
+    public static function getPluginList()
+    {
+        $cacheConfig = DzqCache::get(CacheKey::PLUGIN_LOCAL_CONFIG);
+        if ($cacheConfig) return $cacheConfig;
+        $pluginDir = base_path('plugin');
+        $directories = Finder::create()->in($pluginDir)->directories()->depth(0)->sortByName();
+        $plugins = [];
+        foreach ($directories as $dir) {
+            $basePath = $dir->getPathname();
+            $subPlugins = Finder::create()->in($basePath)->depth(0);
+            $configPath = null;
+            $viewPath = null;
+            $databasePath = null;
+            $consolePath = null;
+            $routesPath = null;
+            foreach ($subPlugins as $item) {
+                $filename = strtolower($item->getFilenameWithoutExtension());
+                $fileVar = $filename . 'Path';
+                if ($filename == 'routes') {
+                    $routesPath = $item->getPathname();
+                    $routeFiles = Finder::create()->in($routesPath)->path('/.*\.php/')->files();
+                    $routesPath = [];
+                    foreach ($routeFiles as $routeFile) {
+                        $routesPath[] = $routeFile->getPathname();
+                    }
+                } else {
+                    $$fileVar = $item->getPathname();
+                }
+            }
+            if (strtolower(substr($configPath, -4, 4)) != 'json') continue;
+            $config = json_decode(file_get_contents($configPath), 256);
+            if ($config['status'] == DzqConst::BOOL_YES) {
+                $config['plugin_' . $config['app_id']] = [
+                    'base' => $basePath,
+                    'view' => $viewPath,
+                    'database' => $databasePath,
+                    'console' => $consolePath,
+                    'config' => $configPath,
+                    'routes' => $routesPath
+                ];
+            }
+
+            if (isset($config['app_id']) && $config['app_id'] != '6130acd182770') {
+                $plugins[$config['app_id']] = $config;
+            }
+        }
+        DzqCache::set(CacheKey::PLUGIN_LOCAL_CONFIG, $plugins, 5 * 60);
+        return $plugins;
+    }
+
+    public static function runConsoleCmd($cmd, $params)
+    {
+        $reader = function & ($object, $property) {
+            return \Closure::bind(function & () use ($property) {
+                return $this->$property;
+            }, $object, $object)->__invoke();
+        };
+        $console = app()->make(\Discuz\Console\Kernel::class);
+        $console->call($cmd, $params);
+        $lastOutput = $reader($console, 'lastOutput');
+        return $lastOutput->fetch();
+    }
+
+    public static function endWith($haystack, $needle)
+    {
+        $length = strlen($needle);
+        if ($length == 0) {
+            return true;
+        }
+        return (substr($haystack, -$length) === $needle);
+    }
+
+    public static function startWith($haystack, $needle)
+    {
+        $length = strlen($needle);
+        if ($length == 0) {
+            return true;
+        }
+        return (substr($haystack, $length) === $needle);
+    }
+
+    public static function downLoadFile($url, $path = '')
+    {
+        $url = self::ssrfDefBlack($url,$host);
+        if (!$url) return false;
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+        curl_setopt($ch,CURLOPT_HTTPHEADER,['HOST: '.$host]);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+        ob_start();
+        curl_exec($ch);
+        $content = ob_get_contents();
+        ob_end_clean();
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if ($code == 200) {
+            if (empty($path)) {
+                return $content;
+            } else {
+                return @file_put_contents($path, $content);
+            }
+        }
+        return false;
+    }
+
+    public static function ssrfDefBlack($url,&$originHost='')
+    {
+        $url = parse_url($url);
+        if (isset($url['port'])) {
+            $url['path'] = ':' . $url['port'] . $url['path'];
+        }
+        if (isset($url['scheme'])) {
+            if (!($url['scheme'] === 'http' || $url['scheme'] === 'https')) {
+                return false;
+            }
+        }
+        $host = $url['host'];
+        if (filter_var($host, FILTER_VALIDATE_IP)) {  //t2
+            return false;
+        } else {
+            $ip = gethostbyname($host);
+            if ($ip === $host || self::isInnerIp($ip)) {
+                return false;
+            }
+            $query = $url['query'] ?? '';
+            $originHost = $host;
+            return $url['scheme'] . '://' . $url['host'] . $url['path'] . '?' . $query;
+        }
+    }
+
+    public static function isInnerIp($ip)
+    {
+        $ips = app(\App\Settings\SettingsRepository::class)->get('inner_net_ip');
+        $ips = json_decode($ips, true);
+        if ($ips === null) return null;
+        $ipLong = ip2long($ip);
+        $ret = false;
+        foreach ($ips as $ipNet) {
+            $ipArr = explode('/', $ipNet);
+            $p1 = $ipArr[0];
+            $p2 = $ipArr[1] ?? 24;
+            $net = ip2long($p1) >> $p2;
+            if ($ipLong >> $p2 === $net) {
+                $ret = true;
+                break;
+            }
+        }
+        return $ret;
+    }
+
+    public static function isCosUrl($url)
+    {
+        $parseUrl = parse_url($url);
+        $host = $parseUrl['host'];
+        $path = $parseUrl['path'];
+        $domain = Request::capture()->getHost();
+        if (!(self::endWith($host, 'myqcloud.com') || strstr($host, $domain)) || !strstr($path, 'public/attachments')) {
+            return false;
+        }
+        return true;
     }
 }

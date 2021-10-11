@@ -17,9 +17,9 @@
 
 namespace Discuz\Base;
 
-use Illuminate\Console\Command;
+use Discuz\Console\AbstractCommand;
 
-abstract class DzqCommand extends Command
+abstract class DzqCommand extends AbstractCommand
 {
     /**
      * 命名名称
@@ -53,7 +53,7 @@ abstract class DzqCommand extends Command
         echo PHP_EOL;
         echo sprintf('%s RUNNING ...', static::class) . PHP_EOL;
         echo PHP_EOL;
-        echo '/**************************START ' . date('Y-m-d H:i:s') . ' START****************************/' . PHP_EOL;
+        echo '************************** START ' . date('Y-m-d H:i:s') . ' START ****************************' . PHP_EOL;
         echo PHP_EOL;
     }
 
@@ -61,7 +61,7 @@ abstract class DzqCommand extends Command
     {
         echo PHP_EOL;
         echo PHP_EOL;
-        echo '/**************************END ' . date('Y-m-d H:i:s') . ' END****************************/' . PHP_EOL;
+        echo '**************************  END   ' . date('Y-m-d H:i:s') . ' END  ****************************' . PHP_EOL;
         echo PHP_EOL;
     }
 }

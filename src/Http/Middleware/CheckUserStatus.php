@@ -81,7 +81,8 @@ class CheckUserStatus implements MiddlewareInterface
         'posts.list', // 帖子
         'backAdmin/login',
         'emoji',
-        'view.count'
+        'view.count',
+        'plugin/list'
     ];
 
     /**

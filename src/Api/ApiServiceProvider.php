@@ -103,19 +103,62 @@ class ApiServiceProvider extends ServiceProvider
 
     protected function populateRoutes(RouteCollection $route)
     {
-        $route->group('/api', function (RouteCollection $route) {
-            require $this->app->basePath('routes/api.php');
-        });
+        $reqUri = $_SERVER['REQUEST_URI'] ?? '';
+        if (empty($reqUri)) return;
+        preg_match("/(?<=plugin\/).*?(?=\/api)/", $reqUri, $m);
+        $pluginName = $m[0];
+        $adminApiPrefix = '/api/backAdmin';
+        $userApiPrefix = '/api';
+        $userApiV3Prefix = '/apiv3';
+        $userApiV3PrefixAlias = '/api/v3';
+        $pluginApiPrefix = '/plugin/' . $pluginName . '/api';
+        if ($this->matchPrefix($reqUri, $adminApiPrefix)) {
+            $route->group('/api/backAdmin', function (RouteCollection $route) {
+                require $this->app->basePath('routes/apiadmin.php');
+            });
+        } else if ($this->matchPrefix($reqUri, $userApiV3Prefix)) {
+            $route->group('/apiv3', function (RouteCollection $route) {
+                require $this->app->basePath('routes/apiv3.php');
+            });
+        } else if ($this->matchPrefix($reqUri, $userApiV3PrefixAlias)) {
+            $route->group('/api/v3', function (RouteCollection $route) {
+                require $this->app->basePath('routes/apiv3.php');
+            });
+        } else if ($this->matchPrefix($reqUri, $userApiPrefix)) {
+            $route->group('/api', function (RouteCollection $route) {
+                require $this->app->basePath('routes/api.php');
+            });
+        } else if ($this->matchPrefix($reqUri, $pluginApiPrefix)) {
+            $this->setPluginRoutes($route, $pluginName);
+        } else {
+            $route->group('/api', function (RouteCollection $route) {
+                require $this->app->basePath('routes/api.php');
+            });
+        }
+    }
 
-        $route->group('/apiv3', function (RouteCollection $route) {
-            require $this->app->basePath('routes/apiv3.php');
-        });
-        $route->group('/api/v3', function (RouteCollection $route) {
-            require $this->app->basePath('routes/apiv3.php');
-        });
 
-        $route->group('/api/backAdmin', function (RouteCollection $route) {
-            require $this->app->basePath('routes/apiadmin.php');
+    private function setPluginRoutes(RouteCollection $route, $pluginName)
+    {
+        $plugins = \Discuz\Common\Utils::getPluginList();
+        $plugin = array_filter($plugins, function ($item) use ($pluginName) {
+            return strtolower($item['name_en']) == strtolower($pluginName);
         });
+        $plugin = current($plugin);
+        if (empty($plugin)) exit('plugin ' . $pluginName . ' not exist.');
+        $prefix = '/plugin/' . $plugin['name_en'] . '/api/';
+        $route->group($prefix, function (RouteCollection $route) use ($plugin) {
+            $pluginFiles = $plugin['plugin_' . $plugin['app_id']];
+            if (isset($pluginFiles['routes'])) {
+                foreach ($pluginFiles['routes'] as $routeFile) {
+                    require_once $routeFile;
+                }
+            }
+        });
+    }
+
+    private function matchPrefix($uri, $prefix)
+    {
+        return ($uri & $prefix) == $prefix;
     }
 }
