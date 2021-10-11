@@ -7,6 +7,7 @@ use App\Common\DzqConst;
 use App\Common\ResponseCode;
 use Discuz\Base\DzqCache;
 use Discuz\Base\DzqLog;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Discuz\Http\DiscuzResponseFactory;
 use Symfony\Component\Finder\Finder;
@@ -213,7 +214,10 @@ class Utils
                     'routes' => $routesPath
                 ];
             }
-            isset($config['app_id']) && $plugins[$config['app_id']] = $config;
+
+            if (isset($config['app_id']) && $config['app_id'] != '6130acd182770') {
+                $plugins[$config['app_id']] = $config;
+            }
         }
         DzqCache::set(CacheKey::PLUGIN_LOCAL_CONFIG, $plugins, 5 * 60);
         return $plugins;
@@ -232,4 +236,103 @@ class Utils
         return $lastOutput->fetch();
     }
 
+    public static function endWith($haystack, $needle)
+    {
+        $length = strlen($needle);
+        if ($length == 0) {
+            return true;
+        }
+        return (substr($haystack, -$length) === $needle);
+    }
+
+    public static function startWith($haystack, $needle)
+    {
+        $length = strlen($needle);
+        if ($length == 0) {
+            return true;
+        }
+        return (substr($haystack, $length) === $needle);
+    }
+
+    public static function downLoadFile($url, $path = '')
+    {
+        $url = self::ssrfDefBlack($url,$host);
+        if (!$url) return false;
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+        curl_setopt($ch,CURLOPT_HTTPHEADER,['HOST: '.$host]);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+        ob_start();
+        curl_exec($ch);
+        $content = ob_get_contents();
+        ob_end_clean();
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if ($code == 200) {
+            if (empty($path)) {
+                return $content;
+            } else {
+                return @file_put_contents($path, $content);
+            }
+        }
+        return false;
+    }
+
+    public static function ssrfDefBlack($url,&$originHost='')
+    {
+        $url = parse_url($url);
+        if (isset($url['port'])) {
+            $url['path'] = ':' . $url['port'] . $url['path'];
+        }
+        if (isset($url['scheme'])) {
+            if (!($url['scheme'] === 'http' || $url['scheme'] === 'https')) {
+                return false;
+            }
+        }
+        $host = $url['host'];
+        if (filter_var($host, FILTER_VALIDATE_IP)) {  //t2
+            return false;
+        } else {
+            $ip = gethostbyname($host);
+            if ($ip === $host || self::isInnerIp($ip)) {
+                return false;
+            }
+            $query = $url['query'] ?? '';
+            $originHost = $host;
+            return $url['scheme'] . '://' . $url['host'] . $url['path'] . '?' . $query;
+        }
+    }
+
+    public static function isInnerIp($ip)
+    {
+        $ips = app(\App\Settings\SettingsRepository::class)->get('inner_net_ip');
+        $ips = json_decode($ips, true);
+        if ($ips === null) return null;
+        $ipLong = ip2long($ip);
+        $ret = false;
+        foreach ($ips as $ipNet) {
+            $ipArr = explode('/', $ipNet);
+            $p1 = $ipArr[0];
+            $p2 = $ipArr[1] ?? 24;
+            $net = ip2long($p1) >> $p2;
+            if ($ipLong >> $p2 === $net) {
+                $ret = true;
+                break;
+            }
+        }
+        return $ret;
+    }
+
+    public static function isCosUrl($url)
+    {
+        $parseUrl = parse_url($url);
+        $host = $parseUrl['host'];
+        $path = $parseUrl['path'];
+        $domain = Request::capture()->getHost();
+        if (!(self::endWith($host, 'myqcloud.com') || strstr($host, $domain)) || !strstr($path, 'public/attachments')) {
+            return false;
+        }
+        return true;
+    }
 }
