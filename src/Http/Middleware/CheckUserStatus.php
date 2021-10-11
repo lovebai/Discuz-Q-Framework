@@ -92,8 +92,7 @@ class CheckUserStatus implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $apiPath = $request->getUri()->getPath();
-        $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
+        $api = Utils::getApiName();
         if ($api === 'forum' || $api === 'user') {
             return $handler->handle($request);
         }

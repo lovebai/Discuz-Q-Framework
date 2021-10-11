@@ -104,12 +104,13 @@ class ApiServiceProvider extends ServiceProvider
     protected function populateRoutes(RouteCollection $route)
     {
         $reqUri = $_SERVER['REQUEST_URI'] ?? '';
-        if(empty($reqUri)) return;
+        if (empty($reqUri)) return;
         preg_match("/(?<=plugin\/).*?(?=\/api)/", $reqUri, $m);
         $pluginName = $m[0];
         $adminApiPrefix = '/api/backAdmin';
         $userApiPrefix = '/api';
         $userApiV3Prefix = '/apiv3';
+        $userApiV3PrefixAlias = '/api/v3';
         $pluginApiPrefix = '/plugin/' . $pluginName . '/api';
         if ($this->matchPrefix($reqUri, $adminApiPrefix)) {
             $route->group('/api/backAdmin', function (RouteCollection $route) {
@@ -117,6 +118,10 @@ class ApiServiceProvider extends ServiceProvider
             });
         } else if ($this->matchPrefix($reqUri, $userApiV3Prefix)) {
             $route->group('/apiv3', function (RouteCollection $route) {
+                require $this->app->basePath('routes/apiv3.php');
+            });
+        } else if ($this->matchPrefix($reqUri, $userApiV3PrefixAlias)) {
+            $route->group('/api/v3', function (RouteCollection $route) {
                 require $this->app->basePath('routes/apiv3.php');
             });
         } else if ($this->matchPrefix($reqUri, $userApiPrefix)) {

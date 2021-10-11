@@ -107,6 +107,25 @@ class Utils
         }
     }
 
+    public static function getApiName()
+    {
+        $request = app('request');
+        return str_replace(['/apiv3/', '/api/', '/api/v3/'], '', $request->getUri()->getPath());
+    }
+
+    public static function getApiPrefix()
+    {
+        $request = app('request');
+        $path = $request->getUri()->getPath();
+        if (stristr($path, 'apiv3')) {
+            return 'apiv3';
+        } else if (stristr($path, 'api/v3')) {
+            return 'api/v3';
+        } else {
+            return 'api';
+        }
+    }
+
     /**
      * v2,v3接口输出
      * @param $code
@@ -118,9 +137,7 @@ class Utils
     public static function outPut($code, $msg = '', $data = [], $requestId = null, $requestTime = null)
     {
         $request = app('request');
-
-        $apiPath = $request->getUri()->getPath();
-        $api = str_replace(['/apiv3/', '/api/'], '', $apiPath);
+        $api = self::getApiName();
         $dzqLog = null;
         $hasLOG = app()->has(DzqLog::APP_DZQLOG);
         if ($hasLOG) {
