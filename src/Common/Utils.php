@@ -350,7 +350,7 @@ class Utils
         $host = $parseUrl['host'];
         $path = $parseUrl['path'];
         $domain = Request::capture()->getHost();
-        if (!(self::endWith($host, 'myqcloud.com') || self::endWith($host, $domain)) || !strstr($path, 'public/attachments')) {
+        if (!(preg_match('/^https?.+cos.+myqcloud\.com$/', $url) || self::endWith($host, $domain)) || !strstr($path, 'public/attachments')) {
             return false;
         }
         return true;
