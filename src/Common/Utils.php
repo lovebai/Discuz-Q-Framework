@@ -110,7 +110,7 @@ class Utils
     public static function getApiName()
     {
         $request = app('request');
-        return str_replace(['/apiv3/', '/api/', '/api/v3/'], '', $request->getUri()->getPath());
+        return str_replace(['/apiv3/', '/api/v3/', '/api/'], '', $request->getUri()->getPath());
     }
 
     public static function getApiPrefix()
