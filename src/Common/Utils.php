@@ -346,6 +346,9 @@ class Utils
 
     public static function isCosUrl($url)
     {
+        if (!preg_match('/https?:\/\/.+/i', $url)) {
+            return false;
+        }
         $parseUrl = parse_url($url);
         $host = $parseUrl['host'];
         $path = $parseUrl['path'];
