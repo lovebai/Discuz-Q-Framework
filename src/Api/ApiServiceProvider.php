@@ -105,8 +105,8 @@ class ApiServiceProvider extends ServiceProvider
     {
         $reqUri = $_SERVER['REQUEST_URI'] ?? '';
         if (empty($reqUri)) return;
-        preg_match("/(?<=plugin\/).*?(?=\/api)/", $reqUri, $m);
-        $pluginName = $m[0];
+        preg_match("/(?<=plugin\/)[a-z|A-Z]+?(?=\/api)/", $reqUri, $m);
+        $pluginName = $m[0] ?? '';
         $adminApiPrefix = '/api/backAdmin';
         $userApiPrefix = '/api';
         $userApiV3Prefix = '/apiv3';
