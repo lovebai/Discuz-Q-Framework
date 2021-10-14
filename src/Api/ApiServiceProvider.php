@@ -159,6 +159,7 @@ class ApiServiceProvider extends ServiceProvider
 
     private function matchPrefix($uri, $prefix)
     {
-        return ($uri & $prefix) == $prefix;
+        $p = '/'.$prefix;//兼容前端错误的url拼接
+        return ($uri & $prefix) == $prefix || ($uri & $p) == $p;
     }
 }
