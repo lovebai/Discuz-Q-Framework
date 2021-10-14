@@ -197,41 +197,6 @@ class DzqCache
     }
 
     /**
-     * @desc 附件数据获取
-     * todo 后续去除模型传递，废除该方法
-     * @param $key
-     * @param array $hashKeys
-     * @param callable|null $callBack
-     * @return bool|Collection
-     */
-    public static function hMGetCollection($key, array $hashKeys, callable $callBack = null)
-    {
-        $data = self::getAppCache($key, $hasCache, $cacheData);
-        $ret = false;
-        if ($data && self::CACHE_SWICH) {
-            $ret = new  Collection();
-            foreach ($hashKeys as $hashKey) {
-                if (!empty($data[$hashKey])) {
-                    $ret->put($hashKey, $data[$hashKey]);
-                } else {
-                    $ret = false;
-                    break;
-                }
-            }
-        }
-        if (($ret === false || !$data) && !empty($callBack)) {
-            $ret = $callBack($hashKeys);
-            !$data && $data = new  Collection();
-            foreach ($ret as $k => $v) {
-                $data->put($k, $v);
-            }
-            $hasCache && self::setAppCache($key, $data, $cacheData);
-            self::set($key, $data);
-        }
-        return $ret;
-    }
-
-    /**
      * @desc 帖子列表二级缓存和预加载
      * @param $key
      * @param $hashKey1
