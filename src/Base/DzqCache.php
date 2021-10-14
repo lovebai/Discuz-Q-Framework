@@ -19,7 +19,6 @@ namespace Discuz\Base;
 
 
 use App\Common\CacheKey;
-use Illuminate\Database\Eloquent\Collection;
 
 class DzqCache
 {
