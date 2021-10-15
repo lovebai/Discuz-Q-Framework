@@ -351,9 +351,8 @@ class Utils
         }
         $parseUrl = parse_url($url);
         $host = $parseUrl['host'];
-        $path = $parseUrl['path'];
         $domain = Request::capture()->getHost();
-        if (!(preg_match('/^.+cos.+myqcloud\.com$/', $host) || self::endWith($host, $domain)) || !strstr($path, 'public/attachments')) {
+        if (!(preg_match('/^.+cos.+myqcloud\.com$/', $host) || self::endWith($host, $domain))) {
             return false;
         }
         return true;
