@@ -208,16 +208,21 @@ class Utils
             foreach ($subPlugins as $item) {
                 $filename = strtolower($item->getFilenameWithoutExtension());
                 $fileVar = $filename . 'Path';
+                $pathName = $item->getPathname();
                 if ($filename == 'routes') {
-                    $routesPath = $item->getPathname();
+                    $routesPath = $pathName;
                     $routeFiles = Finder::create()->in($routesPath)->path('/.*\.php/')->files();
                     $routesPath = [];
                     foreach ($routeFiles as $routeFile) {
                         $routesPath[] = $routeFile->getPathname();
                     }
                 } else {
-                    if (!(isset($$fileVar) && Str::endsWith($$fileVar, 'config.json'))) {
-                        $$fileVar = $item->getPathname();
+                    if ($filename == 'config') {
+                        if (strtolower($item->getExtension()) == 'json') {
+                            $$fileVar = $pathName;
+                        }
+                    } else {
+                        $$fileVar = $pathName;
                     }
                 }
             }
@@ -233,10 +238,7 @@ class Utils
                     'routes' => $routesPath
                 ];
             }
-
-            if (isset($config['app_id']) && $config['app_id'] != '6130acd182770') {
-                $plugins[$config['app_id']] = $config;
-            }
+            $plugins[$config['app_id']] = $config;
         }
         DzqCache::set(CacheKey::PLUGIN_LOCAL_CONFIG, $plugins, 5 * 60);
         return $plugins;
