@@ -208,16 +208,21 @@ class Utils
             foreach ($subPlugins as $item) {
                 $filename = strtolower($item->getFilenameWithoutExtension());
                 $fileVar = $filename . 'Path';
+                $pathName = $item->getPathname();
                 if ($filename == 'routes') {
-                    $routesPath = $item->getPathname();
+                    $routesPath = $pathName;
                     $routeFiles = Finder::create()->in($routesPath)->path('/.*\.php/')->files();
                     $routesPath = [];
                     foreach ($routeFiles as $routeFile) {
                         $routesPath[] = $routeFile->getPathname();
                     }
                 } else {
-                    if (!(isset($$fileVar) && Str::endsWith($$fileVar, 'config.json'))) {
-                        $$fileVar = $item->getPathname();
+                    if ($filename == 'config') {
+                        if (strtolower($item->getExtension()) == 'json') {
+                            $$fileVar = $pathName;
+                        }
+                    } else {
+                        $$fileVar = $pathName;
                     }
                 }
             }
