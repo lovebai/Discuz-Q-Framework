@@ -216,10 +216,12 @@ class Utils
                         $routesPath[] = $routeFile->getPathname();
                     }
                 } else {
-                    $$fileVar = $item->getPathname();
+                    if (!(isset($$fileVar) && Str::endsWith($$fileVar, 'config.json'))) {
+                        $$fileVar = $item->getPathname();
+                    }
                 }
             }
-            if (strtolower(substr($configPath, -4, 4)) != 'json') continue;
+            if (!(!is_null($configPath) && file_exists($configPath))) continue;
             $config = json_decode(file_get_contents($configPath), 256);
             if ($config['status'] == DzqConst::BOOL_YES) {
                 $config['plugin_' . $config['app_id']] = [
@@ -280,7 +282,7 @@ class Utils
         }
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-        !empty($host)&&curl_setopt($ch,CURLOPT_HTTPHEADER,['HOST: '.$host]);
+        !empty($host) && curl_setopt($ch, CURLOPT_HTTPHEADER, ['HOST: ' . $host]);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
@@ -299,7 +301,7 @@ class Utils
         return false;
     }
 
-    public static function ssrfDefBlack($url,&$originHost='')
+    public static function ssrfDefBlack($url, &$originHost = '')
     {
         $url = parse_url($url);
         if (isset($url['port'])) {
