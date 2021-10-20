@@ -18,6 +18,8 @@
 
 namespace Discuz\Console;
 
+use App\Common\CacheKey;
+use Discuz\Base\DzqCache;
 use Discuz\Base\DzqKernel;
 use Discuz\Common\Utils;
 use Discuz\Console\Event\Configuring;
@@ -62,6 +64,12 @@ class Kernel extends SiteApp implements KernelContract
      */
     protected function defineConsoleSchedule()
     {
+
+        $lastReq = DzqCache::get(CacheKey::OAC_REQUEST_TIME);
+        if (!empty($lastReq)) {
+            //超过30分钟,关闭定时脚本
+            if ((time() - $lastReq) / 60.0 > 30) return;
+        }
         $this->app->singleton(Schedule::class, function ($app) {
             return tap(new Schedule($this->scheduleTimezone()), function (Schedule &$schedule) use ($app) {
                 $this->schedule($schedule);

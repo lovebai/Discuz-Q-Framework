@@ -187,6 +187,7 @@ class Utils
         }
         header('Content-Type:application/json; charset=utf-8', true, 200);
         header('Dzq-CostTime:' . ((microtime(true) - DISCUZ_START) * 1000) . 'ms');
+        !empty(getenv('KUBERNETES_OAC_HOST')) && DzqCache::set(CacheKey::OAC_REQUEST_TIME, time());
         exit(json_encode($ret, 256));
     }
 
@@ -208,18 +209,25 @@ class Utils
             foreach ($subPlugins as $item) {
                 $filename = strtolower($item->getFilenameWithoutExtension());
                 $fileVar = $filename . 'Path';
+                $pathName = $item->getPathname();
                 if ($filename == 'routes') {
-                    $routesPath = $item->getPathname();
+                    $routesPath = $pathName;
                     $routeFiles = Finder::create()->in($routesPath)->path('/.*\.php/')->files();
                     $routesPath = [];
                     foreach ($routeFiles as $routeFile) {
                         $routesPath[] = $routeFile->getPathname();
                     }
                 } else {
-                    $$fileVar = $item->getPathname();
+                    if ($filename == 'config') {
+                        if (strtolower($item->getExtension()) == 'json') {
+                            $$fileVar = $pathName;
+                        }
+                    } else {
+                        $$fileVar = $pathName;
+                    }
                 }
             }
-            if (strtolower(substr($configPath, -4, 4)) != 'json') continue;
+            if (!(!is_null($configPath) && file_exists($configPath))) continue;
             $config = json_decode(file_get_contents($configPath), 256);
             if ($config['status'] == DzqConst::BOOL_YES) {
                 $config['plugin_' . $config['app_id']] = [
@@ -231,10 +239,7 @@ class Utils
                     'routes' => $routesPath
                 ];
             }
-
-            if (isset($config['app_id']) && $config['app_id'] != '6130acd182770') {
-                $plugins[$config['app_id']] = $config;
-            }
+            $plugins[$config['app_id']] = $config;
         }
         DzqCache::set(CacheKey::PLUGIN_LOCAL_CONFIG, $plugins, 5 * 60);
         return $plugins;
@@ -280,7 +285,7 @@ class Utils
         }
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-        !empty($host)&&curl_setopt($ch,CURLOPT_HTTPHEADER,['HOST: '.$host]);
+        !empty($host) && curl_setopt($ch, CURLOPT_HTTPHEADER, ['HOST: ' . $host]);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
@@ -299,7 +304,7 @@ class Utils
         return false;
     }
 
-    public static function ssrfDefBlack($url,&$originHost='')
+    public static function ssrfDefBlack($url, &$originHost = '')
     {
         $url = parse_url($url);
         if (isset($url['port'])) {
@@ -351,9 +356,8 @@ class Utils
         }
         $parseUrl = parse_url($url);
         $host = $parseUrl['host'];
-        $path = $parseUrl['path'];
         $domain = Request::capture()->getHost();
-        if (!(preg_match('/^.+cos.+myqcloud\.com$/', $host) || self::endWith($host, $domain)) || !strstr($path, 'public/attachments')) {
+        if (!(preg_match('/^.+cos.+myqcloud\.com$/', $host) || self::endWith($host, $domain))) {
             return false;
         }
         return true;
