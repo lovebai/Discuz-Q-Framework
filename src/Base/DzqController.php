@@ -231,7 +231,7 @@ abstract class DzqController implements RequestHandlerInterface
         ];
     }
 
-    public function preloadPaginiation($pageCount, $perPage, \Illuminate\Database\Eloquent\Builder $builder)
+    public function preloadPaginiation($currentPage,$pageCount, $perPage, \Illuminate\Database\Eloquent\Builder $builder)
     {
         $perPage = $perPage >= 1 ? intval($perPage) : 20;
         $perPageMax = 50;
@@ -239,16 +239,17 @@ abstract class DzqController implements RequestHandlerInterface
         $count = $builder->count();
         $builder = $builder->offset(0)->limit($pageCount * $perPage)->get();
         $builder = $builder->toArray();
+        dd($builder);
         $url = $this->request->getUri();
         $port = $url->getPort();
         $port = $port == null ? '' : ':' . $port;
         parse_str($url->getQuery(), $query);
         unset($query['preload']);
         $ret = [];
-        $currentPage = 1;
         $totalCount = $count;
         $totalPage = $count % $perPage == 0 ? $count / $perPage : intval($count / $perPage) + 1;
-        while ($currentPage <= $pageCount) {
+        $limitPage = $currentPage + $pageCount;
+        while ($currentPage <= $limitPage) {
             $queryFirst = $queryNext = $queryPre = $query;
             $queryFirst['page'] = 1;
             $queryNext['page'] = $currentPage + 1;

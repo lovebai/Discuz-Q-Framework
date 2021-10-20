@@ -362,4 +362,17 @@ class Utils
         }
         return true;
     }
+
+    /**
+     * @desc 正整数
+     * @param $number
+     * @return bool
+     */
+    public static function isPositiveInteger($number)
+    {
+        if ($number > 0 && round($number, 0) == $number) {
+            return true;
+        }
+        return false;
+    }
 }
