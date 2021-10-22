@@ -162,7 +162,7 @@ class DzqCache
             $ret = self::getFragmentFileStore($key, $hashKeys);
         } else {
             $data = self::get($key);
-            $ret = false;
+            $ret = [];
             if ($data && self::CACHE_SWICH) {
                 foreach ($hashKeys as $hashKey) {
                     if (array_key_exists($hashKey, $data)) {
@@ -174,6 +174,8 @@ class DzqCache
                         break;
                     }
                 }
+            }else{
+                $ret = false;
             }
         }
         if ($ret === false && !empty($callBack)) {

@@ -69,8 +69,8 @@ abstract class DzqController implements RequestHandlerInterface
         $this->dzqLogInit();
         //临时处理管理端接口权限
         $path = $this->request->getUri()->getPath();
-        if(stristr($path,'backAdmin') && !stristr($path,'backAdmin/login')){
-            if(!$this->user->isAdmin()){
+        if (stristr($path, 'backAdmin') && !stristr($path, 'backAdmin/login')) {
+            if (!$this->user->isAdmin()) {
                 throw new PermissionDeniedException('没有权限');
             }
         }
@@ -131,6 +131,7 @@ abstract class DzqController implements RequestHandlerInterface
             }
         }
     }
+
     private function setParamsAlias()
     {
         $this->saveParamsAlias = [];
@@ -141,18 +142,19 @@ abstract class DzqController implements RequestHandlerInterface
             }
         }
     }
+
     /*
      * 接口入参
      */
-    public function inPut($name='', $checkValid = true)
+    public function inPut($name = '', $checkValid = true)
     {
-        if(!empty($this->saveParamsAlias[$name])){
+        if (!empty($this->saveParamsAlias[$name])) {
             return $this->saveParamsAlias[$name];
         }
-        if(empty($name)){
-            if($this->parseBody instanceof \Illuminate\Support\Collection){
+        if (empty($name)) {
+            if ($this->parseBody instanceof \Illuminate\Support\Collection) {
                 return $this->parseBody->merge($this->queryParams)->all();
-            }else{
+            } else {
                 return $this->queryParams;
             }
         }
@@ -231,15 +233,14 @@ abstract class DzqController implements RequestHandlerInterface
         ];
     }
 
-    public function preloadPaginiation($currentPage,$pageCount, $perPage, \Illuminate\Database\Eloquent\Builder $builder)
+    public function preloadPaginiation($currentPage, $pageCount, $perPage, \Illuminate\Database\Eloquent\Builder $builder)
     {
         $perPage = $perPage >= 1 ? intval($perPage) : 20;
         $perPageMax = 50;
         $perPage > $perPageMax && $perPage = $perPageMax;
         $count = $builder->count();
-        $builder = $builder->offset(0)->limit($pageCount * $perPage)->get();
+        $builder = $builder->offset(($currentPage-1)*$perPage)->limit($pageCount * $perPage)->get();
         $builder = $builder->toArray();
-        dd($builder);
         $url = $this->request->getUri();
         $port = $url->getPort();
         $port = $port == null ? '' : ':' . $port;
@@ -249,13 +250,14 @@ abstract class DzqController implements RequestHandlerInterface
         $totalCount = $count;
         $totalPage = $count % $perPage == 0 ? $count / $perPage : intval($count / $perPage) + 1;
         $limitPage = $currentPage + $pageCount;
-        while ($currentPage <= $limitPage) {
+        $offset = 0;
+        while ($currentPage < $limitPage) {
             $queryFirst = $queryNext = $queryPre = $query;
-            $queryFirst['page'] = 1;
+            $queryFirst['page'] = $currentPage;
             $queryNext['page'] = $currentPage + 1;
             $queryPre['page'] = $currentPage <= 1 ? 1 : $currentPage - 1;
             $path = $url->getScheme() . '://' . $url->getHost() . $port . $url->getPath() . '?';
-            $pageData = (array)array_slice($builder, ($currentPage - 1) * $perPage, $perPage);
+            $pageData = (array)array_slice($builder, $offset * $perPage, $perPage);
             $ret[$currentPage] = [
                 'pageData' => $pageData,
                 'currentPage' => $currentPage,
@@ -270,6 +272,7 @@ abstract class DzqController implements RequestHandlerInterface
             if (empty($pageData)) {
                 break;
             }
+            $offset++;
             $currentPage++;
         }
         return $ret;
