@@ -22,7 +22,7 @@ abstract class SimpleMessage
 
     protected function getContent($data)
     {
-        if (isset($this->data['notify_type']) && in_array($this->data['notify_type'], ['sticky', 'essence', 'delete'])) {
+        if (isset($this->data['notify_type']) && in_array($this->data['notify_type'], ['sticky', 'essence', 'delete', 'approved'])) {
             $data['post'] = Post::changeNotifitionPostContent($data['post']);
         }
 
