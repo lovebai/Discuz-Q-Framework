@@ -40,10 +40,10 @@ trait QcloudStatisticsTrait
         $setting = Setting::query()->get()->toArray();
         $setting = array_column($setting, null, 'key');
         $version = app()->version();
-        $siteId = !empty($setting['site_id']) ?? '';
-        $siteSecret = !empty($setting['site_secret']) ?? '';
-        $siteInstall = !empty($setting['site_install']) ?? '';
-        $siteManage = !empty($setting['site_manage']) ?? '';
+        $siteId = !empty($setting['site_id']) ? $setting['site_id'] : '';
+        $siteSecret = !empty($setting['site_secret']) ? $setting['site_secret'] : '';
+        $siteInstall = !empty($setting['site_install']) ? $setting['site_install'] : '';
+        $siteManage = !empty($setting['site_manage']) ? $setting['site_manage'] : '';
         $version = app()->version();
         $t1 = date('Y-m-d 00:00:00', strtotime('-1 day'));
         $t2 = date('Y-m-d 23:59:59', strtotime('-1 day'));
