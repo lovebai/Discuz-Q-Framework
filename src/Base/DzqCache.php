@@ -151,12 +151,12 @@ class DzqCache
      * @param $key
      * @param $hashKeys
      * @param callable|null $callBack
-     * @param null $indexField 数据转换的字段
+     * @param null $index 数据转换的字段
      * @param bool $mutiColumn 每个字段下的数据是否保留多个
      * @param bool $autoCache
      * @return bool|array
      */
-    public static function hMGet($key, $hashKeys, callable $callBack = null, $indexField = null, $mutiColumn = false, $autoCache = true)
+    public static function hMGet($key, $hashKeys, callable $callBack = null, $index = null, $mutiColumn = false, $autoCache = true)
     {
         if (isset(CacheKey::$fileStore[$key])) {
             $ret = self::getFragmentFileStore($key, $hashKeys);
@@ -180,7 +180,7 @@ class DzqCache
         }
         if ($ret === false && !empty($callBack)) {
             $ret = $callBack($hashKeys);
-            list($resultWithNull, $resultNotNull) = self::hMSetResult($ret, $indexField, $mutiColumn, $hashKeys, null);
+            list($resultWithNull, $resultNotNull) = self::hMSetResult($ret, $index, $mutiColumn, $hashKeys, null);
             if ($autoCache) {
                 if (isset(CacheKey::$fileStore[$key])) {
                     self::putFragmentFileStore($key, $resultWithNull);
