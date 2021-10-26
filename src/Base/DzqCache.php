@@ -64,28 +64,6 @@ class DzqCache
         return true;
     }
 
-    public static function hSet($key, $hashKey, $value)
-    {
-        $data = self::get($key);
-        $data[$hashKey] = $value;
-        return self::set($key, $data);
-    }
-
-    public static function hMSet($key, array $value, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
-    {
-        list($result) = self::hMSetResult($value, $indexField, $mutiColumn, $indexes, $defaultValue);
-        if (isset(CacheKey::$fileStore[$key])) {
-            self::putFragmentFileStore($key, $result);
-        } else {
-            $data = self::get($key);
-            foreach ($result as $k => $v) {
-                $data[$k] = $v;
-            }
-            self::set($key, $data);
-        }
-        return $result;
-    }
-
     /**
      * @desc 获取一个key下的数据
      * @param $key
@@ -163,19 +141,21 @@ class DzqCache
         } else {
             $data = self::get($key);
             $ret = [];
-            if ($data && self::CACHE_SWICH) {
-                foreach ($hashKeys as $hashKey) {
-                    if (array_key_exists($hashKey, $data)) {
-                        if (!empty($data[$hashKey])) {
-                            $ret[$hashKey] = $data[$hashKey];
+            if(!empty($hashKeys)){
+                if ($data && self::CACHE_SWICH) {
+                    foreach ($hashKeys as $hashKey) {
+                        if (array_key_exists($hashKey, $data)) {
+                            if (!empty($data[$hashKey])) {
+                                $ret[$hashKey] = $data[$hashKey];
+                            }
+                        } else {
+                            $ret = false;
+                            break;
                         }
-                    } else {
-                        $ret = false;
-                        break;
                     }
+                }else{
+                    $ret = false;
                 }
-            }else{
-                $ret = false;
             }
         }
         if ($ret === false && !empty($callBack)) {
