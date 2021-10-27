@@ -31,6 +31,7 @@ use Discuz\Auth\Exception\PermissionDeniedException;
 use Discuz\Contracts\Setting\SettingsRepository;
 use Discuz\Foundation\Application;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -126,7 +127,7 @@ class CheckoutSite implements MiddlewareInterface
         $queryString = $request->getUri()->getQuery();
         $api = Utils::getApiName();
         $this->inWhiteApiList($api, $queryString);
-        if (!(in_array($api, $this->noCheckPayMode) || $this->inWhiteApiList($api, $queryString)) && !(strpos($api, 'users') === 0) && !(strpos($api, 'backAdmin') === 0)) {
+        if (!(in_array($api, $this->noCheckPayMode) || $this->inWhiteApiList($api, $queryString) || $this->isPluginViewFile($api)) && !(strpos($api, 'users') === 0) && !(strpos($api, 'backAdmin') === 0)) {
             Utils::outPut(ResponseCode::JUMP_TO_PAY_SITE);
         }
     }
@@ -143,6 +144,11 @@ class CheckoutSite implements MiddlewareInterface
                 break;
         }
         return $isPass;
+    }
+
+    private function isPluginViewFile($api)
+    {
+        return Str::startsWith($api, ['/plugin', 'plugin']);
     }
 
     private function getOrder($actor)
