@@ -19,7 +19,6 @@ namespace Discuz\Base;
 
 
 use App\Common\CacheKey;
-use Illuminate\Database\Eloquent\Collection;
 
 class DzqCache
 {
@@ -63,28 +62,6 @@ class DzqCache
             return self::set($key, $data);
         }
         return true;
-    }
-
-    public static function hSet($key, $hashKey, $value)
-    {
-        $data = self::get($key);
-        $data[$hashKey] = $value;
-        return self::set($key, $data);
-    }
-
-    public static function hMSet($key, array $value, $indexField = null, $mutiColumn = false, $indexes = [], $defaultValue = [])
-    {
-        list($result) = self::hMSetResult($value, $indexField, $mutiColumn, $indexes, $defaultValue);
-        if (isset(CacheKey::$fileStore[$key])) {
-            self::putFragmentFileStore($key, $result);
-        } else {
-            $data = self::get($key);
-            foreach ($result as $k => $v) {
-                $data[$k] = $v;
-            }
-            self::set($key, $data);
-        }
-        return $result;
     }
 
     /**
@@ -152,34 +129,38 @@ class DzqCache
      * @param $key
      * @param $hashKeys
      * @param callable|null $callBack
-     * @param null $indexField 数据转换的字段
+     * @param null $index 数据转换的字段
      * @param bool $mutiColumn 每个字段下的数据是否保留多个
      * @param bool $autoCache
      * @return bool|array
      */
-    public static function hMGet($key, $hashKeys, callable $callBack = null, $indexField = null, $mutiColumn = false, $autoCache = true)
+    public static function hMGet($key, $hashKeys, callable $callBack = null, $index = null, $mutiColumn = false, $autoCache = true)
     {
         if (isset(CacheKey::$fileStore[$key])) {
             $ret = self::getFragmentFileStore($key, $hashKeys);
         } else {
             $data = self::get($key);
-            $ret = false;
-            if ($data && self::CACHE_SWICH) {
-                foreach ($hashKeys as $hashKey) {
-                    if (array_key_exists($hashKey, $data)) {
-                        if (!empty($data[$hashKey])) {
-                            $ret[$hashKey] = $data[$hashKey];
+            $ret = [];
+            if(!empty($hashKeys)){
+                if ($data && self::CACHE_SWICH) {
+                    foreach ($hashKeys as $hashKey) {
+                        if (array_key_exists($hashKey, $data)) {
+                            if (!empty($data[$hashKey])) {
+                                $ret[$hashKey] = $data[$hashKey];
+                            }
+                        } else {
+                            $ret = false;
+                            break;
                         }
-                    } else {
-                        $ret = false;
-                        break;
                     }
+                }else{
+                    $ret = false;
                 }
             }
         }
         if ($ret === false && !empty($callBack)) {
             $ret = $callBack($hashKeys);
-            list($resultWithNull, $resultNotNull) = self::hMSetResult($ret, $indexField, $mutiColumn, $hashKeys, null);
+            list($resultWithNull, $resultNotNull) = self::hMSetResult($ret, $index, $mutiColumn, $hashKeys, null);
             if ($autoCache) {
                 if (isset(CacheKey::$fileStore[$key])) {
                     self::putFragmentFileStore($key, $resultWithNull);
@@ -192,41 +173,6 @@ class DzqCache
                 }
             }
             return $resultNotNull;
-        }
-        return $ret;
-    }
-
-    /**
-     * @desc 附件数据获取
-     * todo 后续去除模型传递，废除该方法
-     * @param $key
-     * @param array $hashKeys
-     * @param callable|null $callBack
-     * @return bool|Collection
-     */
-    public static function hMGetCollection($key, array $hashKeys, callable $callBack = null)
-    {
-        $data = self::getAppCache($key, $hasCache, $cacheData);
-        $ret = false;
-        if ($data && self::CACHE_SWICH) {
-            $ret = new  Collection();
-            foreach ($hashKeys as $hashKey) {
-                if (!empty($data[$hashKey])) {
-                    $ret->put($hashKey, $data[$hashKey]);
-                } else {
-                    $ret = false;
-                    break;
-                }
-            }
-        }
-        if (($ret === false || !$data) && !empty($callBack)) {
-            $ret = $callBack($hashKeys);
-            !$data && $data = new  Collection();
-            foreach ($ret as $k => $v) {
-                $data->put($k, $v);
-            }
-            $hasCache && self::setAppCache($key, $data, $cacheData);
-            self::set($key, $data);
         }
         return $ret;
     }
