@@ -103,7 +103,8 @@ class CheckUserStatus implements MiddlewareInterface
         }
         // 被禁用的用户
         if ($actor->status == User::STATUS_BAN) {
-            Utils::outPut(ResponseCode::USER_BAN);
+            $rejectReason = !empty($actor->reject_reason) ? $actor->reject_reason : '';
+            Utils::outPut(ResponseCode::USER_BAN, '', ['banReason' => $rejectReason]);
         }
         // 审核中的用户
         if ($actor->status == User::STATUS_MOD) {
