@@ -187,7 +187,7 @@ class Utils
         }
         header('Content-Type:application/json; charset=utf-8', true, 200);
         header('Dzq-CostTime:' . ((microtime(true) - DISCUZ_START) * 1000) . 'ms');
-        !empty(getenv('KUBERNETES_OAC_HOST')) && DzqCache::set(CacheKey::OAC_REQUEST_TIME, time());
+        !empty(getenv('KUBERNETES_OAC_HOST')) && app('cache')->put(CacheKey::OAC_REQUEST_TIME, time());
         exit(json_encode($ret, 256));
     }
 
