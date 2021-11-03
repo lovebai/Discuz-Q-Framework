@@ -15,9 +15,9 @@
 
 namespace Discuz\Notifications\Channels;
 
-use App\Api\Controller\Notification\NotificationTimingTrait;
 use App\Models\NotificationTpl;
 use Discuz\Contracts\Setting\SettingsRepository;
+use Discuz\Notifications\Traits\NotificationTimingTrait;
 use Discuz\Wechat\EasyWechatTrait;
 use EasyWeChat\Kernel\Exceptions\InvalidArgumentException;
 use EasyWeChat\Kernel\Exceptions\InvalidConfigException;
