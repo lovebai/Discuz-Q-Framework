@@ -15,7 +15,7 @@
 
 namespace Discuz\Notifications\Channels;
 
-use App\Api\Controller\NotificationV3\NotificationTimingTrait;
+use App\Api\Controller\Notification\NotificationTimingTrait;
 use App\Models\NotificationTpl;
 use Discuz\Contracts\Setting\SettingsRepository;
 use Discuz\Wechat\EasyWechatTrait;
