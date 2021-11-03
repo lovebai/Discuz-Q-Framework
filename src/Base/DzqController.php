@@ -60,7 +60,7 @@ abstract class DzqController implements RequestHandlerInterface
         $this->request = $request;
         $this->queryParams = $request->getQueryParams();
         $this->parseBody = $request->getParsedBody();
-        $this->requestId = Str::uuid();
+        $this->requestId = Utils::uuid();
         $this->requestTime = date('Y-m-d H:i:s');
         $this->app = app();
         $this->registerProviders();
