@@ -150,7 +150,7 @@ class ApiServiceProvider extends ServiceProvider
         $prefix = '/plugin/' . $plugin['name_en'] . '/api/';
         $route->group($prefix, function (RouteCollection $route) use ($plugin) {
             $pluginFiles = $plugin['plugin_' . $plugin['app_id']];
-            Utils::setAppKey("plugin_appid",$plugin['app_id']);
+            Utils::setPluginAppId($plugin['app_id']);
             if (isset($pluginFiles['routes'])) {
                 foreach ($pluginFiles['routes'] as $routeFile) {
                     require_once $routeFile;
