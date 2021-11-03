@@ -114,25 +114,25 @@ class ApiServiceProvider extends ServiceProvider
         $userApiV3PrefixAlias = '/api/v3';
         $pluginApiPrefix = '/plugin/' . $pluginName . '/api';
         if ($this->matchPrefix($reqUri, $adminApiPrefix)) {
-            $route->group('/api/backAdmin', function (RouteCollection $route) {
+            $route->group($adminApiPrefix, function (RouteCollection $route) {
                 require $this->app->basePath('routes/apiadmin.php');
             });
         } else if ($this->matchPrefix($reqUri, $userApiV3Prefix)) {
-            $route->group('/apiv3', function (RouteCollection $route) {
+            $route->group($userApiV3Prefix, function (RouteCollection $route) {
                 require $this->app->basePath('routes/apiv3.php');
             });
         } else if ($this->matchPrefix($reqUri, $userApiV3PrefixAlias)) {
-            $route->group('/api/v3', function (RouteCollection $route) {
+            $route->group($userApiV3PrefixAlias, function (RouteCollection $route) {
                 require $this->app->basePath('routes/apiv3.php');
             });
         } else if ($this->matchPrefix($reqUri, $userApiPrefix)) {
-            $route->group('/api', function (RouteCollection $route) {
+            $route->group($userApiPrefix, function (RouteCollection $route) {
                 require $this->app->basePath('routes/api.php');
             });
         } else if ($this->matchPrefix($reqUri, $pluginApiPrefix)) {
             $this->setPluginRoutes($route, $pluginName);
         } else {
-            $route->group('/api', function (RouteCollection $route) {
+            $route->group($userApiPrefix, function (RouteCollection $route) {
                 require $this->app->basePath('routes/api.php');
             });
         }
@@ -161,7 +161,7 @@ class ApiServiceProvider extends ServiceProvider
 
     private function matchPrefix($uri, $prefix)
     {
-        $p = '/'.$prefix;//兼容前端错误的url拼接
+        $p = '/' . $prefix;//兼容前端错误的url拼接
         return ($uri & $prefix) == $prefix || ($uri & $p) == $p;
     }
 }

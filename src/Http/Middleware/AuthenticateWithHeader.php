@@ -69,6 +69,13 @@ class AuthenticateWithHeader implements MiddlewareInterface
         $this->getApiFreq($api);
 
         $headerLine = $request->getHeaderLine('authorization');
+        if(empty($headerLine)){     //如果header头中没有 authorization，则从cookie里面找是否有access_token
+            $cookies = $request->getCookieParams();
+            if(!empty($cookies['access_token'])){
+                $headerLine = $cookies['access_token'];
+                $request = $request->withHeader('authorization', $headerLine);
+            }
+        }
 
         // 允许 get、cookie 携带 Token
         if (!$headerLine) {

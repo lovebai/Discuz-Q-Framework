@@ -65,7 +65,7 @@ class Kernel extends SiteApp implements KernelContract
     protected function defineConsoleSchedule()
     {
 
-        $lastReq = DzqCache::get(CacheKey::OAC_REQUEST_TIME);
+        $lastReq = app('cache')->get(CacheKey::OAC_REQUEST_TIME);
         if (!empty($lastReq)) {
             //超过30分钟,关闭定时脚本
             if ((time() - $lastReq) / 60.0 > 30) return;
