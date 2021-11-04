@@ -27,6 +27,7 @@ use Discuz\Auth\Guest;
 use Discuz\Base\DzqLog;
 use Discuz\Cache\CacheManager;
 use Discuz\Common\Utils;
+use Discuz\Contracts\Setting\SettingsRepository;
 use Illuminate\Support\Arr;
 use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\ResourceServer;
@@ -194,6 +195,12 @@ class AuthenticateWithHeader implements MiddlewareInterface
             return true;
         }
         $method = strtolower($method);
+
+        if ($this->isAttachments($api, $method) || $this->isCoskey($api, $method)) {
+            $maxUploadNum = app()->make(SettingsRepository::class)->get('support_max_upload_attachment_num', 'default');
+            $maxLimit = $maxUploadNum ? (int)$maxUploadNum : 20;
+        }
+
         if (empty($userId)) {
             $key = 'api_limit_by_ip_' . md5($ip . $api . $method);
         } else {
@@ -203,14 +210,14 @@ class AuthenticateWithHeader implements MiddlewareInterface
             return $this->setLimit($key, $method, 10, 10 * 60);
         }
         if ($this->isAttachments($api, $method)) {
-            return $this->setLimit($key, $method, 20, 5 * 60);
+            return $this->setLimit($key, $method, $maxLimit, 5 * 60);
         }
         if ($this->isPoll($api)) {
             return $this->setLimit($key, $method, 200, 60);
         }
 
         if ($this->isCoskey($api, $method)) {
-            return $this->setLimit($key, $method, 20, 30);
+            return $this->setLimit($key, $method, $maxLimit, 30);
         }
         if ($this->isPayOrder($api, $method)) {
             return $this->setLimit($key, $method, 3, 10);
