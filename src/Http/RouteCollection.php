@@ -48,9 +48,9 @@ class RouteCollection
         $this->currentGroupPrefix = '';
     }
 
-    public function get($path, $name, $handler)
+    public function get($path, $name, $handler,$replaceHandler = null)
     {
-        return $this->addRoute('GET', $path, $name, $handler);
+        return $this->addRoute('GET', $path, $name, $handler,$replaceHandler);
     }
 
     public function post($path, $name, $handler)
@@ -73,7 +73,13 @@ class RouteCollection
         return $this->addRoute('DELETE', $path, $name, $handler);
     }
 
-    public function group($prefix, callable $callback)
+    /**
+     * @param $prefix
+     * @param callable $callback
+     * @param int $times 访问次数
+     * @param int $interval 时间间隔(秒)
+     */
+    public function group($prefix, callable $callback, $times = 100, $interval = 60)
     {
         $previousGroupPrefix = $this->currentGroupPrefix;
         $this->currentGroupPrefix = $previousGroupPrefix . $prefix;
@@ -81,7 +87,7 @@ class RouteCollection
         $this->currentGroupPrefix = $previousGroupPrefix;
     }
 
-    public function addRoute($method, $path, $name, $handler)
+    public function addRoute($method, $path, $name, $handler,$replaceHandler = null)
     {
         $path = $this->currentGroupPrefix . $path;
         $path = str_replace('//','/',$path);
