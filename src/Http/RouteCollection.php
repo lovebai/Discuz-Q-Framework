@@ -48,9 +48,9 @@ class RouteCollection
         $this->currentGroupPrefix = '';
     }
 
-    public function get($path, $name, $handler,$replaceHandler = null)
+    public function get($path, $name, $handler, $replaceHandler = null)
     {
-        return $this->addRoute('GET', $path, $name, $handler,$replaceHandler);
+        return $this->addRoute('GET', $path, $name, $handler, $replaceHandler);
     }
 
     public function post($path, $name, $handler)
@@ -73,13 +73,7 @@ class RouteCollection
         return $this->addRoute('DELETE', $path, $name, $handler);
     }
 
-    /**
-     * @param $prefix
-     * @param callable $callback
-     * @param int $times 访问次数
-     * @param int $interval 时间间隔(秒)
-     */
-    public function group($prefix, callable $callback, $times = 100, $interval = 60)
+    public function group($prefix, callable $callback)
     {
         $previousGroupPrefix = $this->currentGroupPrefix;
         $this->currentGroupPrefix = $previousGroupPrefix . $prefix;
@@ -87,10 +81,23 @@ class RouteCollection
         $this->currentGroupPrefix = $previousGroupPrefix;
     }
 
-    public function addRoute($method, $path, $name, $handler,$replaceHandler = null)
+    /**
+     * @param callable $callback
+     * @param int $times 访问次数
+     * @param int $interval 时间间隔(秒)
+     */
+    public function withFrequency(callable $callback, $times = 100, $interval = 60)
+    {
+        $previousGroupPrefix = $this->currentGroupPrefix;
+        $this->currentGroupPrefix = $previousGroupPrefix;
+        $callback($this);
+        $this->currentGroupPrefix = $previousGroupPrefix;
+    }
+
+    public function addRoute($method, $path, $name, $handler, $replaceHandler = null)
     {
         $path = $this->currentGroupPrefix . $path;
-        $path = str_replace('//','/',$path);
+        $path = str_replace('//', '/', $path);
         $routeDatas = $this->routeParser->parse($path);
         foreach ($routeDatas as $routeData) {
             $this->dataGenerator->addRoute($method, $routeData, $handler);
@@ -117,7 +124,7 @@ class RouteCollection
         if (isset($this->reverse[$name])) {
             $parts = $this->reverse[$name][0];
             array_walk($parts, [$this, 'fixPathPart'], $parameters);
-            return '/'.ltrim(implode('', $parts), '/');
+            return '/' . ltrim(implode('', $parts), '/');
         }
         throw new \RuntimeException("Route $name not found");
     }
