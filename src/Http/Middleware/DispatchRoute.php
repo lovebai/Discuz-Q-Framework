@@ -20,6 +20,7 @@ namespace Discuz\Http\Middleware;
 
 use Discuz\Http\Exception\MethodNotAllowedException;
 use Discuz\Http\Exception\RouteNotFoundException;
+use Discuz\Http\GroupCountBased;
 use Discuz\Http\RouteCollection;
 use Discuz\Http\RouteHandlerFactory;
 use Psr\Http\Message\ResponseInterface;
@@ -65,6 +66,7 @@ class DispatchRoute implements MiddlewareInterface
     {
         $method = $request->getMethod();
         $uri = $request->getUri()->getPath() ?: '/';
+        dd('gxxx',$this->getDispatcher());
         $routeInfo = $this->getDispatcher()->dispatch($method, $uri);
         switch ($routeInfo[0]) {
             case Dispatcher::NOT_FOUND:
@@ -82,6 +84,9 @@ class DispatchRoute implements MiddlewareInterface
     {
         if (! isset($this->dispatcher)) {
             $this->dispatcher = new Dispatcher\GroupCountBased($this->routes->getRouteData());
+            $d = $this->routes->getRouteData();
+            $this->dispatcher = new \Discuz\Http\GroupCountBased($d);
+
         }
         return $this->dispatcher;
     }

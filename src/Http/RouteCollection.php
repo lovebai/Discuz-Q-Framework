@@ -42,7 +42,8 @@ class RouteCollection
 
     public function __construct()
     {
-        $this->dataGenerator = new DataGenerator\GroupCountBased;
+        $this->dataGenerator = new GroupCountBased();
+
         $this->routeParser = new RouteParser\Std;
 
         $this->currentGroupPrefix = '';
@@ -58,20 +59,20 @@ class RouteCollection
         return $this->addRoute('POST', $path, $name, $handler);
     }
 
-    public function put($path, $name, $handler)
-    {
-        return $this->addRoute('PUT', $path, $name, $handler);
-    }
-
-    public function patch($path, $name, $handler)
-    {
-        return $this->addRoute('PATCH', $path, $name, $handler);
-    }
-
-    public function delete($path, $name, $handler)
-    {
-        return $this->addRoute('DELETE', $path, $name, $handler);
-    }
+//    public function put($path, $name, $handler)
+//    {
+//        return $this->addRoute('PUT', $path, $name, $handler);
+//    }
+//
+//    public function patch($path, $name, $handler)
+//    {
+//        return $this->addRoute('PATCH', $path, $name, $handler);
+//    }
+//
+//    public function delete($path, $name, $handler)
+//    {
+//        return $this->addRoute('DELETE', $path, $name, $handler);
+//    }
 
     public function group($prefix, callable $callback)
     {
@@ -100,7 +101,7 @@ class RouteCollection
         $path = str_replace('//', '/', $path);
         $routeDatas = $this->routeParser->parse($path);
         foreach ($routeDatas as $routeData) {
-            $this->dataGenerator->addRoute($method, $routeData, $handler);
+            $this->dataGenerator->addRoute($method, $routeData, $handler,$replaceHandler);
         }
 
         $this->reverse[$name] = $routeDatas;

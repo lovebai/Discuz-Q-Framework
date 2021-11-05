@@ -193,8 +193,8 @@ class Utils
 
     public static function getPluginList()
     {
-        $cacheConfig = DzqCache::get(CacheKey::PLUGIN_LOCAL_CONFIG);
-        if ($cacheConfig) return $cacheConfig;
+//        $cacheConfig = DzqCache::get(CacheKey::PLUGIN_LOCAL_CONFIG);
+//        if ($cacheConfig) return $cacheConfig;
         $pluginDir = base_path('plugin');
         $directories = Finder::create()->in($pluginDir)->directories()->depth(0)->sortByName();
         $plugins = [];
@@ -215,7 +215,8 @@ class Utils
                     $routeFiles = Finder::create()->in($routesPath)->path('/.*\.php/')->files();
                     $routesPath = [];
                     foreach ($routeFiles as $routeFile) {
-                        $routesPath[] = $routeFile->getPathname();
+                        $routePath = $routeFile->getPathname();
+                        $routesPath[] = $routePath;
                     }
                 } else {
                     if ($filename == 'config') {
