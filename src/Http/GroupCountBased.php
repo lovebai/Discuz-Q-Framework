@@ -17,32 +17,41 @@
 
 namespace Discuz\Http;
 
-use FastRoute\Dispatcher\RegexBasedAbstract;
 
-class GroupCountBased extends \Discuz\Http\RegexBasedAbstract
+class GroupCountBased extends RegexBasedAbstract
 {
-    protected function getApproxChunkSize()
+    public function __construct($data)
     {
-        return 10;
+        list($this->staticRouteMap, $this->variableRouteData) = $data;
     }
 
-    protected function processChunk($regexToRoutesMap)
+    protected function dispatchVariableRoute($routeData, $uri)
     {
-        $routeMap = [];
-        $regexes = [];
-        $numGroups = 0;
-        foreach ($regexToRoutesMap as $regex => $route) {
-            $numVariables = count($route->variables);
-            $numGroups = max($numGroups, $numVariables);
+        foreach ($routeData as $data) {
+            if (!preg_match($data['regex'], $uri, $matches)) {
+                continue;
+            }
 
-            $regexes[] = $regex . str_repeat('()', $numGroups - $numVariables);
-            $routeMap[$numGroups + 1] = [$route->handler, $route->variables];
+            list($handler, $varNames) = $data['routeMap'][count($matches)];
 
-            ++$numGroups;
+            $vars = [];
+            $i = 0;
+            foreach ($varNames as $varName) {
+                $vars[$varName] = $matches[++$i];
+            }
+            return [self::FOUND, $handler, $vars];
         }
 
-        $regex = '~^(?|' . implode('|', $regexes) . ')$~';
-        return ['regex' => $regex, 'routeMap' => $routeMap];
+        return [self::NOT_FOUND];
+    }
+
+    public function getStaticRouteMap()
+    {
+        return $this->staticRouteMap;
+    }
+
+    public function getVariableRouteData()
+    {
+        return $this->variableRouteData;
     }
 }
-

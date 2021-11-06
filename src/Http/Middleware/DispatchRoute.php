@@ -66,7 +66,6 @@ class DispatchRoute implements MiddlewareInterface
     {
         $method = $request->getMethod();
         $uri = $request->getUri()->getPath() ?: '/';
-        dd('gxxx',$this->getDispatcher());
         $routeInfo = $this->getDispatcher()->dispatch($method, $uri);
         switch ($routeInfo[0]) {
             case Dispatcher::NOT_FOUND:
@@ -76,18 +75,32 @@ class DispatchRoute implements MiddlewareInterface
             case Dispatcher::FOUND:
                 $handler = $routeInfo[1];
                 $parameters = $routeInfo[2];
+                $hMap = $this->getReplaceHandlersMap();
+                $handler = $hMap[$handler]??$handler;
                 return $this->factory->toController($handler)($request, $parameters);
         }
     }
 
     protected function getDispatcher()
     {
-        if (! isset($this->dispatcher)) {
-            $this->dispatcher = new Dispatcher\GroupCountBased($this->routes->getRouteData());
-            $d = $this->routes->getRouteData();
-            $this->dispatcher = new \Discuz\Http\GroupCountBased($d);
-
+        if (!isset($this->dispatcher)) {
+            $this->dispatcher = new GroupCountBased($this->routes->getRouteData());
         }
         return $this->dispatcher;
+    }
+    protected function getReplaceHandlersMap(){
+        $dispatcher = $this->getDispatcher();
+        $staticRouteMap = $dispatcher->getStaticRouteMap();
+//        $variableRouteData = $dispatcher->getVariableRouteData();
+        $hMap = [];
+        foreach ($staticRouteMap as $staticRoutes) {
+            foreach ($staticRoutes as $staticRoute) {
+                if(strpos($staticRoute,'|')){
+                    $handlers = explode('|',$staticRoute);
+                    $hMap[$handlers[1]] = $handlers[0];
+                }
+            }
+        }
+        return $hMap;
     }
 }

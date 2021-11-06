@@ -42,7 +42,7 @@ class RouteCollection
 
     public function __construct()
     {
-        $this->dataGenerator = new GroupCountBased();
+        $this->dataGenerator = new DataGenerator\GroupCountBased;
 
         $this->routeParser = new RouteParser\Std;
 
@@ -101,7 +101,8 @@ class RouteCollection
         $path = str_replace('//', '/', $path);
         $routeDatas = $this->routeParser->parse($path);
         foreach ($routeDatas as $routeData) {
-            $this->dataGenerator->addRoute($method, $routeData, $handler,$replaceHandler);
+            !is_null($replaceHandler) && $handler = $handler . '|' . $replaceHandler;
+            $this->dataGenerator->addRoute($method, $routeData, $handler);
         }
 
         $this->reverse[$name] = $routeDatas;
