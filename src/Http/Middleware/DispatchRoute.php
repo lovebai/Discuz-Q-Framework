@@ -61,6 +61,7 @@ class DispatchRoute implements MiddlewareInterface
      * @param ServerRequestInterface $request
      * @param RequestHandlerInterface $handler
      * @return ResponseInterface
+     * @throws \Exception
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
@@ -75,8 +76,7 @@ class DispatchRoute implements MiddlewareInterface
             case Dispatcher::FOUND:
                 $handler = $routeInfo[1];
                 $parameters = $routeInfo[2];
-                $hMap = $this->getReplaceHandlersMap();
-                $handler = $hMap[$handler]??$handler;
+                $handler = $this->getReplaceHandlersMap($method, $handler);
                 return $this->factory->toController($handler)($request, $parameters);
         }
     }
@@ -88,19 +88,32 @@ class DispatchRoute implements MiddlewareInterface
         }
         return $this->dispatcher;
     }
-    protected function getReplaceHandlersMap(){
+
+    protected function getReplaceHandlersMap($method, &$handler)
+    {
         $dispatcher = $this->getDispatcher();
         $staticRouteMap = $dispatcher->getStaticRouteMap();
 //        $variableRouteData = $dispatcher->getVariableRouteData();
-        $hMap = [];
-        foreach ($staticRouteMap as $staticRoutes) {
+        foreach ($staticRouteMap as $m => $staticRoutes) {
             foreach ($staticRoutes as $staticRoute) {
-                if(strpos($staticRoute,'|')){
-                    $handlers = explode('|',$staticRoute);
-                    $hMap[$handlers[1]] = $handlers[0];
+
+                if (is_array($staticRoute)) {//插件路由覆盖
+                    if ($handler == $staticRoute['replaceHandler']) {
+                        if ($method == $staticRoute['method'] && $method == $m) {
+                            $handler = $staticRoute['handler'];
+                            return $handler;
+                        } else {
+                            throw new \Exception('handler ' . $handler . ' route method not matched');
+                        }
+                    }
+
+                } else {
+                    if ($m == $method && $staticRoute == $handler) {
+                        return $handler;
+                    }
                 }
             }
         }
-        return $hMap;
+        throw new \Exception('handler ' . $handler . ' route not found');
     }
 }

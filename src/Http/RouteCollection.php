@@ -54,9 +54,9 @@ class RouteCollection
         return $this->addRoute('GET', $path, $name, $handler, $replaceHandler);
     }
 
-    public function post($path, $name, $handler)
+    public function post($path, $name, $handler, $replaceHandler = null)
     {
-        return $this->addRoute('POST', $path, $name, $handler);
+        return $this->addRoute('POST', $path, $name, $handler, $replaceHandler);
     }
 
 //    public function put($path, $name, $handler)
@@ -101,7 +101,12 @@ class RouteCollection
         $path = str_replace('//', '/', $path);
         $routeDatas = $this->routeParser->parse($path);
         foreach ($routeDatas as $routeData) {
-            !is_null($replaceHandler) && $handler = $handler . '|' . $replaceHandler;
+//            !is_null($replaceHandler) && $handler = $handler . '|' . $replaceHandler;
+            !is_null($replaceHandler) && $handler = [
+                'method' => $method,
+                'handler' => $handler,
+                'replaceHandler' => $replaceHandler
+            ];
             $this->dataGenerator->addRoute($method, $routeData, $handler);
         }
 

@@ -145,7 +145,6 @@ class ApiServiceProvider extends ServiceProvider
     private function setPluginRoutes(RouteCollection $route, $plugins, $pluginName)
     {
         foreach ($plugins as $plugin) {
-            if (empty($plugin)) exit('plugin ' . $pluginName . ' not exist.');
             $prefix = '/plugin/' . $plugin['name_en'] . '/api/';
             $route->group($prefix, function (RouteCollection $route) use ($plugin) {
                 $pluginFiles = $plugin['plugin_' . $plugin['app_id']];
