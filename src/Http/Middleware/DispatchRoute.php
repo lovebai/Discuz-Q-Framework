@@ -76,7 +76,7 @@ class DispatchRoute implements MiddlewareInterface
             case Dispatcher::FOUND:
                 $handler = $routeInfo[1];
                 $parameters = $routeInfo[2];
-                $handler = $this->getReplaceHandlersMap($method, $handler);
+                $handler = $this->getReplaceHandler($method, $handler);
                 return $this->factory->toController($handler)($request, $parameters);
         }
     }
@@ -89,7 +89,7 @@ class DispatchRoute implements MiddlewareInterface
         return $this->dispatcher;
     }
 
-    protected function getReplaceHandlersMap($method, $handler)
+    protected function getReplaceHandler($method, $handler)
     {
         $dispatcher = $this->getDispatcher();
         $staticRouteMap = $dispatcher->getStaticRouteMap();
