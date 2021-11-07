@@ -403,4 +403,28 @@ class Utils
             mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
         );
     }
+
+    public static function setAppKey($key, $value)
+    {
+        return app()->instance($key, $value);
+    }
+
+    public static function getAppKey($key)
+    {
+        if (app()->has($key)) {
+            return app()->get($key);
+        }
+        return null;
+    }
+
+    public static function setRouteMap($data)
+    {
+        return self::setAppKey('dzq_boot_route_data', $data);
+    }
+
+    public static function getRouteMap()
+    {
+        return self::getAppKey('dzq_boot_route_data');
+    }
+
 }

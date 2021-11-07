@@ -74,9 +74,9 @@ class DispatchRoute implements MiddlewareInterface
             case Dispatcher::METHOD_NOT_ALLOWED:
                 throw new MethodNotAllowedException($method);
             case Dispatcher::FOUND:
-                $handler = $routeInfo[1];
+                $handlerInfo = $routeInfo[1];
                 $parameters = $routeInfo[2];
-                $handler = $this->getReplaceHandler($method, $handler);
+                $handler = $this->getReplaceHandler($method, $handlerInfo);
                 return $this->factory->toController($handler)($request, $parameters);
         }
     }
@@ -89,7 +89,7 @@ class DispatchRoute implements MiddlewareInterface
         return $this->dispatcher;
     }
 
-    protected function getReplaceHandler($method, $handler)
+    protected function getReplaceHandler($method, $handlerInfo)
     {
         $dispatcher = $this->getDispatcher();
         $staticRouteMap = $dispatcher->getStaticRouteMap();
@@ -97,10 +97,12 @@ class DispatchRoute implements MiddlewareInterface
         $replaceHandlers = [];
         foreach ($staticRouteMap as $m => $staticRoutes) {
             foreach ($staticRoutes as $urlPath => $staticRoute) {
-                is_array($staticRoute) && $replaceHandlers[$staticRoute['replaceHandler']] = $staticRoute;
-
+                if(!empty($staticRoute['replaceHandler'])){
+                    $replaceHandlers[$staticRoute['replaceHandler']] = $staticRoute;
+                }
             }
         }
+        $handler = $handlerInfo['handler'];
         if(isset($replaceHandlers[$handler])){
             if($replaceHandlers[$handler]['method'] == $method){
                 return $replaceHandlers[$handler]['handler'];

@@ -66,6 +66,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        dd(Utils::getRouteMap());
         $api = Utils::getApiName();
         $this->getApiFreq($api);
 

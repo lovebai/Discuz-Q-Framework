@@ -40,6 +40,9 @@ class RouteCollection
 
     protected $currentGroupPrefix;
 
+    protected $times = 30;
+    protected $interval = 60;
+
     public function __construct()
     {
         $this->dataGenerator = new DataGenerator\GroupCountBased;
@@ -92,6 +95,8 @@ class RouteCollection
         $previousGroupPrefix = $this->currentGroupPrefix;
         $this->currentGroupPrefix = $previousGroupPrefix;
         $callback($this);
+        $this->times = $times;
+        $this->interval = $interval;
         $this->currentGroupPrefix = $previousGroupPrefix;
     }
 
@@ -101,10 +106,12 @@ class RouteCollection
         $path = str_replace('//', '/', $path);
         $routeDatas = $this->routeParser->parse($path);
         foreach ($routeDatas as $routeData) {
-            !is_null($replaceHandler) && $handler = [
+            $handler = [
                 'method' => $method,
                 'handler' => $handler,
-                'replaceHandler' => $replaceHandler
+                'replaceHandler' => $replaceHandler,
+                'times'=>$this->times,
+                'interval'=>$this->interval
             ];
             $this->dataGenerator->addRoute($method, $routeData, $handler);
         }
