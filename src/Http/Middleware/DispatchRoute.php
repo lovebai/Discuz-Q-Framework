@@ -89,31 +89,25 @@ class DispatchRoute implements MiddlewareInterface
         return $this->dispatcher;
     }
 
-    protected function getReplaceHandlersMap($method, &$handler)
+    protected function getReplaceHandlersMap($method, $handler)
     {
         $dispatcher = $this->getDispatcher();
         $staticRouteMap = $dispatcher->getStaticRouteMap();
-//        $variableRouteData = $dispatcher->getVariableRouteData();
+        //$variableRouteData = $dispatcher->getVariableRouteData(); //不支持动态路由
+        $replaceHandlers = [];
         foreach ($staticRouteMap as $m => $staticRoutes) {
-            foreach ($staticRoutes as $staticRoute) {
+            foreach ($staticRoutes as $urlPath => $staticRoute) {
+                is_array($staticRoute) && $replaceHandlers[$staticRoute['replaceHandler']] = $staticRoute;
 
-                if (is_array($staticRoute)) {//插件路由覆盖
-                    if ($handler == $staticRoute['replaceHandler']) {
-                        if ($method == $staticRoute['method'] && $method == $m) {
-                            $handler = $staticRoute['handler'];
-                            return $handler;
-                        } else {
-                            throw new \Exception('handler ' . $handler . ' route method not matched');
-                        }
-                    }
-
-                } else {
-                    if ($m == $method && $staticRoute == $handler) {
-                        return $handler;
-                    }
-                }
             }
         }
-        throw new \Exception('handler ' . $handler . ' route not found');
+        if(isset($replaceHandlers[$handler])){
+            if($replaceHandlers[$handler]['method'] == $method){
+                return $replaceHandlers[$handler]['handler'];
+            }else{
+                throw new \Exception('handler (' . $handler . ') method not matched');
+            }
+        }
+        return $handler;
     }
 }
