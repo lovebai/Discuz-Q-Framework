@@ -101,7 +101,6 @@ class RouteCollection
         $path = str_replace('//', '/', $path);
         $routeDatas = $this->routeParser->parse($path);
         foreach ($routeDatas as $routeData) {
-//            !is_null($replaceHandler) && $handler = $handler . '|' . $replaceHandler;
             !is_null($replaceHandler) && $handler = [
                 'method' => $method,
                 'handler' => $handler,
