@@ -191,45 +191,44 @@ class Utils
         exit(json_encode($ret, 256));
     }
 
-    public static function getPluginList()
+    public static function getPluginList($isAll=false)
     {
         $cacheConfig = DzqCache::get(CacheKey::PLUGIN_LOCAL_CONFIG);
-        if ($cacheConfig) return $cacheConfig;
-        $pluginDir = base_path('plugin');
-        $directories = Finder::create()->in($pluginDir)->directories()->depth(0)->sortByName();
-        $plugins = [];
-        foreach ($directories as $dir) {
-            $basePath = $dir->getPathname();
-            $subPlugins = Finder::create()->in($basePath)->depth(0);
-            $configPath = null;
-            $viewPath = null;
-            $databasePath = null;
-            $consolePath = null;
-            $routesPath = null;
-            foreach ($subPlugins as $item) {
-                $filename = strtolower($item->getFilenameWithoutExtension());
-                $fileVar = $filename . 'Path';
-                $pathName = $item->getPathname();
-                if ($filename == 'routes') {
-                    $routesPath = $pathName;
-                    $routeFiles = Finder::create()->in($routesPath)->path('/.*\.php/')->files();
-                    $routesPath = [];
-                    foreach ($routeFiles as $routeFile) {
-                        $routesPath[] = $routeFile->getPathname();
-                    }
-                } else {
-                    if ($filename == 'config') {
-                        if (strtolower($item->getExtension()) == 'json') {
-                            $$fileVar = $pathName;
+        if (empty($cacheConfig)){
+            $pluginDir = base_path('plugin');
+            $directories = Finder::create()->in($pluginDir)->directories()->depth(0)->sortByName();
+            $plugins = [];
+            foreach ($directories as $dir) {
+                $basePath = $dir->getPathname();
+                $subPlugins = Finder::create()->in($basePath)->depth(0);
+                $configPath = null;
+                $viewPath = null;
+                $databasePath = null;
+                $consolePath = null;
+                $routesPath = null;
+                foreach ($subPlugins as $item) {
+                    $filename = strtolower($item->getFilenameWithoutExtension());
+                    $fileVar = $filename . 'Path';
+                    $pathName = $item->getPathname();
+                    if ($filename == 'routes') {
+                        $routesPath = $pathName;
+                        $routeFiles = Finder::create()->in($routesPath)->path('/.*\.php/')->files();
+                        $routesPath = [];
+                        foreach ($routeFiles as $routeFile) {
+                            $routesPath[] = $routeFile->getPathname();
                         }
                     } else {
-                        $$fileVar = $pathName;
+                        if ($filename == 'config') {
+                            if (strtolower($item->getExtension()) == 'json') {
+                                $$fileVar = $pathName;
+                            }
+                        } else {
+                            $$fileVar = $pathName;
+                        }
                     }
                 }
-            }
-            if (!(!is_null($configPath) && file_exists($configPath))) continue;
-            $config = json_decode(file_get_contents($configPath), 256);
-            if ($config['status'] == DzqConst::BOOL_YES) {
+                if (!(!is_null($configPath) && file_exists($configPath))) continue;
+                $config = json_decode(file_get_contents($configPath), 256);
                 $config['plugin_' . $config['app_id']] = [
                     'base' => $basePath,
                     'view' => $viewPath,
@@ -238,11 +237,20 @@ class Utils
                     'config' => $configPath,
                     'routes' => $routesPath
                 ];
+
+                $plugins[$config['app_id']] = $config;
             }
-            $plugins[$config['app_id']] = $config;
+            DzqCache::set(CacheKey::PLUGIN_LOCAL_CONFIG, $plugins, 5 * 60);
+            $cacheConfig = $plugins;
         }
-        DzqCache::set(CacheKey::PLUGIN_LOCAL_CONFIG, $plugins, 5 * 60);
-        return $plugins;
+        if (!$isAll){
+            foreach ($cacheConfig as $key=>&$pluginItem){
+                if ($pluginItem['status'] != DzqConst::BOOL_YES){
+                    unset($pluginItem["plugin_".$pluginItem["app_id"]]);
+                }
+            }
+        }
+        return $cacheConfig;
     }
 
     public static function runConsoleCmd($cmd, $params)
