@@ -108,7 +108,6 @@ class AuthenticateWithHeader implements MiddlewareInterface
         if (Utils::startWith($api, '/backAdmin')) {
             return false;
         }
-//      $api = '/api/v3/plug/tes/hello';
         $httpMethod = Arr::get($request->getServerParams(), 'REQUEST_METHOD', '');
         $routeInfo = $this->getRouteInfo($api, $httpMethod);
         $ip = ip($request->getServerParams());
