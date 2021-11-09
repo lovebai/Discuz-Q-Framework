@@ -93,7 +93,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
         $actor = $cache->get($key);
         if (!$actor) {
             $actor = User::find($userId);
-            $cache->put($key, $actor, 5 * 60);
+            $cache->put($key, $actor, 3 * 60);
         }
 //        if (!is_null($actor) && $actor->exists) {
 //            $actor->changeUpdateAt()->save();
