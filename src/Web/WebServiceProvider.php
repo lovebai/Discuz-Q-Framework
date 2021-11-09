@@ -18,7 +18,6 @@
 
 namespace Discuz\Web;
 
-use App\Common\Utils;
 use Discuz\Http\Middleware\DispatchRoute;
 use Discuz\Http\Middleware\HandleErrorsWithView;
 use Discuz\Http\Middleware\HandleErrorsWithWhoops;
