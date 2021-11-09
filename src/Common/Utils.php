@@ -7,6 +7,7 @@ use App\Common\DzqConst;
 use App\Common\ResponseCode;
 use Discuz\Base\DzqCache;
 use Discuz\Base\DzqLog;
+use Discuz\Http\RouteCollection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Discuz\Http\DiscuzResponseFactory;
@@ -249,6 +250,27 @@ class Utils
         return $plugins;
     }
 
+    /**
+     * @desc 一次性加载所有插件的路由文件
+     * @param RouteCollection $route
+     * @return RouteCollection
+     */
+    public static function includePluginRoutes(RouteCollection &$route){
+        $plugins = self::getPluginList();
+        foreach ($plugins as $plugin) {
+            $prefix = '/plugin/' . $plugin['name_en'] . '/api/';
+            $route->group($prefix, function (RouteCollection $route) use ($plugin) {
+                $pluginFiles = $plugin['plugin_' . $plugin['app_id']];
+                \App\Common\Utils::setPluginAppId($plugin['app_id']);
+                if (isset($pluginFiles['routes'])) {
+                    foreach ($pluginFiles['routes'] as $routeFile) {
+                        require_once $routeFile;
+                    }
+                }
+            });
+        }
+        return $route;
+    }
     public static function runConsoleCmd($cmd, $params)
     {
         $reader = function & ($object, $property) {

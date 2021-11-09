@@ -136,27 +136,8 @@ class ApiServiceProvider extends ServiceProvider
                 require $this->app->basePath('routes/api.php');
             });
         }
-        $plugins = \Discuz\Common\Utils::getPluginList();
-        //加载插件所有接口
-        $this->setPluginRoutes($route, $plugins, $pluginName);
+        \Discuz\Common\Utils::includePluginRoutes($route);
         \Discuz\Common\Utils::setRouteMap($route->getRouteData());
-    }
-
-
-    private function setPluginRoutes(RouteCollection $route, $plugins, $pluginName)
-    {
-        foreach ($plugins as $plugin) {
-            $prefix = '/plugin/' . $plugin['name_en'] . '/api/';
-            $route->group($prefix, function (RouteCollection $route) use ($plugin) {
-                $pluginFiles = $plugin['plugin_' . $plugin['app_id']];
-                Utils::setPluginAppId($plugin['app_id']);
-                if (isset($pluginFiles['routes'])) {
-                    foreach ($pluginFiles['routes'] as $routeFile) {
-                        require_once $routeFile;
-                    }
-                }
-            });
-        }
     }
 
     private function matchPrefix($uri, $prefix)
