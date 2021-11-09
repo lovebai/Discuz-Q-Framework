@@ -40,8 +40,9 @@ class RouteCollection
 
     protected $currentGroupPrefix;
 
-    protected $times = 30;
-    protected $interval = 60;
+    protected $times;
+    protected $interval;
+    protected $delay;
 
     public function __construct()
     {
@@ -50,6 +51,9 @@ class RouteCollection
         $this->routeParser = new RouteParser\Std;
 
         $this->currentGroupPrefix = '';
+        $this->times = null;
+        $this->interval = null;
+        $this->delay = null;
     }
 
     public function get($path, $name, $handler, $replaceHandler = null)
@@ -89,15 +93,17 @@ class RouteCollection
      * @param callable $callback
      * @param int $times 访问次数
      * @param int $interval 时间间隔(秒)
+     * @param int $delay 超过限频禁用时长(秒)
      */
-    public function withFrequency(callable $callback, $times = 100, $interval = 60)
+    public function withFrequency(callable $callback, $times = 100, $interval = 60, $delay = 300)
     {
-        $previousGroupPrefix = $this->currentGroupPrefix;
-        $this->currentGroupPrefix = $previousGroupPrefix;
-        $callback($this);
         $this->times = $times;
         $this->interval = $interval;
-        $this->currentGroupPrefix = $previousGroupPrefix;
+        $this->delay = $delay;
+        $callback($this);
+        $this->times = null;
+        $this->interval = null;
+        $this->delay = null;
     }
 
     public function addRoute($method, $path, $name, $handler, $replaceHandler = null)
@@ -110,8 +116,9 @@ class RouteCollection
                 'method' => $method,
                 'handler' => $handler,
                 'replaceHandler' => $replaceHandler,
-                'times'=>$this->times,
-                'interval'=>$this->interval
+                'times' => $this->times,
+                'interval' => $this->interval,
+                'delay' => $this->delay
             ];
             $this->dataGenerator->addRoute($method, $routeData, $handler);
         }
