@@ -191,10 +191,12 @@ class Utils
         exit(json_encode($ret, 256));
     }
 
-    public static function getPluginList()
+    public static function getPluginList($all = false)
     {
-//        $cacheConfig = DzqCache::get(CacheKey::PLUGIN_LOCAL_CONFIG);
-//        if ($cacheConfig) return $cacheConfig;
+        if(!$all){
+            $cacheConfig = DzqCache::get(CacheKey::PLUGIN_LOCAL_CONFIG);
+            if ($cacheConfig) return $cacheConfig;
+        }
         $pluginDir = base_path('plugin');
         $directories = Finder::create()->in($pluginDir)->directories()->depth(0)->sortByName();
         $plugins = [];
@@ -215,8 +217,7 @@ class Utils
                     $routeFiles = Finder::create()->in($routesPath)->path('/.*\.php/')->files();
                     $routesPath = [];
                     foreach ($routeFiles as $routeFile) {
-                        $routePath = $routeFile->getPathname();
-                        $routesPath[] = $routePath;
+                        $routesPath[] = $routeFile->getPathname();
                     }
                 } else {
                     if ($filename == 'config') {
@@ -230,19 +231,21 @@ class Utils
             }
             if (!(!is_null($configPath) && file_exists($configPath))) continue;
             $config = json_decode(file_get_contents($configPath), 256);
-            if ($config['status'] == DzqConst::BOOL_YES) {
-                $config['plugin_' . $config['app_id']] = [
-                    'base' => $basePath,
-                    'view' => $viewPath,
-                    'database' => $databasePath,
-                    'console' => $consolePath,
-                    'config' => $configPath,
-                    'routes' => $routesPath
-                ];
+            $config['plugin_' . $config['app_id']] = [
+                'base' => $basePath,
+                'view' => $viewPath,
+                'database' => $databasePath,
+                'console' => $consolePath,
+                'config' => $configPath,
+                'routes' => $routesPath
+            ];
+            if ($all) {
+                $plugins[$config['app_id']] = $config;
+            } else {
+                $config['status'] == DzqConst::BOOL_YES && $plugins[$config['app_id']] = $config;
             }
-            $plugins[$config['app_id']] = $config;
         }
-        DzqCache::set(CacheKey::PLUGIN_LOCAL_CONFIG, $plugins, 5 * 60);
+        !$all && DzqCache::set(CacheKey::PLUGIN_LOCAL_CONFIG, $plugins, 5 * 60);
         return $plugins;
     }
 
