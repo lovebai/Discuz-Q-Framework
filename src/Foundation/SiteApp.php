@@ -23,10 +23,12 @@ use Discuz\Api\ApiServiceProvider;
 use Discuz\Auth\AuthServiceProvider;
 use Discuz\Base\DzqLog;
 use Discuz\Cache\CacheServiceProvider;
+use Discuz\Common\Utils;
 use Discuz\Database\DatabaseServiceProvider;
 use Discuz\Database\MigrationServiceProvider;
 use Discuz\Filesystem\FilesystemServiceProvider;
 use Discuz\Http\HttpServiceProvider;
+use Discuz\Http\RouteCollection;
 use Discuz\Notifications\NotificationServiceProvider;
 use Discuz\Qcloud\QcloudServiceProvider;
 use Discuz\Queue\QueueServiceProvider;
@@ -46,7 +48,6 @@ use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
-use Discuz\Foundation\SqlProfileServiceProvider;
 
 class SiteApp
 {
@@ -73,8 +74,10 @@ class SiteApp
         $this->app->register(EncryptionServiceProvider::class);
         $this->app->register(CacheServiceProvider::class);
         $this->app->register(RedisServiceProvider::class);
-        $this->app->register(ApiServiceProvider::class);
-        $this->app->register(WebServiceProvider::class);
+        if(ARTISAN_BINARY != 'disco'){
+            $this->app->register(ApiServiceProvider::class);
+            $this->app->register(WebServiceProvider::class);
+        }
         $this->app->register(BusServiceProvider::class);
         $this->app->register(ValidationServiceProvider::class);
         $this->app->register(HashServiceProvider::class);
@@ -87,17 +90,39 @@ class SiteApp
         $this->app->register(NotificationServiceProvider::class);
         $this->app->register(WechatServiceProvider::class);
         $this->app->register(RedPacketServiceProvider::class);
-        $this->app->register(SqlProfileServiceProvider::class);
 
         $this->registerServiceProvider();
 
         $this->app->registerConfiguredProviders();
 
         $this->app->boot();
-
+        $this->includePluginRoutes($this->app->make(RouteCollection::class));
         return $this->app;
     }
-
+    /**
+     * @desc 一次性加载所有插件的路由文件
+     * @param RouteCollection $route
+     * @return RouteCollection
+     */
+    private  function includePluginRoutes(RouteCollection $route){
+        $plugins = Utils::getPluginList();
+        foreach ($plugins as $plugin) {
+            $prefix = '/plugin/' . $plugin['name_en'] . '/api/';
+            $route->group($prefix, function (RouteCollection $route) use ($plugin) {
+                $pluginFiles = $plugin['plugin_' . $plugin['app_id']];
+                \App\Common\Utils::setPluginAppId($plugin['app_id']);
+                if (isset($pluginFiles['routes'])) {
+                    foreach ($pluginFiles['routes'] as $routeFile) {
+                        require_once $routeFile;
+                    }
+                }
+            });
+        }
+        //添加首页路由
+        $route->get('/{other:.*}', 'other', \App\Http\Controller\IndexController::class);
+        Utils::setRouteMap($route->getRouteData());
+        return $route;
+    }
     protected function registerServiceProvider()
     {
     }

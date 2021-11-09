@@ -106,40 +106,30 @@ class ApiServiceProvider extends ServiceProvider
     {
         $reqUri = $_SERVER['REQUEST_URI'] ?? '';
         if (empty($reqUri)) return;
-        preg_match("/(?<=plugin\/)[a-z|A-Z]+?(?=\/api)/", $reqUri, $m);
-        $pluginName = $m[0] ?? '';
-        $adminApiPrefix = '/api/backAdmin';
-        $userApiPrefix = '/api';
-        $userApiV3Prefix = '/apiv3';
-        $userApiV3PrefixAlias = '/api/v3';
-        $pluginApiPrefix = '/plugin/' . $pluginName . '/api';
-        if ($this->matchPrefix($reqUri, $adminApiPrefix)) {
-            $route->group($adminApiPrefix, function (RouteCollection $route) {
+        $api1 = '/api/backAdmin/';
+        $api2 = '/api/';
+        $api3 = '/apiv3/';
+        $api4 = '/api/v3/';
+        if ($this->startWith($reqUri, $api1)) {
+            $route->group($api1, function (RouteCollection $route) {
                 require $this->app->basePath('routes/apiadmin.php');
             });
-        } else if ($this->matchPrefix($reqUri, $userApiV3Prefix)) {
-            $route->group($userApiV3Prefix, function (RouteCollection $route) {
+        } else if ($this->startWith($reqUri, $api3)) {
+            $route->group($api3, function (RouteCollection $route) {
                 require $this->app->basePath('routes/apiv3.php');
             });
-        } else if ($this->matchPrefix($reqUri, $userApiV3PrefixAlias)) {
-            $route->group($userApiV3PrefixAlias, function (RouteCollection $route) {
+        } else if ($this->startWith($reqUri, $api4)) {
+            $route->group($api4, function (RouteCollection $route) {
                 require $this->app->basePath('routes/apiv3.php');
             });
-        } else if ($this->matchPrefix($reqUri, $userApiPrefix)) {
-            $route->group($userApiPrefix, function (RouteCollection $route) {
-                require $this->app->basePath('routes/api.php');
-            });
-        } else if ($this->matchPrefix($reqUri, $pluginApiPrefix)) {
-//            $this->setPluginRoutes($route,$plugins, $pluginName);
-        } else {
-            $route->group($userApiPrefix, function (RouteCollection $route) {
+        } else if ($this->startWith($reqUri, $api2)) {
+            $route->group($api2, function (RouteCollection $route) {
                 require $this->app->basePath('routes/api.php');
             });
         }
-        \Discuz\Common\Utils::includePluginRoutes($route);
     }
 
-    private function matchPrefix($uri, $prefix)
+    private function startWith($uri, $prefix)
     {
         $p = '/' . $prefix;//兼容前端错误的url拼接
         return ($uri & $prefix) == $prefix || ($uri & $p) == $p;
