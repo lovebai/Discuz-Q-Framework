@@ -40,38 +40,46 @@ class RouteCollection
 
     protected $currentGroupPrefix;
 
+    protected $times;
+    protected $interval;
+    protected $delay;
+
     public function __construct()
     {
         $this->dataGenerator = new DataGenerator\GroupCountBased;
+
         $this->routeParser = new RouteParser\Std;
 
         $this->currentGroupPrefix = '';
+        $this->times = null;
+        $this->interval = null;
+        $this->delay = null;
     }
 
-    public function get($path, $name, $handler)
+    public function get($path, $name, $handler, $replaceHandler = null)
     {
-        return $this->addRoute('GET', $path, $name, $handler);
+        return $this->addRoute('GET', $path, $name, $handler, $replaceHandler);
     }
 
-    public function post($path, $name, $handler)
+    public function post($path, $name, $handler, $replaceHandler = null)
     {
-        return $this->addRoute('POST', $path, $name, $handler);
+        return $this->addRoute('POST', $path, $name, $handler, $replaceHandler);
     }
 
-    public function put($path, $name, $handler)
-    {
-        return $this->addRoute('PUT', $path, $name, $handler);
-    }
-
-    public function patch($path, $name, $handler)
-    {
-        return $this->addRoute('PATCH', $path, $name, $handler);
-    }
-
-    public function delete($path, $name, $handler)
-    {
-        return $this->addRoute('DELETE', $path, $name, $handler);
-    }
+//    public function put($path, $name, $handler)
+//    {
+//        return $this->addRoute('PUT', $path, $name, $handler);
+//    }
+//
+//    public function patch($path, $name, $handler)
+//    {
+//        return $this->addRoute('PATCH', $path, $name, $handler);
+//    }
+//
+//    public function delete($path, $name, $handler)
+//    {
+//        return $this->addRoute('DELETE', $path, $name, $handler);
+//    }
 
     public function group($prefix, callable $callback)
     {
@@ -81,12 +89,37 @@ class RouteCollection
         $this->currentGroupPrefix = $previousGroupPrefix;
     }
 
-    public function addRoute($method, $path, $name, $handler)
+    /**
+     * @param callable $callback
+     * @param int $times 访问次数
+     * @param int $interval 时间间隔(秒)
+     * @param int $delay 超过限频禁用时长(秒)
+     */
+    public function withFrequency(callable $callback, $times = 100, $interval = 60, $delay = 300)
+    {
+        $this->times = $times;
+        $this->interval = $interval;
+        $this->delay = $delay;
+        $callback($this);
+        $this->times = null;
+        $this->interval = null;
+        $this->delay = null;
+    }
+
+    public function addRoute($method, $path, $name, $handler, $replaceHandler = null)
     {
         $path = $this->currentGroupPrefix . $path;
-        $path = str_replace('//','/',$path);
+        $path = str_replace('//', '/', $path);
         $routeDatas = $this->routeParser->parse($path);
         foreach ($routeDatas as $routeData) {
+            $handler = [
+                'method' => $method,
+                'handler' => $handler,
+                'replaceHandler' => $replaceHandler,
+                'times' => $this->times,
+                'interval' => $this->interval,
+                'delay' => $this->delay
+            ];
             $this->dataGenerator->addRoute($method, $routeData, $handler);
         }
 
@@ -111,7 +144,7 @@ class RouteCollection
         if (isset($this->reverse[$name])) {
             $parts = $this->reverse[$name][0];
             array_walk($parts, [$this, 'fixPathPart'], $parameters);
-            return '/'.ltrim(implode('', $parts), '/');
+            return '/' . ltrim(implode('', $parts), '/');
         }
         throw new \RuntimeException("Route $name not found");
     }

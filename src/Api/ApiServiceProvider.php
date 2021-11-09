@@ -130,33 +130,14 @@ class ApiServiceProvider extends ServiceProvider
                 require $this->app->basePath('routes/api.php');
             });
         } else if ($this->matchPrefix($reqUri, $pluginApiPrefix)) {
-            $this->setPluginRoutes($route, $pluginName);
+//            $this->setPluginRoutes($route,$plugins, $pluginName);
         } else {
             $route->group($userApiPrefix, function (RouteCollection $route) {
                 require $this->app->basePath('routes/api.php');
             });
         }
-    }
-
-
-    private function setPluginRoutes(RouteCollection $route, $pluginName)
-    {
-        $plugins = \Discuz\Common\Utils::getPluginList();
-        $plugin = array_filter($plugins, function ($item) use ($pluginName) {
-            return strtolower($item['name_en']) == strtolower($pluginName);
-        });
-        $plugin = current($plugin);
-        if (empty($plugin)) exit('plugin ' . $pluginName . ' not exist.');
-        $prefix = '/plugin/' . $plugin['name_en'] . '/api/';
-        $route->group($prefix, function (RouteCollection $route) use ($plugin) {
-            $pluginFiles = $plugin['plugin_' . $plugin['app_id']];
-            Utils::setPluginAppId($plugin['app_id']);
-            if (isset($pluginFiles['routes'])) {
-                foreach ($pluginFiles['routes'] as $routeFile) {
-                    require_once $routeFile;
-                }
-            }
-        });
+        \Discuz\Common\Utils::includePluginRoutes($route);
+        \Discuz\Common\Utils::setRouteMap($route->getRouteData());
     }
 
     private function matchPrefix($uri, $prefix)

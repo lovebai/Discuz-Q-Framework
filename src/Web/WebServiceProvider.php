@@ -18,6 +18,7 @@
 
 namespace Discuz\Web;
 
+use App\Common\Utils;
 use Discuz\Http\Middleware\DispatchRoute;
 use Discuz\Http\Middleware\HandleErrorsWithView;
 use Discuz\Http\Middleware\HandleErrorsWithWhoops;
@@ -57,5 +58,7 @@ class WebServiceProvider extends ServiceProvider
         $route->group('', function (RouteCollection $route) {
             require $this->app->basePath('routes/web.php');
         });
+        \Discuz\Common\Utils::includePluginRoutes($route);
+        \Discuz\Common\Utils::setRouteMap($route->getRouteData());
     }
 }
