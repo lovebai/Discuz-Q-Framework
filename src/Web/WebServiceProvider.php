@@ -57,5 +57,6 @@ class WebServiceProvider extends ServiceProvider
         $route->group('', function (RouteCollection $route) {
             require $this->app->basePath('routes/web.php');
         });
+        \Discuz\Common\Utils::includePluginRoutes($route);
     }
 }
