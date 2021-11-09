@@ -250,28 +250,6 @@ class Utils
         return $plugins;
     }
 
-    /**
-     * @desc 一次性加载所有插件的路由文件
-     * @param RouteCollection $route
-     * @return RouteCollection
-     */
-    public static function includePluginRoutes(RouteCollection &$route){
-        $plugins = self::getPluginList();
-        foreach ($plugins as $plugin) {
-            $prefix = '/plugin/' . $plugin['name_en'] . '/api/';
-            $route->group($prefix, function (RouteCollection $route) use ($plugin) {
-                $pluginFiles = $plugin['plugin_' . $plugin['app_id']];
-                \App\Common\Utils::setPluginAppId($plugin['app_id']);
-                if (isset($pluginFiles['routes'])) {
-                    foreach ($pluginFiles['routes'] as $routeFile) {
-                        require_once $routeFile;
-                    }
-                }
-            });
-        }
-        self::setRouteMap($route->getRouteData());
-        return $route;
-    }
     public static function runConsoleCmd($cmd, $params)
     {
         $reader = function & ($object, $property) {
@@ -443,7 +421,7 @@ class Utils
         return null;
     }
 
-    private static function setRouteMap($data)
+    public static function setRouteMap($data)
     {
         return self::setAppKey('dzq_boot_route_data', $data);
     }

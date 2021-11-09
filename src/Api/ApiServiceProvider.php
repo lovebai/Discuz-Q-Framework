@@ -136,7 +136,6 @@ class ApiServiceProvider extends ServiceProvider
                 require $this->app->basePath('routes/api.php');
             });
         }
-        \Discuz\Common\Utils::includePluginRoutes($route);
     }
 
     private function matchPrefix($uri, $prefix)

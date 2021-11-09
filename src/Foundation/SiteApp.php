@@ -27,6 +27,7 @@ use Discuz\Database\DatabaseServiceProvider;
 use Discuz\Database\MigrationServiceProvider;
 use Discuz\Filesystem\FilesystemServiceProvider;
 use Discuz\Http\HttpServiceProvider;
+use Discuz\Http\RouteCollection;
 use Discuz\Notifications\NotificationServiceProvider;
 use Discuz\Qcloud\QcloudServiceProvider;
 use Discuz\Queue\QueueServiceProvider;
@@ -46,7 +47,7 @@ use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
-use Discuz\Foundation\SqlProfileServiceProvider;
+use \Discuz\Common\Utils;
 
 class SiteApp
 {
@@ -95,7 +96,32 @@ class SiteApp
 
         $this->app->boot();
 
+        $this->includePluginRoutes($this->app->make(RouteCollection::class));
         return $this->app;
+    }
+
+    /**
+     * @desc 一次性加载所有插件的路由文件
+     * @param RouteCollection $route
+     * @return RouteCollection
+     */
+    private function includePluginRoutes(RouteCollection $route)
+    {
+        $plugins = Utils::getPluginList();
+        foreach ($plugins as $plugin) {
+            $prefix = '/plugin/' . $plugin['name_en'] . '/api/';
+            $route->group($prefix, function (RouteCollection $route) use ($plugin) {
+                $pluginFiles = $plugin['plugin_' . $plugin['app_id']];
+                \App\Common\Utils::setPluginAppId($plugin['app_id']);
+                if (isset($pluginFiles['routes'])) {
+                    foreach ($pluginFiles['routes'] as $routeFile) {
+                        require_once $routeFile;
+                    }
+                }
+            });
+        }
+        Utils::setRouteMap($route->getRouteData());
+        return $route;
     }
 
     protected function registerServiceProvider()
@@ -174,16 +200,16 @@ class SiteApp
     {
         //最后一条应为'alias' => 'log'。默认错误会输出到最后一条中
         $logs = [
-            ['alias' => DzqLog::LOG_WECHAT, 'path' => 'logs/'.DzqLog::LOG_WECHAT.'.log', 'level' => Logger::INFO],
-            ['alias' => DzqLog::LOG_PAY, 'path' => 'logs/'.DzqLog::LOG_PAY.'.log', 'level' => Logger::INFO],
-            ['alias' => DzqLog::LOG_QCLOUND, 'path' => 'logs/'.DzqLog::LOG_QCLOUND.'.log', 'level' => Logger::INFO],
-            ['alias' => DzqLog::LOG_WECHAT_OFFIACCOUNT, 'path' => 'logs/'.DzqLog::LOG_WECHAT_OFFIACCOUNT.'.log', 'level' => Logger::INFO],
-            ['alias' => DzqLog::LOG_PERFORMANCE, 'path' => 'logs/'.DzqLog::LOG_PERFORMANCE.'.log', 'level' => Logger::INFO],
-            ['alias' => DzqLog::LOG_LOGIN, 'path' => 'logs/'.DzqLog::LOG_LOGIN.'.log', 'level' => Logger::INFO],
-            ['alias' => DzqLog::LOG_ADMIN, 'path' => 'logs/'.DzqLog::LOG_ADMIN.'.log', 'level' => Logger::INFO],
-            ['alias' => DzqLog::LOG_API, 'path' => 'logs/'.DzqLog::LOG_API.'.log', 'level' => Logger::INFO],
-            ['alias' => DzqLog::LOG_ERROR, 'path' => 'logs/'.DzqLog::LOG_ERROR.'.log', 'level' => Logger::INFO],
-            ['alias' => DzqLog::LOG_INFO, 'path' => 'logs/'.DzqLog::LOG_INFO.'.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_WECHAT, 'path' => 'logs/' . DzqLog::LOG_WECHAT . '.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_PAY, 'path' => 'logs/' . DzqLog::LOG_PAY . '.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_QCLOUND, 'path' => 'logs/' . DzqLog::LOG_QCLOUND . '.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_WECHAT_OFFIACCOUNT, 'path' => 'logs/' . DzqLog::LOG_WECHAT_OFFIACCOUNT . '.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_PERFORMANCE, 'path' => 'logs/' . DzqLog::LOG_PERFORMANCE . '.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_LOGIN, 'path' => 'logs/' . DzqLog::LOG_LOGIN . '.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_ADMIN, 'path' => 'logs/' . DzqLog::LOG_ADMIN . '.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_API, 'path' => 'logs/' . DzqLog::LOG_API . '.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_ERROR, 'path' => 'logs/' . DzqLog::LOG_ERROR . '.log', 'level' => Logger::INFO],
+            ['alias' => DzqLog::LOG_INFO, 'path' => 'logs/' . DzqLog::LOG_INFO . '.log', 'level' => Logger::INFO],
         ];
 
         foreach ($logs as $log) {
