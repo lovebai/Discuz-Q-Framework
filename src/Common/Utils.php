@@ -269,6 +269,7 @@ class Utils
                 }
             });
         }
+        self::setRouteMap($route->getRouteData());
         return $route;
     }
     public static function runConsoleCmd($cmd, $params)
@@ -442,7 +443,7 @@ class Utils
         return null;
     }
 
-    public static function setRouteMap($data)
+    private static function setRouteMap($data)
     {
         return self::setAppKey('dzq_boot_route_data', $data);
     }

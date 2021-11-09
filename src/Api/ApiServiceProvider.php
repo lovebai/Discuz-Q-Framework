@@ -137,7 +137,6 @@ class ApiServiceProvider extends ServiceProvider
             });
         }
         \Discuz\Common\Utils::includePluginRoutes($route);
-        \Discuz\Common\Utils::setRouteMap($route->getRouteData());
     }
 
     private function matchPrefix($uri, $prefix)

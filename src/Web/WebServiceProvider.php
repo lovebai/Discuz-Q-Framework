@@ -58,6 +58,5 @@ class WebServiceProvider extends ServiceProvider
             require $this->app->basePath('routes/web.php');
         });
         \Discuz\Common\Utils::includePluginRoutes($route);
-        \Discuz\Common\Utils::setRouteMap($route->getRouteData());
     }
 }
