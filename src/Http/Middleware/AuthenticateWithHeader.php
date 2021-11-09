@@ -118,8 +118,8 @@ class AuthenticateWithHeader implements MiddlewareInterface
         } else {
             $key = md5($userId . $api . $httpMethod);
         }
-        $times = $routeInfo['times'] ?: 50;
-        $interval = $routeInfo['interval'] ?: 60;
+        $times = $routeInfo['times'] ?: 20;
+        $interval = $routeInfo['interval'] ?: 30;
         $delay = $routeInfo['delay'] ?: 300;//默认禁用5分钟
         $cache = app('cache');
         $count = $cache->get($key);
