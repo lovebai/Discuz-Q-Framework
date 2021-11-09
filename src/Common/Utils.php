@@ -193,10 +193,10 @@ class Utils
 
     public static function getPluginList($all = false)
     {
-//        if(!$all){
-//            $cacheConfig = DzqCache::get(CacheKey::PLUGIN_LOCAL_CONFIG);
-//            if ($cacheConfig) return $cacheConfig;
-//        }
+        if(!$all){
+            $cacheConfig = DzqCache::get(CacheKey::PLUGIN_LOCAL_CONFIG);
+            if ($cacheConfig) return $cacheConfig;
+        }
         $pluginDir = base_path('plugin');
         $directories = Finder::create()->in($pluginDir)->directories()->depth(0)->sortByName();
         $plugins = [];
@@ -245,7 +245,7 @@ class Utils
                 $config['status'] == DzqConst::BOOL_YES && $plugins[$config['app_id']] = $config;
             }
         }
-//        !$all && DzqCache::set(CacheKey::PLUGIN_LOCAL_CONFIG, $plugins, 5 * 60);
+        !$all && DzqCache::set(CacheKey::PLUGIN_LOCAL_CONFIG, $plugins, 5 * 60);
         return $plugins;
     }
 
