@@ -18,7 +18,6 @@
 
 namespace Discuz\Api;
 
-use App\Common\Utils;
 use Discuz\Api\Controller\AbstractSerializeController;
 use Discuz\Api\Events\ApiExceptionRegisterHandler;
 use Discuz\Api\Events\ConfigMiddleware;
