@@ -77,7 +77,8 @@ class CheckoutSite implements MiddlewareInterface
         'emoji',
         'view.count',
         'swagger',
-        'plugin/list'
+        'plugin/list',
+        'thread.typelist'
     ];
     public function __construct(Application $app, SettingsRepository $settings)
     {
