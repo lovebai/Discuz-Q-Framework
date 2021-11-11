@@ -96,7 +96,7 @@ class SiteApp
         $this->app->registerConfiguredProviders();
 
         $this->app->boot();
-        $this->includePluginRoutes($this->app->make(RouteCollection::class));
+        ARTISAN_BINARY != 'disco' && $this->includePluginRoutes($this->app->make(RouteCollection::class));
         return $this->app;
     }
     /**
