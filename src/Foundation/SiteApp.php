@@ -74,7 +74,7 @@ class SiteApp
         $this->app->register(EncryptionServiceProvider::class);
         $this->app->register(CacheServiceProvider::class);
         $this->app->register(RedisServiceProvider::class);
-        if(ARTISAN_BINARY != 'disco'){
+        if (ARTISAN_BINARY == 'http') {
             $this->app->register(ApiServiceProvider::class);
             $this->app->register(WebServiceProvider::class);
         }
@@ -96,7 +96,7 @@ class SiteApp
         $this->app->registerConfiguredProviders();
 
         $this->app->boot();
-        ARTISAN_BINARY != 'disco' && $this->includePluginRoutes($this->app->make(RouteCollection::class));
+        ARTISAN_BINARY == 'http' && $this->includePluginRoutes($this->app->make(RouteCollection::class));
         return $this->app;
     }
     /**

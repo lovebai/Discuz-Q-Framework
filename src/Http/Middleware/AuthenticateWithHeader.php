@@ -18,6 +18,7 @@
 
 namespace Discuz\Http\Middleware;
 
+use App\Common\CacheKey;
 use App\Common\ResponseCode;
 use App\Models\User;
 use App\Passport\Repositories\AccessTokenRepository;
@@ -89,7 +90,7 @@ class AuthenticateWithHeader implements MiddlewareInterface
             return null;
         }
         $cache = app('cache');
-        $key = 'dzq_login_user_by_id_' . $userId;
+        $key = CacheKey::DZQ_LOGIN_IN_USER_BY_ID . $userId;
         $actor = $cache->get($key);
         if (!$actor) {
             $actor = User::find($userId);
