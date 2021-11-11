@@ -17,6 +17,8 @@
 
 namespace Discuz\Database;
 
+use App\Common\CacheKey;
+use Discuz\Base\DzqCache;
 use Discuz\Common\Utils;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
@@ -30,21 +32,24 @@ class PluginCommand extends Command
     {
         $name = $this->input->getOption('name');
         if (empty($name)) throw new \Exception('expected one plugin name,used like [ php disco migrate:plugin --name=test ]');
+        DzqCache::delKey(CacheKey::PLUGIN_LOCAL_CONFIG);
         $pluginList = Utils::getPluginList();
-
-        $basePath = base_path().DIRECTORY_SEPARATOR;
+        $basePath = base_path() . DIRECTORY_SEPARATOR;
+        $rightName = false;
         foreach ($pluginList as $item) {
             if (strtolower($item['name_en']) == strtolower($name)) {
                 $paths = 'plugin_' . $item['app_id'];
                 $absolutePath = $item[$paths]['database'] . '/migrations';
-                $localPath = str_replace($basePath,'',$absolutePath);
+                $localPath = str_replace($basePath, '', $absolutePath);
                 if (!file_exists($absolutePath)) throw new \Exception($absolutePath . ' directory in ' . $item['name_en'] . '  not exist.');
 //                $this->call('migrate', array_filter(['--path' => $databasePath, '--force' => true]));
-                $log = Utils::runConsoleCmd('migrate',['--path' => $localPath, '--force' => true]);
+                $log = Utils::runConsoleCmd('migrate', ['--path' => $localPath, '--force' => true]);
                 $this->info($log);
+                $rightName = true;
                 break;
             }
         }
+        if ($rightName == false) throw new \Exception("plugin name is not exist,confirm your parameter of `$name`.");
     }
 
     protected function getOptions()
