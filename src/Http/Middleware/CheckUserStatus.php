@@ -82,7 +82,8 @@ class CheckUserStatus implements MiddlewareInterface
         'backAdmin/login',
         'emoji',
         'view.count',
-        'plugin/list'
+        'plugin/list',
+        'thread.typelist'
     ];
 
     /**
