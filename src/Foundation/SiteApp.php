@@ -119,7 +119,9 @@ class SiteApp
             });
         }
         //添加首页路由
-        $route->get('/{other:.*}', 'other', \App\Http\Controller\IndexController::class);
+        $route->group('', function (RouteCollection $route) {
+            require_once $this->app->basePath('routes/other.php');
+        });
         Utils::setRouteMap($route->getRouteData());
         return $route;
     }
