@@ -23,12 +23,10 @@ use Discuz\Api\ApiServiceProvider;
 use Discuz\Auth\AuthServiceProvider;
 use Discuz\Base\DzqLog;
 use Discuz\Cache\CacheServiceProvider;
-use Discuz\Common\Utils;
 use Discuz\Database\DatabaseServiceProvider;
 use Discuz\Database\MigrationServiceProvider;
 use Discuz\Filesystem\FilesystemServiceProvider;
 use Discuz\Http\HttpServiceProvider;
-use Discuz\Http\RouteCollection;
 use Discuz\Notifications\NotificationServiceProvider;
 use Discuz\Qcloud\QcloudServiceProvider;
 use Discuz\Queue\QueueServiceProvider;
@@ -58,7 +56,7 @@ class SiteApp
         $this->app = $app;
     }
 
-    public function siteBoot()
+    public function siteBoot($isHttp = false)
     {
         $this->app->instance('env', 'production');
         $this->app->instance('discuz.config', $this->loadConfig());
@@ -74,7 +72,7 @@ class SiteApp
         $this->app->register(EncryptionServiceProvider::class);
         $this->app->register(CacheServiceProvider::class);
         $this->app->register(RedisServiceProvider::class);
-        if (ARTISAN_BINARY == 'http') {
+        if ($isHttp) {
             $this->app->register(ApiServiceProvider::class);
             $this->app->register(WebServiceProvider::class);
         }
@@ -96,35 +94,9 @@ class SiteApp
         $this->app->registerConfiguredProviders();
 
         $this->app->boot();
-        ARTISAN_BINARY == 'http' && $this->includePluginRoutes($this->app->make(RouteCollection::class));
         return $this->app;
     }
-    /**
-     * @desc 一次性加载所有插件的路由文件
-     * @param RouteCollection $route
-     * @return RouteCollection
-     */
-    private  function includePluginRoutes(RouteCollection $route){
-        $plugins = Utils::getPluginList();
-        foreach ($plugins as $plugin) {
-            $prefix = '/plugin/' . $plugin['name_en'] . '/api/';
-            $route->group($prefix, function (RouteCollection $route) use ($plugin) {
-                $pluginFiles = $plugin['plugin_' . $plugin['app_id']];
-                \App\Common\Utils::setPluginAppId($plugin['app_id']);
-                if (isset($pluginFiles['routes'])) {
-                    foreach ($pluginFiles['routes'] as $routeFile) {
-                        require_once $routeFile;
-                    }
-                }
-            });
-        }
-        //添加首页路由
-        $route->group('', function (RouteCollection $route) {
-            require_once $this->app->basePath('routes/other.php');
-        });
-        Utils::setRouteMap($route->getRouteData());
-        return $route;
-    }
+
     protected function registerServiceProvider()
     {
     }

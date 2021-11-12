@@ -18,6 +18,7 @@
 
 namespace Discuz\Http;
 
+use Discuz\Common\Utils;
 use Discuz\Foundation\Application;
 use Discuz\Foundation\SiteApp;
 use Discuz\Http\Middleware\RequestHandler;
@@ -37,7 +38,8 @@ class Server extends SiteApp
     public function listen()
     {
         try {
-            $this->siteBoot();
+            $app = $this->siteBoot(true);
+            $this->includePluginRoutes($app->make(RouteCollection::class));
         } catch (QueryException $e) {
             // 忽略，避免由于数据库引起的启动错误，导致页面无法显示
         } catch (Throwable $e) {
@@ -73,6 +75,29 @@ class Server extends SiteApp
 
         //增加性能日志
         //$this->addPerformanceLog();
+    }
+    /**
+     * @desc 一次性加载所有插件的路由文件
+     * @param RouteCollection $route
+     * @return RouteCollection
+     */
+    private  function includePluginRoutes(RouteCollection $route){
+        $plugins = Utils::getPluginList();
+        foreach ($plugins as $plugin) {
+            $prefix = '/plugin/' . $plugin['name_en'] . '/api/';
+            $route->group($prefix, function (RouteCollection $route) use ($plugin) {
+                $pluginFiles = $plugin['plugin_' . $plugin['app_id']];
+                \App\Common\Utils::setPluginAppId($plugin['app_id']);
+                if (isset($pluginFiles['routes'])) {
+                    foreach ($pluginFiles['routes'] as $routeFile) {
+                        require_once $routeFile;
+                    }
+                }
+            });
+        }
+        $route->get('/{other:.*}', 'other', \App\Http\Controller\IndexController::class);
+        Utils::setRouteMap($route->getRouteData());
+        return $route;
     }
 
     private function isDebug()
