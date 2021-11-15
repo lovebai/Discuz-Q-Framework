@@ -201,14 +201,14 @@ abstract class DzqController implements RequestHandlerInterface
     /*
      * 分页
      */
-    public function pagination($page, $perPage, \Illuminate\Database\Eloquent\Builder $builder, $toArray = true)
+    public function pagination($page, $perPage, \Illuminate\Database\Eloquent\Builder $builder, $toArray = true, $fields = ['*'])
     {
         $page = $page >= 1 ? intval($page) : 1;
         $perPageMax = 50;
         $perPage = $perPage >= 1 ? intval($perPage) : 20;
         $perPage > $perPageMax && $perPage = $perPageMax;
         $count = $builder->count();
-        $builder = $builder->offset(($page - 1) * $perPage)->limit($perPage)->get();
+        $builder = $builder->offset(($page - 1) * $perPage)->limit($perPage)->get($fields);
         $builder = $toArray ? $builder->toArray() : $builder;
         $url = $this->request->getUri();
         $port = $url->getPort();
