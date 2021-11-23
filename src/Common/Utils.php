@@ -240,6 +240,8 @@ class Utils
                 'config' => $configPath,
                 'routes' => $routesPath
             ];
+            $pluginDir = explode(DIRECTORY_SEPARATOR, $basePath);
+            $config['plugin_dirname'] = end($pluginDir);
             if ($all) {
                 $plugins[$config['app_id']] = $config;
             } else {
