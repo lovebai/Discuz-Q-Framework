@@ -87,7 +87,7 @@ class Server extends SiteApp
             $prefix = '/plugin/' . $plugin['name_en'] . '/api/';
             $route->group($prefix, function (RouteCollection $route) use ($plugin) {
                 $pluginFiles = $plugin['plugin_' . $plugin['app_id']];
-                \App\Common\Utils::setPluginAppId($plugin['app_id']);
+                \App\Common\Utils::setPluginAppId($plugin['plugin_dirname'], $plugin['app_id']);
                 if (isset($pluginFiles['routes'])) {
                     foreach ($pluginFiles['routes'] as $routeFile) {
                         require_once $routeFile;
