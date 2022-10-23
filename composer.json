@@ -1,6 +1,6 @@
 {
-    "name": "discuz/core",
-    "description": "The Discuz Framework",
+    "name": "discuzq/core",
+    "description": "The Discuzq Framework",
     "require": {
         "php": "^7.2",
         "ext-json": "*",
