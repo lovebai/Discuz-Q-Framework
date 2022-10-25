@@ -1,6 +1,7 @@
 {
     "name": "discuzq/core",
     "description": "The Discuzq Framework",
+	"license": "Apache-2.0",
     "require": {
         "php": "^7.2",
         "ext-json": "*",
